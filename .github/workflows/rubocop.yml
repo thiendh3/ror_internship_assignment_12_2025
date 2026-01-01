@@ -19,4 +19,4 @@ jobs:
           rubocop_version: gemfile
           rubocop_extensions: rubocop-rails:gemfile rubocop-rspec:gemfile
           reporter: github-check
-          fail_level: warning
+          fail_level: any
