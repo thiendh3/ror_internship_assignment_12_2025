@@ -20,5 +20,5 @@
 - Gửi DD cho mentor review, bổ sung chỉnh sửa nếu cần
 - Sau khi mentor đồng ý với DD thì intern bắt đầu coding
 - Kết thúc coding gửi PR cho các intern khác review chéo lẫn nhau
-- Intern review chéo xong thì gửi cho các mentors
+- Intern review chéo xong thì gửi cho các mentors, lưu ý PR cần pass CI rubocop trước khi gửi cho mentors review
 - Mentors review xong approve PR, intern tiến hành deploy để testing/fix bugs nếu có
