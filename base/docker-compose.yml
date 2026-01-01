@@ -41,11 +41,33 @@ services:
       DATABASE_NAME: ${DATABASE_NAME:-database}
       DATABASE_PORT: ${DATABASE_PORT:-3306}
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:-}
+      SOLR_URL: ${SOLR_URL:-http://solr:8983/solr}
     depends_on:
       db:
         condition: service_healthy
+      solr:
+        condition: service_healthy
     networks:
       - rails_network
+
+  solr:
+    image: solr:9
+    container_name: rails_solr
+    restart: unless-stopped
+    ports:
+      - "8983:8983"
+    volumes:
+      - solr_data:/var/solr
+    environment:
+      SOLR_HEAP: "512m"
+    networks:
+      - rails_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/admin/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   mysql_data:
@@ -55,6 +77,8 @@ volumes:
   rails_storage:
     driver: local
   rails_tmp:
+    driver: local
+  solr_data:
     driver: local
 
 networks:

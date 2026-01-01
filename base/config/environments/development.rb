@@ -1,6 +1,7 @@
-require "active_support/core_ext/integer/time"
+# rubocop:disable Style/FrozenStringLiteralComment
+require 'active_support/core_ext/integer/time'
 
-Rails.application.configure do
+Rails.application.configure do # rubocop:disable Metrics/BlockLength
   # Settings specified here will take precedence over those in config/application.rb.
 
   # In the development environment your application's code is reloaded any time
@@ -40,9 +41,9 @@ Rails.application.configure do
   config.action_mailer.raise_delivery_errors = true
   config.action_mailer.perform_deliveries = true
 
-  host = ENV.fetch("RAILS_HOST", "localhost:3000")
-  config.action_mailer.default_url_options = { host: host, protocol: 'http'}
-  config.action_mailer.default_options = { from: 'noreply@example.com'}
+  host = ENV.fetch('RAILS_HOST', 'localhost:3000')
+  config.action_mailer.default_url_options = { host: host, protocol: 'http' }
+  config.action_mailer.default_options = { from: 'noreply@example.com' }
 
   # Use file delivery in development to avoid SMTP authentication errors
   # Emails will be saved to tmp/mail directory
@@ -98,4 +99,9 @@ Rails.application.configure do
 
   # Raise error when a before_action's only/except options reference missing actions
   config.action_controller.raise_on_missing_callback_actions = true
+
+  # Solr configuration
+  # SOLR_URL is set in docker-compose.yml
+  # Default: http://solr:8983/solr (for Docker) or http://localhost:8983/solr (for local)
 end
+# rubocop:enable Style/FrozenStringLiteralComment
