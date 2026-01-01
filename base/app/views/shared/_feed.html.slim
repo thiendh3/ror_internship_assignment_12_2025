@@ -1,0 +1,5 @@
+- if @feed_items.any?
+  ol.microposts
+    = render @feed_items
+  .digg_pagination
+    = will_paginate @feed_items, params: {controller: :static_pages, action: :home}

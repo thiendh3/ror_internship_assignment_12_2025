@@ -1,0 +1,62 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: rails_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: database
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - rails_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rails_app
+    restart: unless-stopped
+    command: bash -c "rm -f tmp/pids/server.pid && ./bin/rails server -b 0.0.0.0"
+    volumes:
+      - .:/rails
+      - node_modules:/rails/node_modules
+      - rails_storage:/rails/storage
+      - rails_tmp:/rails/tmp
+    ports:
+      - "${RAILS_PORT:-3000}:3000"
+    environment:
+      RAILS_ENV: ${RAILS_ENV:-development}
+      DATABASE_HOST: db
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: root
+      DATABASE_NAME: ${DATABASE_NAME:-database}
+      DATABASE_PORT: ${DATABASE_PORT:-3306}
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - rails_network
+
+volumes:
+  mysql_data:
+    driver: local
+  node_modules:
+    driver: local
+  rails_storage:
+    driver: local
+  rails_tmp:
+    driver: local
+
+networks:
+  rails_network:
+    driver: bridge

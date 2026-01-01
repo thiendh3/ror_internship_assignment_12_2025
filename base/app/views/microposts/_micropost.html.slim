@@ -1,0 +1,12 @@
+li#micropost-#{micropost.id}
+  = link_to gravatar_for(micropost.user, size: 50), micropost.user
+  span.user
+    = link_to micropost.user.name, micropost.user
+  span.content
+    = micropost.content
+    - if micropost.image.attached?
+      = image_tag micropost.display_image
+  span.timestamp
+    | Posted #{time_ago_in_words(micropost.created_at)} ago.
+    - if current_user?(micropost.user)
+      = link_to "delete", micropost, method: :delete, data: {confirm: "Are you sure?"}
