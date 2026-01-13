@@ -22,3 +22,9 @@
 - Kết thúc coding gửi PR cho các intern khác review chéo lẫn nhau
 - Intern review chéo xong thì gửi cho các mentors, lưu ý PR cần pass CI rubocop trước khi gửi cho mentors review
 - Mentors review xong approve PR, intern tiến hành deploy để testing/fix bugs nếu có
+
+
+## Docker
+- Run command:
+1. docker compose build
+2. docker compose up
