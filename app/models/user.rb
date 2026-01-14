@@ -94,11 +94,15 @@ class User < ApplicationRecord
   #Follow a user
   def follow(other_user)
     following << other_user
+    index_to_solr
+    SolrService.add(other_user)
   end
 
   #Unfollow a user
   def unfollow(other_user)
     following.delete(other_user)
+    index_to_solr
+    SolrService.add(other_user)
   end
 
   #Return true if the current user is following the other user
@@ -112,11 +116,12 @@ class User < ApplicationRecord
       id: id,
       name_text: name,
       email_text: email,
-      bio_text: bio,
 
       name_ac: name,
       email_ac: email,
-      bio_ac: bio,
+
+      followers_count_i: followers.count,
+      following_count_i: following.count,
       
       active_boolean: activated,
       type: "User"

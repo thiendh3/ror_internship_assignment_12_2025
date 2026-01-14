@@ -21,7 +21,7 @@ class SolrService
       Rails.logger.error "Solr Delete Error: #{e.message}"
     end
 
-    def search(query, page: 1, per_page: 30, is_admin: false, filter_type: 'all', following_ids: [], current_user_id: nil, search_field: 'name')
+    def search(query, page: 1, per_page: 30, is_admin: false, filter_type: 'all', following_ids: [], current_user_id: nil, search_field: 'name', count_filter: {})
       start_row = (page.to_i - 1) * per_page.to_i
 
       safe_query = query.gsub(/[^a-zA-Z0-9\s@\.]/, '')
@@ -44,6 +44,23 @@ class SolrService
         fq_parts << "-id:#{current_user_id}" if current_user_id
       else
         fq_parts << 'active_boolean:true'
+      end
+
+      if count_filter[:value].present?
+        field_name = count_filter[:field] == 'following' ? 'following_count_i' : 'followers_count_i'
+        val = count_filter[:value].to_i
+        
+        range_query = case count_filter[:operator]
+                      when '>='
+                        # Inclusive: val to Infinity
+                        "#{field_name}:[#{val} TO *]"
+                      when '<='
+                        # Inclusive: 0 to val
+                        "#{field_name}:[0 TO #{val}]"
+                      else
+                        ""
+                      end
+        fq_parts << range_query if range_query.present?
       end
 
       # 2. Build Text Query (q) - UPDATED

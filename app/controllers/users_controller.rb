@@ -21,9 +21,6 @@ class UsersController < ApplicationController
       @user.send_activation_email
       flash[:info] = "Please check your email to activate your account."
       redirect_to root_url
-      #log_in @user
-      #flash[:success] = "Welcome to the Sample App!"
-      #redirect_to @user
     else
       render 'new'
     end
@@ -63,6 +60,12 @@ class UsersController < ApplicationController
                       'name'
                     end
 
+    count_filter = {
+      field: params[:count_field],       # 'followers' or 'following'
+      operator: params[:count_operator], # '>' or '<'
+      value: params[:count_value]        # e.g., '50'
+    }
+
     result = SolrService.search(
       query, 
       page: page, 
@@ -71,7 +74,8 @@ class UsersController < ApplicationController
       filter_type: @filter_type,
       following_ids: current_user.following.ids,
       current_user_id: current_user.id,
-      search_field: @search_field
+      search_field: @search_field,
+      count_filter: count_filter
     )
 
     # Reorder results

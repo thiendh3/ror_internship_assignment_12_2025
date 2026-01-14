@@ -62,4 +62,27 @@ namespace :solr do
 
     puts "Schema setup complete."
   end
+
+  desc "Reindex all user records to Solr"
+  task reindex: :environment do
+    puts "Starting reindex..."
+    
+    count = 0
+    errors = 0
+
+    User.find_each do |user|
+      begin
+        SolrService.add(user)
+        count += 1
+        print "." if count % 50 == 0
+      rescue StandardError => e
+        puts "\nFailed to index User ##{user.id}: #{e.message}"
+        errors += 1
+      end
+    end
+
+    puts "\nReindexing complete."
+    puts "Successfully indexed: #{count}"
+    puts "Errors encountered: #{errors}"
+  end
 end
