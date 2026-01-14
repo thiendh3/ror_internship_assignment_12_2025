@@ -1024,3 +1024,61 @@ span.image{
         }
     }
 }
+
+/* Edit form image handling */
+.edit-micropost-form {
+    .current-image-preview {
+        padding: 10px;
+        background: white;
+        border: 1px solid #e1e8ed;
+        border-radius: 8px;
+        
+        img {
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        label {
+            color: #657786;
+            font-size: 13px;
+            cursor: pointer;
+            
+            input[type="checkbox"] {
+                margin-right: 5px;
+            }
+            
+            &:hover {
+                color: #e0245e;
+            }
+        }
+    }
+    
+    .image-preview-container {
+        padding: 10px;
+        background: white;
+        border: 1px solid #e1e8ed;
+        border-radius: 8px;
+        
+        .image-preview {
+            display: block;
+        }
+    }
+    
+    input[type="file"] {
+        padding: 8px;
+        border: 1px solid #e1e8ed;
+        border-radius: 8px;
+        
+        &:focus {
+            outline: none;
+            border-color: #1da1f2;
+        }
+    }
+    
+    label {
+        font-weight: 500;
+        color: #14171a;
+        margin-bottom: 5px;
+        display: block;
+    }
+}

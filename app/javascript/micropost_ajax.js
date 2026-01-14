@@ -119,38 +119,106 @@ function initializeMicropostAjax() {
             e.preventDefault();
             const micropostId = e.target.dataset.micropostId;
             const micropostElement = document.getElementById(`micropost-${micropostId}`);
-            const contentSpan = micropostElement.querySelector('.content');
-            const currentContent = contentSpan.textContent.trim();
+            const micropostBody = micropostElement.querySelector('.micropost-body');
+            const contentElement = micropostBody.querySelector('.micropost-content');
+            const imageElement = micropostBody.querySelector('.micropost-image');
+            const hashtagsElement = micropostBody.querySelector('.micropost-hashtags');
+
+            // Get content
+            let currentContent = contentElement.textContent.trim();
+
+            // Add hashtags back to content for editing
+            if (hashtagsElement) {
+                const hashtags = Array.from(hashtagsElement.querySelectorAll('.hashtag-badge'))
+                    .map(badge => badge.textContent.trim())
+                    .join(' ');
+                if (hashtags) {
+                    currentContent = currentContent + ' ' + hashtags;
+                }
+            }
+
+            const hasImage = imageElement !== null;
+
+            // Save original HTML for cancel
+            const originalBodyHTML = micropostBody.innerHTML;
 
             // Create edit form
             const editForm = document.createElement('form');
             editForm.className = 'edit-micropost-form';
             editForm.innerHTML = `
         <textarea class="form-control" rows="3" name="content" required>${currentContent}</textarea>
-        <div class="edit-actions" style="margin-top: 5px;">
+        <div style="margin-top: 10px;">
+          ${hasImage ? `
+            <div class="current-image-preview">
+              <img src="${imageElement.querySelector('img').src}" style="max-width: 200px; border-radius: 8px;">
+              <label style="display: block; margin-top: 5px;">
+                <input type="checkbox" name="remove_image" value="1"> Remove image
+              </label>
+            </div>
+          ` : ''}
+          <div style="margin-top: 10px;">
+            <label>Upload new image:</label>
+            <input type="file" name="image" accept="image/*" class="form-control" style="height: auto;">
+            <div class="image-preview-container" style="margin-top: 10px; display: none;">
+              <img class="image-preview" style="max-width: 200px; border-radius: 8px;">
+            </div>
+          </div>
+        </div>
+        <div class="edit-actions" style="margin-top: 10px;">
           <button type="submit" class="btn btn-primary btn-sm">Save</button>
           <button type="button" class="btn btn-default btn-sm cancel-edit">Cancel</button>
         </div>
       `;
 
             // Replace content with form
-            contentSpan.innerHTML = '';
-            contentSpan.appendChild(editForm);
+            micropostBody.innerHTML = '';
+            micropostBody.appendChild(editForm);
+
+            // Handle image preview
+            const imageInput = editForm.querySelector('input[type="file"]');
+            const previewContainer = editForm.querySelector('.image-preview-container');
+            const previewImg = editForm.querySelector('.image-preview');
+
+            imageInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        previewImg.src = e.target.result;
+                        previewContainer.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewContainer.style.display = 'none';
+                }
+            });
 
             // Handle form submission
             editForm.addEventListener('submit', function (e) {
                 e.preventDefault();
+                const formData = new FormData();
                 const newContent = this.querySelector('textarea').value;
+                const imageFile = this.querySelector('input[type="file"]').files[0];
+                const removeImage = this.querySelector('input[name="remove_image"]');
+
+                formData.append('micropost[content]', newContent);
+
+                if (imageFile) {
+                    formData.append('micropost[image]', imageFile);
+                }
+
+                if (removeImage && removeImage.checked) {
+                    formData.append('micropost[remove_image]', '1');
+                }
 
                 fetch(`/microposts/${micropostId}`, {
                     method: 'PATCH',
                     headers: {
                         'X-CSRF-Token': document.querySelector('[name="csrf-token"]').content,
-                        'Content-Type': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ micropost: { content: newContent } })
+                    body: formData
                 })
                     .then(response => response.json())
                     .then(data => {
@@ -172,7 +240,8 @@ function initializeMicropostAjax() {
 
             // Handle cancel
             editForm.querySelector('.cancel-edit').addEventListener('click', function () {
-                contentSpan.textContent = currentContent;
+                // Restore original content
+                micropostBody.innerHTML = originalBodyHTML;
             });
         }
     });

@@ -32,6 +32,16 @@ class MicropostsController < ApplicationController
   end
 
   def update
+    # Handle image attachment
+    if params[:micropost][:image].present?
+      @micropost.image.attach(params[:micropost][:image])
+    end
+    
+    # Handle image removal
+    if params[:micropost][:remove_image] == '1'
+      @micropost.image.purge
+    end
+    
     respond_to do |format|
       if @micropost.update(micropost_params)
         format.html {

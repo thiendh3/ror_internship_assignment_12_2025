@@ -32,6 +32,10 @@ class Micropost < ApplicationRecord
   def extract_hashtags
     content.scan(HASHTAG_REGEX).map(&:downcase).uniq
   end
+  
+  def content_without_hashtags
+    content.gsub(HASHTAG_REGEX, '').strip
+  end
 
   private
     def extract_and_save_hashtags

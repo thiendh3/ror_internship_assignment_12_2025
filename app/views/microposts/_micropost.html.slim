@@ -25,9 +25,9 @@
   .micropost-body
     .micropost-content
       - if defined?(highlights) && highlights && highlights[micropost.id.to_s] && highlights[micropost.id.to_s]['content']
-        == highlights[micropost.id.to_s]['content'].first
+        == highlights[micropost.id.to_s]['content'].first.gsub(/#\w+/, '').strip
       - else
-        = micropost.content
+        = micropost.content_without_hashtags
     
     - if micropost.image.attached?
       .micropost-image
