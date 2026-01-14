@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+  # associations
   has_many :microposts, dependent: :destroy
   has_many :active_relationships, class_name: "Relationship",
                                   foreign_key: "follower_id",
@@ -8,9 +9,17 @@ class User < ApplicationRecord
                                   dependent: :destroy
   has_many :following, through: :active_relationships, source: :followed
   has_many :followers, through: :passive_relationships
+
+  # virtual attributes
   attr_accessor :remember_token, :activation_token, :reset_token
+
+  # callbacks
   before_save :downcase_email
   before_create :create_activation_digest
+  after_save :index_to_solr
+  after_destroy :remove_from_solr
+
+  # validations
   validates :name, presence: true, length: {maximum: 50}
   VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
   validates :email, presence: true, length: {maximum: 255},
@@ -96,6 +105,18 @@ class User < ApplicationRecord
     following.include?(other_user)
   end
 
+  # Map from user fields to solr doc fields
+  def to_solr_doc 
+    {
+      id: id,
+      name_text: name,
+      email_text: email,
+      bio_text: bio,
+      active_boolean: activated,
+      type: "User"
+    }
+  end
+
   private
     #Convert email to dall lower-case
     def downcase_email
@@ -106,5 +127,13 @@ class User < ApplicationRecord
     def create_activation_digest
       self.activation_token = User.new_token
       self.activation_digest = User.digest(activation_token)
+    end
+
+    def index_to_solr
+      SolrService.add(self)
+    end
+
+    def remove_from_solr
+      SolrService.delete(self.id)
     end
 end
