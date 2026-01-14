@@ -1,0 +1,45 @@
+div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0; border-bottom: 1px solid #eee; padding-bottom: 10px;"
+  
+  / LEFT: Filter + Count
+  div style="display: flex; align-items: center; gap: 15px;"
+    
+    / Filter Dropdown
+    .dropdown style="margin-right: 15px;"
+      button.btn.btn-default.dropdown-toggle type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+        span.glyphicon.glyphicon-filter style="margin-right: 5px;"
+        | Filter: 
+        strong = filter_type.titleize
+        span.caret style="margin-left: 5px;"
+      
+      ul.dropdown-menu
+        li class="#{'active' if filter_type == 'all'}"
+          = link_to users_path(query: params[:query], filter: 'all') do
+              | All Users
+        
+        li class="#{'active' if filter_type == 'following'}"
+          = link_to users_path(query: params[:query], filter: 'following') do
+              | Following
+        
+        li class="#{'active' if filter_type == 'not_following'}"
+          = link_to users_path(query: params[:query], filter: 'not_following') do
+              | Not Following
+        
+        - if current_user.admin?
+          li.divider role="separator"
+          li class="#{'active' if filter_type == 'activated'}"
+            = link_to users_path(query: params[:query], filter: 'activated') do
+                | Activated
+          li class="#{'active' if filter_type == 'not_activated'}"
+            = link_to users_path(query: params[:query], filter: 'not_activated') do
+                | Not Activated
+
+    / Result Count
+    span.text-muted
+      | Found 
+      strong = total_found
+      |  users
+
+  / RIGHT: Pagination
+  div
+    .digg_pagination style="margin: 0;"
+      = will_paginate users, container: false, previous_label: "«", next_label: "»"

@@ -11,7 +11,7 @@ li
     
     / 1. Name
     div style="font-size: 1.1em; font-weight: bold;"
-      = link_to highlight(user.name, params[:query], highlighter: '<strong class="text-primary">\1</strong>'), user
+      = link_to highlight(user.name, params[:query]), user
     
     / 2. Stats (Followers/Following)
     div.small.text-muted style="margin-bottom: 2px;"
@@ -25,6 +25,6 @@ li
       div.small.text-info
         span.glyphicon.glyphicon-envelope style="margin-right: 5px; color: #888;"
         - if params[:query].present?
-          = highlight(user.email, params[:query], highlighter: '<strong class="text-primary">\1</strong>')
+          = highlight(user.email, params[:query])
         - else
           = user.email

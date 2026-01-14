@@ -3,35 +3,17 @@ h1 All users
 
 .row
   .col-md-6.col-md-offset-3
-    .search-form.center
-      / Wrap the form with the controller
-      div data-controller="autocomplete" data-autocomplete-url-value=autocomplete_users_path
-        = form_with(url: users_path, method: :get, local: true, html: { autocomplete: 'off' }) do |f|
-          .input-group.relative-position
-            = f.text_field :query, 
-                value: params[:query], 
-                class: "form-control", 
-                placeholder: "Search for users...",
-                data: { autocomplete_target: "input", action: "input->autocomplete#search blur->autocomplete#blur" }
-            span.input-group-btn
-              = f.submit "Search", class: "btn btn-primary"
-              - if params[:query].present?
-                = link_to "Clear", users_path, class: "btn btn-default"
-          
-          / The dropdown container
-          .list-group.autocomplete-results data-autocomplete-target="results" hidden=true style="position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; background-color: white; border: 1px solid #ddd;"
+    = render 'search_form', filter_type: @filter_type
 
-- if @is_search_mode
-  h3.center Search results for: "#{params[:query]}"
-
-/ Unified Rendering Logic
 - if @users.any?
-  .digg_pagination
-    = will_paginate @users
+  / Render the Toolbar (Filters + Count + Top Pagination)
+  = render 'toolbar', users: @users, filter_type: @filter_type, total_found: @total_found
+
   ul.users
-    / This will automatically use the updated _user.html.slim partial
-    = render @users
+    = render @users 
+  
   .digg_pagination
     = will_paginate @users
+
 - else
-  p.center No users found.
+  p.center style="margin-top: 30px;" No users found matching your criteria.

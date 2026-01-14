@@ -46,23 +46,40 @@ class UsersController < ApplicationController
   def index
     page = params[:page] || 1
     per_page = 30
-
-    if params[:query].present?
-      is_admin = current_user&.admin?
-      result = SolrService.search(params[:query], page: page, per_page: per_page, is_admin: is_admin)
-
-      users_by_id = User.where(id: result[:ids]).index_by(&:id)
-      ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
-
-      @users = WillPaginate::Collection.create(page, per_page, result[:total]) do |pager|
-        pager.replace(ordered_users)
-      end
-
-      @is_search_mode = true
-    else
-      @users = User.where(activated: true).paginate(page: params[:page], per_page: per_page)
-      @is_search_mode = false
+    
+    # Logic for Filters (unchanged)
+    @filter_type = params[:filter] || 'all'
+    unless current_user.admin?
+      @filter_type = 'all' if ['activated', 'not_activated'].include?(@filter_type)
     end
+
+    # Solr Search
+    is_admin = current_user&.admin?
+    query = params[:query] || ""
+
+    result = SolrService.search(
+      query, 
+      page: page, 
+      per_page: per_page, 
+      is_admin: is_admin,
+      filter_type: @filter_type,
+      following_ids: current_user.following.ids,
+      current_user_id: current_user.id
+    )
+
+    # Reorder results
+    users_by_id = User.where(id: result[:ids]).index_by(&:id)
+    ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
+
+    # Create paginated collection
+    @users = WillPaginate::Collection.create(page, per_page, result[:total]) do |pager|
+      pager.replace(ordered_users)
+    end
+    
+    # Store total found count for the view
+    @total_found = result[:total]
+
+    @is_search_mode = true
   end
 
   def destroy

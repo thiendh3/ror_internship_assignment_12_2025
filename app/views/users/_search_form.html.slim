@@ -1,0 +1,13 @@
+.search-form.center
+  div data-controller="autocomplete" data-autocomplete-url-value=autocomplete_users_path
+    = form_with(url: users_path, method: :get, local: true, html: { autocomplete: 'off' }) do |f|
+      = hidden_field_tag :filter, filter_type
+      
+      .input-group.relative-position
+        = f.text_field :query, value: params[:query], class: "form-control", placeholder: "Search for users...", data: { autocomplete_target: "input", action: "input->autocomplete#search blur->autocomplete#blur" }
+        span.input-group-btn
+          = f.submit "Search", class: "btn btn-primary"
+          - if params[:query].present?
+            = link_to "Clear", users_path(filter: filter_type), class: "btn btn-default"
+      
+      .list-group.autocomplete-results data-autocomplete-target="results" hidden=true style="position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; background-color: white; border: 1px solid #ddd;"
