@@ -27,17 +27,19 @@ class SolrService
       safe_query = query.gsub(/[^a-zA-Z0-9\s@\.]/, '')
       return { ids: [], total: 0 } if safe_query.blank?
 
+      text_fuzzy_clause = safe_query.length >= 3 ? " OR #{safe_query}~1" : ""
+      
       text_fields = ["name_text^5", "bio_text"]
       text_fields << "email_text" if is_admin
       
       text_query = text_fields.map do |f| 
         field, boost = f.split('^')
         boost_suffix = boost ? "^#{boost}" : ""
-        "#{field}:(#{safe_query} OR #{safe_query}~1)#{boost_suffix}" 
+        "#{field}:(#{safe_query}#{text_fuzzy_clause})#{boost_suffix}" 
       end.join(" OR ")
 
-      ac_fields = ["name_ac^2", "bio_ac"]
-      ac_fields << "email_ac" if is_admin
+      ac_fields = ["name_ac^10", "bio_ac^2"]
+      ac_fields << "email_ac^2" if is_admin
 
       ac_query = ac_fields.map do |f| 
         field, boost = f.split('^')
@@ -51,29 +53,18 @@ class SolrService
         q: final_query,
         defType: 'lucene', 
         fq: 'active_boolean:true',
-
-        hl: true,
-        'hl.fl': 'name_ac bio_ac email_ac', 
-        'hl.simple.pre': '<strong class="text-primary">', 
-        'hl.simple.post': '</strong>',
-        'hl.method': 'original', 
-        'hl.preserveMulti': true, 
-        
         rows: per_page,
         start: start_row
       }
 
-      puts response[:docs]
-
       {
         ids: response.dig('response', 'docs')&.map { |d| d['id'] } || [],
-        total: response.dig('response', 'numFound') || 0,
-        highlighting: response['highlighting'] || {}
+        total: response.dig('response', 'numFound') || 0
       }
 
     rescue RSolr::Error::Http => e
       Rails.logger.error "Solr Search Error: #{e.message}"
-      { ids: [], total: 0, highlighting: {} }
+      { ids: [], total: 0 }
     end
   end
 end

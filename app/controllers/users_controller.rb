@@ -54,11 +54,6 @@ class UsersController < ApplicationController
       users_by_id = User.where(id: result[:ids]).index_by(&:id)
       ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
 
-      ordered_users.each do |user|
-        highlights = result[:highlighting][user.id.to_s] || {}
-        user.define_singleton_method(:solr_highlights) { highlights }
-      end
-
       @users = WillPaginate::Collection.create(page, per_page, result[:total]) do |pager|
         pager.replace(ordered_users)
       end

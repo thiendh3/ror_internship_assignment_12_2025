@@ -1,17 +1,10 @@
 li
   = gravatar_for user, size: 50
   
-  / Check for Autocomplete Highlight (name_ac)
-  - if user.respond_to?(:solr_highlights) && user.solr_highlights['name_ac'].present?
-    = link_to raw(user.solr_highlights['name_ac'].first), user
-  - else
-    = link_to user.name, user
-
-  / Check for Bio Highlight
-  - if user.respond_to?(:solr_highlights) && user.solr_highlights['bio_ac'].present?
+  / highlight(text, phrase, options)
+  = link_to highlight(user.name, params[:query], highlighter: '<strong class="text-primary">\1</strong>'), user
+  
+  / Optional: Highlight email too if you show it
+  - if current_user.admin? && params[:query].present?
     |  | 
-    span.content == user.solr_highlights['bio_ac'].first
-
-  - if current_user.admin? && !current_user?(user)
-    |  | 
-    = link_to "delete", user, method: :delete, data: { confirm: "Are you sure?" }
+    = highlight(user.email, params[:query], highlighter: '<strong class="text-primary">\1</strong>')

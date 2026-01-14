@@ -1,26 +1,22 @@
 namespace :solr do
-  desc "Robust Configure Solr Schema (Force Update Types)"
+  desc "Configure Solr Schema with EdgeNGram (minGramSize: 1)"
   task setup: :environment do
     conn = SolrService.connection
     puts "Configuring Solr Schema..."
 
-    # 1. Define 'text_autocomplete' Field Type (With Force Update)
+    # 1. Define 'text_autocomplete' Field Type
     field_type_def = {
       "name": "text_autocomplete",
       "class": "solr.TextField",
       "positionIncrementGap": "100",
-      "analyzer": {
-        "tokenizer": { "class": "solr.StandardTokenizerFactory" },
-        "filters": [{ "class": "solr.LowerCaseFilterFactory" }]
-      },
       "indexAnalyzer": {
         "tokenizer": { "class": "solr.StandardTokenizerFactory" },
         "filters": [
           { "class": "solr.LowerCaseFilterFactory" },
           { 
             "class": "solr.EdgeNGramFilterFactory", 
-            "minGramSize": "1", 
-            "maxGramSize": "20" 
+            "minGramSize": 1, 
+            "maxGramSize": 20 
           }
         ]
       },
@@ -30,49 +26,39 @@ namespace :solr do
       }
     }
 
-    begin
-      conn.post 'schema', data: { "add-field-type": field_type_def }.to_json, headers: { 'Content-Type' => 'application/json' }
-      puts "Created Field Type 'text_autocomplete'."
-    rescue RSolr::Error::Http => e
-      if e.message.include?("already exists")
-        # THIS IS THE MISSING PART: Force Update!
-        puts "Field Type 'text_autocomplete' exists. Updating..."
-        conn.post 'schema', data: { "replace-field-type": field_type_def }.to_json, headers: { 'Content-Type' => 'application/json' }
-        puts "Updated Field Type 'text_autocomplete'."
-      end
-    end
-
-    # 2. Configure Autocomplete Fields (Add or Replace)
-    ac_fields = ["name_ac", "email_ac", "bio_ac"]
-    
-    ac_fields.each do |field|
-      field_def = { "name": field, "type": "text_autocomplete", "stored": true, "indexed": true }
-
+    # Helper to add or replace
+    def update_solr(conn, type, name, payload)
       begin
-        conn.post 'schema', data: { "add-field": field_def }.to_json, headers: { 'Content-Type' => 'application/json' }
-        puts "Created field '#{field}'."
+        conn.post 'schema', data: { "add-#{type}": payload }.to_json
+        puts "Created #{type} '#{name}'."
       rescue RSolr::Error::Http => e
         if e.message.include?("already exists")
-          puts "Field '#{field}' exists. Updating..."
-          conn.post 'schema', data: { "replace-field": field_def }.to_json, headers: { 'Content-Type' => 'application/json' }
-          puts "Updated field '#{field}'."
+          puts "#{type.capitalize} '#{name}' exists. Replacing..."
+          conn.post 'schema', data: { "replace-#{type}": payload }.to_json
+          puts "Replaced #{type} '#{name}'."
+        else
+          raise e
         end
       end
     end
 
+    # Execute Updates
+    update_solr(conn, 'field-type', 'text_autocomplete', field_type_def)
+
+    # 2. Configure Fields
+    ["name_ac", "email_ac", "bio_ac"].each do |field|
+      field_def = { "name": field, "type": "text_autocomplete", "stored": true, "indexed": true }
+      update_solr(conn, 'field', field, field_def)
+    end
+
     # 3. Configure Standard Fields
-    text_fields = ["name_text", "email_text", "bio_text"]
-    text_fields.each do |field|
+    ["name_text", "email_text", "bio_text"].each do |field|
       field_def = { "name": field, "type": "text_general", "stored": true, "indexed": true }
-      begin
-        conn.post 'schema', data: { "add-field": field_def }.to_json, headers: { 'Content-Type' => 'application/json' }
-      rescue RSolr::Error::Http; end
+      update_solr(conn, 'field', field, field_def)
     end
 
     # 4. Configure Boolean Field
-    begin
-      conn.post 'schema', data: { "add-field": { "name": "active_boolean", "type": "boolean", "stored": true, "indexed": true } }.to_json, headers: { 'Content-Type' => 'application/json' }
-    rescue RSolr::Error::Http; end
+    update_solr(conn, 'field', 'active_boolean', { "name": "active_boolean", "type": "boolean", "stored": true, "indexed": true })
 
     puts "Schema setup complete."
   end
