@@ -7,5 +7,47 @@
     section.micropost_form
       = render 'shared/micropost_form'
   .col-md-8
-    h3 Micropost Feed
-    = render 'shared/feed'
+    .search-section
+      h4 Search Microposts
+      = form_with url: root_path, method: :get, local: true, class: "search-form-block" do |f|
+        .row
+          .col-md-12
+            .form-group.search-input-container
+              = f.text_field :q, value: params[:q], placeholder: "Search content...", class: "form-control search-input", id: "search-query", autocomplete: "off"
+              #autocomplete-results.autocomplete-dropdown
+        .row
+          .col-md-3
+            .form-group
+              = f.label :user_id, "Author", class: "control-label-sm"
+              = f.select :user_id, options_from_collection_for_select(@following_users, :id, :name, params[:user_id]), { include_blank: "All following" }, class: "form-control input-sm"
+          .col-md-3
+            .form-group
+              = f.label :hashtag, "Hashtag", class: "control-label-sm"
+              = f.text_field :hashtag, value: params[:hashtag], placeholder: "hashtag name", class: "form-control input-sm"
+          .col-md-3
+            .form-group
+              = f.label :from, "From Date", class: "control-label-sm"
+              = f.date_field :from, value: params[:from], class: "form-control input-sm"
+          .col-md-3
+            .form-group
+              = f.label :to, "To Date", class: "control-label-sm"
+              = f.date_field :to, value: params[:to], class: "form-control input-sm"
+        .row
+          .col-md-12
+            = f.submit "Search", class: "btn btn-primary btn-sm"
+            - if params[:q].present? || params[:hashtag].present? || params[:user_id].present? || params[:from].present? || params[:to].present?
+              = link_to "Clear", root_path, class: "btn btn-default btn-sm"
+    
+    - if params[:q].present? || params[:hashtag].present? || params[:user_id].present? || params[:from].present? || params[:to].present?
+      h3 Search Results (#{@search_results.count})
+      - if @search_results.any?
+        ol.microposts
+          - @search_results.each do |micropost|
+            = render partial: 'microposts/micropost', locals: { micropost: micropost, highlights: @highlights }
+        .digg_pagination
+          = will_paginate @search_results, params: {controller: :static_pages, action: :home, q: params[:q], hashtag: params[:hashtag], user_id: params[:user_id], from: params[:from], to: params[:to]}
+      - else
+        .alert.alert-info No results found
+    - else
+      h3 Micropost Feed
+      = render 'shared/feed'

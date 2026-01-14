@@ -13,7 +13,8 @@ class MicropostSearch
       'hl.fl': 'content',
       'hl.simple.pre': '<mark>',
       'hl.simple.post': '</mark>',
-      rows: 20
+      rows: 1000,
+      sort: 'created_at desc'
     }
   end
 end
