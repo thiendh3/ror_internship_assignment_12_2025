@@ -57,6 +57,12 @@ class UsersController < ApplicationController
     is_admin = current_user&.admin?
     query = params[:query] || ""
 
+    @search_field = if is_admin && params[:search_field] == 'email'
+                      'email'
+                    else
+                      'name'
+                    end
+
     result = SolrService.search(
       query, 
       page: page, 
@@ -64,7 +70,8 @@ class UsersController < ApplicationController
       is_admin: is_admin,
       filter_type: @filter_type,
       following_ids: current_user.following.ids,
-      current_user_id: current_user.id
+      current_user_id: current_user.id,
+      search_field: @search_field
     )
 
     # Reorder results
@@ -109,8 +116,18 @@ class UsersController < ApplicationController
       return
     end
 
-    is_admin = current_user&.admin?
-    result = SolrService.search(query, page: 1, per_page: 5, is_admin: is_admin)
+    search_field = 'name'
+    if current_user&.admin? && params[:search_field] == 'email'
+      search_field = 'email'
+    end
+
+    result = SolrService.search(
+      query, 
+      page: 1, 
+      per_page: 5, 
+      is_admin: current_user&.admin?,
+      search_field: search_field
+    )
 
     users = User.where(id: result[:ids])
     
@@ -118,15 +135,18 @@ class UsersController < ApplicationController
     ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
 
     render json: ordered_users.map { |u| 
-      { 
+      user_data = { 
         id: u.id, 
         name: u.name, 
-        email: u.email,
         gravatar_url: "https://secure.gravatar.com/avatar/#{Digest::MD5::hexdigest(u.email.downcase)}?s=50",
         followers_count: u.followers.count,
         following_count: u.following.count,
         url: user_path(u) 
       } 
+
+      user_data[:email] = u.email if current_user&.admin?
+
+      user_data
     }
   end
 
@@ -136,7 +156,6 @@ class UsersController < ApplicationController
       params.require(:user).permit(:name, :email, :password, :password_confirmation)
     end
 
-    #Before filter
 
     #Confirm the correct user
     def correct_user

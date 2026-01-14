@@ -24,9 +24,20 @@ export default class extends Controller {
 			return;
 		}
 
+		// 1. Get the selected search field (defaults to 'name' if dropdown is missing)
+		const searchFieldSelect = this.element.querySelector(
+			'select[name="search_field"]'
+		);
+		const searchField = searchFieldSelect
+			? searchFieldSelect.value
+			: "name";
+
 		try {
+			// 2. Append search_field to the URL
 			const response = await fetch(
-				`${this.urlValue}?query=${encodeURIComponent(query)}`,
+				`${this.urlValue}?query=${encodeURIComponent(
+					query
+				)}&search_field=${searchField}`,
 				{
 					headers: { Accept: "application/json" },
 				}
@@ -44,20 +55,42 @@ export default class extends Controller {
 			return;
 		}
 
-		const html = users.map(user => `
-      <a href="${user.url}" class="list-group-item autocomplete-item" style="display: flex; align-items: center; gap: 10px;">
+		const html = users
+			.map((user, index) => {
+				const borderStyle =
+					index < users.length - 1
+						? "border-bottom: 1px solid #ccc;"
+						: "";
+
+				const emailHtml = user.email
+					? `<br><small class="text-info"><span class="glyphicon glyphicon-envelope"></span> ${this.escapeHtml(
+							user.email
+					  )}</small>`
+					: "";
+
+				return `
+      <a href="${
+			user.url
+		}" class="list-group-item autocomplete-item" style="display: flex; align-items: center; gap: 10px; ${borderStyle}">
         
-        <img src="${user.gravatar_url}" alt="${this.escapeHtml(user.name)}" class="gravatar" style="border-radius: 50%; width: 40px; height: 40px; border: 1px solid #ddd;">
+        <img src="${user.gravatar_url}" alt="${this.escapeHtml(
+					user.name
+				)}" class="gravatar" style="border-radius: 50%; width: 40px; height: 40px; border: 1px solid #ddd; flex-shrink: 0;">
         
         <div class="media-body">
           <strong>${this.escapeHtml(user.name)}</strong>
+          ${emailHtml}
           <br>
           <small class="text-muted" style="font-size: 0.85em;">
-             Following: ${user.following_count} | Followers: ${user.followers_count}
+             Following: ${user.following_count} | Followers: ${
+					user.followers_count
+				}
           </small>
         </div>
       </a>
-    `).join("")
+    `;
+			})
+			.join("");
 
 		this.resultsTarget.innerHTML = html;
 		this.resultsTarget.hidden = false;
