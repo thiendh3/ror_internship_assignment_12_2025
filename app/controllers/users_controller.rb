@@ -85,6 +85,34 @@ class UsersController < ApplicationController
     render 'show_follow'
   end
 
+  def autocomplete
+    query = params[:query]
+    if query.blank?
+      render json: []
+      return
+    end
+
+    is_admin = current_user&.admin?
+    result = SolrService.search(query, page: 1, per_page: 5, is_admin: is_admin)
+
+    users = User.where(id: result[:ids])
+    
+    users_by_id = users.index_by(&:id)
+    ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
+
+    render json: ordered_users.map { |u| 
+      { 
+        id: u.id, 
+        name: u.name, 
+        email: u.email,
+        gravatar_url: "https://secure.gravatar.com/avatar/#{Digest::MD5::hexdigest(u.email.downcase)}?s=50",
+        followers_count: u.followers.count,
+        following_count: u.following.count,
+        url: user_path(u) 
+      } 
+    }
+  end
+
   private
     #Strong param
     def user_params

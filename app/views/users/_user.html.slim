@@ -1,10 +1,30 @@
 li
   = gravatar_for user, size: 50
   
-  / highlight(text, phrase, options)
-  = link_to highlight(user.name, params[:query], highlighter: '<strong class="text-primary">\1</strong>'), user
-  
-  / Optional: Highlight email too if you show it
-  - if current_user.admin? && params[:query].present?
-    |  | 
-    = highlight(user.email, params[:query], highlighter: '<strong class="text-primary">\1</strong>')
+  / Action: Delete Button (Floated Right)
+  - if current_user.admin? && !current_user?(user)
+    = link_to user, method: :delete, data: { confirm: "You sure?" }, class: "btn btn-danger btn-xs pull-right", title: "Delete User", style: "margin-top: 5px;"
+      span.glyphicon.glyphicon-trash
+
+  / Content: User Details Wrapper
+  div style="margin-left: 60px;"
+    
+    / 1. Name
+    div style="font-size: 1.1em; font-weight: bold;"
+      = link_to highlight(user.name, params[:query], highlighter: '<strong class="text-primary">\1</strong>'), user
+    
+    / 2. Stats (Followers/Following)
+    div.small.text-muted style="margin-bottom: 2px;"
+      | Followers: 
+      strong = user.followers.count
+      |  | Following: 
+      strong = user.following.count
+    
+    / 3. Email (Admin Only)
+    - if current_user.admin?
+      div.small.text-info
+        span.glyphicon.glyphicon-envelope style="margin-right: 5px; color: #888;"
+        - if params[:query].present?
+          = highlight(user.email, params[:query], highlighter: '<strong class="text-primary">\1</strong>')
+        - else
+          = user.email
