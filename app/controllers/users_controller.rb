@@ -114,43 +114,49 @@ class UsersController < ApplicationController
   end
 
   def autocomplete
-    query = params[:query]
-    if query.blank?
-      render json: { queries: [], users: [] }
-      return
-    end
+    query = params[:query].to_s.strip
+    return render json: { queries: [], users: [] } if query.blank?
 
     search_field = (current_user&.admin? && params[:search_field] == 'email') ? 'email' : 'name'
 
-    # Fetch more results now that we have a scrollbar
     result = SolrService.search(
       query, 
       page: 1, 
-      per_page: 15, # Increased limit
+      per_page: 10,
       is_admin: current_user&.admin?,
       search_field: search_field
     )
 
-    # 1. Generate Query Autocomplete (The "Search for..." strings)
-    # We extract unique names/emails from the Solr result IDs to suggest terms
     users = User.where(id: result[:ids])
-    suggested_queries = users.map { |u| search_field == 'email' ? u.email : u.name }.uniq.first(5)
 
-    # 2. Generate User Suggestions (The "Instant Results" objects)
+    # --- REAL-WORLD QUERY SUGGESTIONS LOGIC ---
+    # Instead of full names, we suggest the specific word/token being typed
+    # or broad categories (like just the First Name)
+    suggested_queries = users.map do |u|
+      val = search_field == 'email' ? u.email : u.name
+      
+      # Logic: If they typed "Jo", suggest "John" instead of "Johnathan Applebee"
+      # This finds the specific word in the name that starts with the query
+      words = val.split(/[\s@.]/) # Split by space, @, or dot
+      matching_word = words.find { |w| w.downcase.start_with?(query.downcase) }
+      
+      matching_word ? matching_word.capitalize : nil
+    end.compact.uniq.first(3)
+
+    # --- INSTANT USER RESULTS ---
     users_by_id = users.index_by(&:id)
     ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
 
     user_suggestions = ordered_users.map do |u|
-      data = {
+      {
         id: u.id,
         name: u.name,
         gravatar_url: "https://secure.gravatar.com/avatar/#{Digest::MD5::hexdigest(u.email.downcase)}?s=50",
         followers_count: u.followers.count,
         following_count: u.following.count,
-        url: user_path(u)
+        url: user_path(u),
+        email: (current_user&.admin? ? u.email : nil)
       }
-      data[:email] = u.email if current_user&.admin?
-      data
     end
 
     render json: { queries: suggested_queries, users: user_suggestions }

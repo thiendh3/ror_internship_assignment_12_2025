@@ -57,14 +57,14 @@ export default class extends Controller {
 
 		// 1. Render Search Suggestions (Queries)
 		if (data.queries.length > 0) {
-			html += `<div class="autocomplete-header">Search Suggestions</div>`;
+			html += `<div class="autocomplete-header">Continue searching for...</div>`;
 			data.queries.forEach((q) => {
 				html += `
-          <a href="#" class="list-group-item" data-action="click->autocomplete#selectQuery">
-            <span class="glyphicon glyphicon-search text-muted"></span> ${this.escapeHtml(
-				q
-			)}
-          </a>`;
+      <a href="#" class="list-group-item" data-action="click->autocomplete#selectQuery" style="color: #105cb6;">
+        <span class="glyphicon glyphicon-search"></span> <strong>${this.escapeHtml(
+			q
+		)}</strong>
+      </a>`;
 			});
 		}
 
