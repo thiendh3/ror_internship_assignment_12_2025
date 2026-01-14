@@ -394,19 +394,31 @@ span.image {
 	margin-top: 2px;
 	z-index: 100000 !important;
 
+	/* Restore Scrollbar for long lists */
+	max-height: 450px;
+	overflow-y: auto;
+
+	.autocomplete-header {
+		background: #f8f8f8;
+		padding: 8px 12px;
+		font-size: 0.85em;
+		font-weight: bold;
+		color: #777;
+		text-transform: uppercase;
+		border-bottom: 1px solid #eee;
+	}
+
 	.list-group-item {
 		border: none;
-		border-bottom: 1px solid #eee;
-		cursor: pointer;
-		background-color: white !important;
-
-		&:last-child {
-			border-bottom: none;
-		}
+		border-bottom: 1px solid #f0f0f0;
+		padding: 10px 15px;
 
 		&:hover {
 			background-color: #f5f5f5 !important;
-			text-decoration: none;
+		}
+
+		.glyphicon-search {
+			margin-right: 8px;
 		}
 	}
 }

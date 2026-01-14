@@ -116,42 +116,44 @@ class UsersController < ApplicationController
   def autocomplete
     query = params[:query]
     if query.blank?
-      render json: []
+      render json: { queries: [], users: [] }
       return
     end
 
-    search_field = 'name'
-    if current_user&.admin? && params[:search_field] == 'email'
-      search_field = 'email'
-    end
+    search_field = (current_user&.admin? && params[:search_field] == 'email') ? 'email' : 'name'
 
+    # Fetch more results now that we have a scrollbar
     result = SolrService.search(
       query, 
       page: 1, 
-      per_page: 5, 
+      per_page: 15, # Increased limit
       is_admin: current_user&.admin?,
       search_field: search_field
     )
 
+    # 1. Generate Query Autocomplete (The "Search for..." strings)
+    # We extract unique names/emails from the Solr result IDs to suggest terms
     users = User.where(id: result[:ids])
-    
+    suggested_queries = users.map { |u| search_field == 'email' ? u.email : u.name }.uniq.first(5)
+
+    # 2. Generate User Suggestions (The "Instant Results" objects)
     users_by_id = users.index_by(&:id)
     ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
 
-    render json: ordered_users.map { |u| 
-      user_data = { 
-        id: u.id, 
-        name: u.name, 
+    user_suggestions = ordered_users.map do |u|
+      data = {
+        id: u.id,
+        name: u.name,
         gravatar_url: "https://secure.gravatar.com/avatar/#{Digest::MD5::hexdigest(u.email.downcase)}?s=50",
         followers_count: u.followers.count,
         following_count: u.following.count,
-        url: user_path(u) 
-      } 
+        url: user_path(u)
+      }
+      data[:email] = u.email if current_user&.admin?
+      data
+    end
 
-      user_data[:email] = u.email if current_user&.admin?
-
-      user_data
-    }
+    render json: { queries: suggested_queries, users: user_suggestions }
   end
 
   private
