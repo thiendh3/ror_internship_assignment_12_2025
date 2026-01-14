@@ -55,51 +55,39 @@ export default class extends Controller {
 
 		let html = "";
 
-		// 1. Render Search Suggestions (Queries)
+		// 1. Search Suggestions
 		if (data.queries.length > 0) {
-			html += `<div class="autocomplete-header">Continue searching for...</div>`;
+			html += `<div class="autocomplete-header">Search Suggestions</div>`;
 			data.queries.forEach((q) => {
 				html += `
-      <a href="#" class="list-group-item" data-action="click->autocomplete#selectQuery" style="color: #105cb6;">
-        <span class="glyphicon glyphicon-search"></span> <strong>${this.escapeHtml(
-			q
-		)}</strong>
-      </a>`;
+        <a href="#" class="list-group-item query-suggestion-item" data-action="click->autocomplete#selectQuery">
+          <span class="glyphicon glyphicon-search"></span> <span>${this.escapeHtml(
+				q
+			)}</span>
+        </a>`;
 			});
 		}
 
-		// 2. Render Instant Results (People)
+		// 2. People Results
 		if (data.users.length > 0) {
 			html += `<div class="autocomplete-header">People</div>`;
-			html += data.users
-				.map((user) => {
-					const emailHtml = user.email
-						? `<br><small class="text-info"><span class="glyphicon glyphicon-envelope"></span> ${this.escapeHtml(
-								user.email
-						  )}</small>`
-						: "";
-
-					return `
-            <a href="${
-				user.url
-			}" class="list-group-item autocomplete-item" style="display: flex; align-items: center; gap: 10px;">
-              <img src="${user.gravatar_url}" alt="${this.escapeHtml(
-						user.name
-					)}" 
-                   class="gravatar" style="border-radius: 50%; width: 32px; height: 32px; border: 1px solid #ddd; flex-shrink: 0;">
-              <div class="media-body">
-                <strong>${this.escapeHtml(user.name)}</strong>
-                ${emailHtml}
-                <br>
-                <small class="text-muted" style="font-size: 0.8em;">
-                   Following: ${user.following_count} | Followers: ${
-						user.followers_count
-					}
-                </small>
-              </div>
-            </a>`;
-				})
-				.join("");
+			data.users.forEach((user) => {
+				const emailHtml = user.email
+					? `<small class="text-info">${this.escapeHtml(
+							user.email
+					  )}</small>`
+					: "";
+				html += `
+        <a href="${user.url}" class="list-group-item user-result-item">
+          <img src="${
+				user.gravatar_url
+			}" class="gravatar" style="width: 36px; height: 36px;">
+          <div class="media-body">
+            <strong>${this.escapeHtml(user.name)}</strong>
+            ${emailHtml}
+          </div>
+        </a>`;
+			});
 		}
 
 		this.resultsTarget.innerHTML = html;
