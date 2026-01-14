@@ -1,15 +1,15 @@
 class SolrService
-  SOLR_URL = ENV.fetch('SOLR_URL', 'http://localhost:8983/solr/internship_development')
+  SOLR_URL = ENV.fetch('SOLR_URL')
 
   class << self
     def connection
-      @connection = ||= RSolr.connect(url: SOLR_URL)
+      puts SOLR_URL
+      @connection ||= RSolr.connect(url: SOLR_URL)
     end
 
     def add(user)
       connection.add(user.to_solr_doc)
-      connect.commit
-
+      connection.commit
     rescue RSolr::Error::Http => e
       Rails.logger.error "Solr Add Error: #{e.message}"
     end
@@ -38,10 +38,9 @@ class SolrService
 
       response
 
-      rescue RSolr::Error::Http => e
-        Rails.logger.error "Solr Search Error: #{e.message}"
-        { 'response' => { 'docs' => [] } }
-      end
+    rescue RSolr::Error::Http => e
+      Rails.logger.error "Solr Search Error: #{e.message}"
+      { 'response' => { 'docs' => [] } }
     end
   end
 end
