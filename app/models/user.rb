@@ -59,6 +59,7 @@ class User < ApplicationRecord
   #Activate an account
   def activate
     update_columns(activated: true, activated_at: Time.zone.now)
+    index_to_solr
   end
 
   #Send activation email

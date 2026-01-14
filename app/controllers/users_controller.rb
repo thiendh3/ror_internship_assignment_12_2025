@@ -42,7 +42,17 @@ class UsersController < ApplicationController
   end
 
   def index
-    @users = User.where(activated: true).paginate(page: params[:page])
+    if params[:query].present?
+      is_admin = current_user&.admin?
+      result = SolrService.search(params[:query], is_admin: is_admin)
+
+      @users = result[:docs]
+      @highlighting = result[:highlighting]
+      @is_search_mode = true
+    else
+      @users = User.where(activated: true).paginate(page: params[:page])
+      @is_search_mode = false
+    end
   end
 
   def destroy

@@ -31,16 +31,22 @@ class SolrService
         qf: search_fields.join(' '),
         fq: 'active_boolean:true',
         hl: true,
-        'hl.fl': 'name_text bio_text',
-        'hl.simple.pre': '<b>',
-        'hl.simple.post': '</b>'
+        'hl.fl': 'name_text bio_text email_text', 
+        'hl.simple.pre': '<strong class="text-primary">', 
+        'hl.simple.post': '</strong>',
+        rows: 20
       }
 
-      response
+      Rails.logger.log(response[:docs])
+
+      {
+        docs: response.dig('response', 'docs') || [],
+        highlighting: response['highlighting'] || {}
+      }
 
     rescue RSolr::Error::Http => e
       Rails.logger.error "Solr Search Error: #{e.message}"
-      { 'response' => { 'docs' => [] } }
+      { docs: [], highlighting: {} }
     end
   end
 end
