@@ -15,5 +15,9 @@ li id="micropost-#{micropost.id}"
         = link_to "##{hashtag.name}", root_path(hashtag: hashtag.name), class: "hashtag-link"
   span.timestamp
     | Posted #{time_ago_in_words(micropost.created_at)} ago.
+    a.view-micropost href="#" data-micropost-id=micropost.id View
     - if current_user?(micropost.user)
-      = link_to "delete", micropost, method: :delete, data: {confirm: "Are you sure?"}
+      | 
+      a.edit-micropost href="#" data-micropost-id=micropost.id Edit
+      | 
+      a.delete-micropost href="#" data-micropost-id=micropost.id Delete
