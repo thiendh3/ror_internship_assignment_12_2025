@@ -29,9 +29,23 @@ end
 
 #Generate microposts for some users
 users = User.order(:created_at).take(6)
+hashtags = %w[rails ruby solr search tutorial]
+
 50.times do
-  content = Faker::Lorem.sentence(word_count: 5)
-  users.each {|user| user.microposts.create!(content: content)}
+  sentence = Faker::Lorem.sentence(word_count: 4)
+
+  tag_string = hashtags.sample(rand(1..2))
+                         .map { |t| "##{t}" }
+                         .join(" ")
+
+  content = "#{sentence} #{tag_string}"
+
+  users.each do |user|
+    Micropost.create!(
+      user: user,
+      content: content
+    )
+  end
 end
 
 #Create following relationships
