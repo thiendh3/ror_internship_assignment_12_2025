@@ -14,25 +14,15 @@ h1 All users
 
 - if @is_search_mode
   h3.center Search results for: "#{params[:query]}"
-  - if @users.empty?
-    p.center No users found.
-  - else
-    ul.users
-      - @users.each do |doc|
-        - user_id = doc['id']
-        - hl_name = @highlighting.dig(user_id, 'name_text')&.first || doc['name_text']
-        - hl_bio  = @highlighting.dig(user_id, 'bio_text')&.first  || doc['bio_text']
-        
-        li
-          = gravatar_for User.find(user_id), size: 50
-          = link_to raw(hl_name), user_path(user_id)
-          - if hl_bio.present?
-            |  | 
-            span.content == hl_bio
-- else
+
+/ Unified Rendering Logic
+- if @users.any?
   .digg_pagination
-    = will_paginate
+    = will_paginate @users
   ul.users
+    / This will automatically use the updated _user.html.slim partial
     = render @users
   .digg_pagination
-    = will_paginate
+    = will_paginate @users
+- else
+  p.center No users found.

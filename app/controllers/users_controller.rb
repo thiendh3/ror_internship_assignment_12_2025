@@ -1,4 +1,6 @@
 class UsersController < ApplicationController
+  require 'will_paginate/array'
+
   before_action :logged_in_user, only: [:index, :edit, :update, :destroy]
   before_action :correct_user, only: [:edit, :update]
   before_action :admin_user, only: :destroy
@@ -42,15 +44,28 @@ class UsersController < ApplicationController
   end
 
   def index
+    page = params[:page] || 1
+    per_page = 30
+
     if params[:query].present?
       is_admin = current_user&.admin?
-      result = SolrService.search(params[:query], is_admin: is_admin)
+      result = SolrService.search(params[:query], page: page, per_page: per_page, is_admin: is_admin)
 
-      @users = result[:docs]
-      @highlighting = result[:highlighting]
+      users_by_id = User.where(id: result[:ids]).index_by(&:id)
+      ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
+
+      ordered_users.each do |user|
+        highlights = result[:highlighting][user.id.to_s] || {}
+        user.define_singleton_method(:solr_highlights) { highlights }
+      end
+
+      @users = WillPaginate::Collection.create(page, per_page, result[:total]) do |pager|
+        pager.replace(ordered_users)
+      end
+
       @is_search_mode = true
     else
-      @users = User.where(activated: true).paginate(page: params[:page])
+      @users = User.where(activated: true).paginate(page: params[:page], per_page: per_page)
       @is_search_mode = false
     end
   end

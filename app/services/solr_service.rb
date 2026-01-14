@@ -21,32 +21,59 @@ class SolrService
       Rails.logger.error "Solr Delete Error: #{e.message}"
     end
 
-    def search(query, is_admin: false)
-      search_fields = ["name_text^2", "bio_text"]
-      search_fields << "email_text" if is_admin
-    
+    def search(query, page: 1, per_page: 20, is_admin: false)
+      start_row = (page.to_i - 1) * per_page.to_i
+
+      safe_query = query.gsub(/[^a-zA-Z0-9\s@\.]/, '')
+      return { ids: [], total: 0 } if safe_query.blank?
+
+      text_fields = ["name_text^5", "bio_text"]
+      text_fields << "email_text" if is_admin
+      
+      text_query = text_fields.map do |f| 
+        field, boost = f.split('^')
+        boost_suffix = boost ? "^#{boost}" : ""
+        "#{field}:(#{safe_query} OR #{safe_query}~1)#{boost_suffix}" 
+      end.join(" OR ")
+
+      ac_fields = ["name_ac^2", "bio_ac"]
+      ac_fields << "email_ac" if is_admin
+
+      ac_query = ac_fields.map do |f| 
+        field, boost = f.split('^')
+        boost_suffix = boost ? "^#{boost}" : ""
+        "#{field}:#{safe_query}#{boost_suffix}" 
+      end.join(" OR ")
+      
+      final_query = "(#{text_query}) OR (#{ac_query})"
+
       response = connection.get "select", params: {
-        q: query,
-        defType: 'edismax',
-        qf: search_fields.join(' '),
+        q: final_query,
+        defType: 'lucene', 
         fq: 'active_boolean:true',
+
         hl: true,
-        'hl.fl': 'name_text bio_text email_text', 
+        'hl.fl': 'name_ac bio_ac email_ac', 
         'hl.simple.pre': '<strong class="text-primary">', 
         'hl.simple.post': '</strong>',
-        rows: 20
+        'hl.method': 'original', 
+        'hl.preserveMulti': true, 
+        
+        rows: per_page,
+        start: start_row
       }
 
-      Rails.logger.log(response[:docs])
+      puts response[:docs]
 
       {
-        docs: response.dig('response', 'docs') || [],
+        ids: response.dig('response', 'docs')&.map { |d| d['id'] } || [],
+        total: response.dig('response', 'numFound') || 0,
         highlighting: response['highlighting'] || {}
       }
 
     rescue RSolr::Error::Http => e
       Rails.logger.error "Solr Search Error: #{e.message}"
-      { docs: [], highlighting: {} }
+      { ids: [], total: 0, highlighting: {} }
     end
   end
 end

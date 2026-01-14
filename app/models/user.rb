@@ -113,6 +113,11 @@ class User < ApplicationRecord
       name_text: name,
       email_text: email,
       bio_text: bio,
+
+      name_ac: name,
+      email_ac: email,
+      bio_ac: bio,
+      
       active_boolean: activated,
       type: "User"
     }

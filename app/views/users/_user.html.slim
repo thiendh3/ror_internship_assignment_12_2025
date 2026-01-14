@@ -1,6 +1,17 @@
 li
   = gravatar_for user, size: 50
-  = link_to user.name, user
+  
+  / Check for Autocomplete Highlight (name_ac)
+  - if user.respond_to?(:solr_highlights) && user.solr_highlights['name_ac'].present?
+    = link_to raw(user.solr_highlights['name_ac'].first), user
+  - else
+    = link_to user.name, user
+
+  / Check for Bio Highlight
+  - if user.respond_to?(:solr_highlights) && user.solr_highlights['bio_ac'].present?
+    |  | 
+    span.content == user.solr_highlights['bio_ac'].first
+
   - if current_user.admin? && !current_user?(user)
     |  | 
     = link_to "delete", user, method: :delete, data: { confirm: "Are you sure?" }
