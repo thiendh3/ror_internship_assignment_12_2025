@@ -1,23 +1,62 @@
-li id="micropost-#{micropost.id}"
-  = link_to gravatar_for(micropost.user, size: 50), micropost.user
-  span.user
-    = link_to micropost.user.name, micropost.user
-  span.content
-    - if defined?(highlights) && highlights && highlights[micropost.id.to_s] && highlights[micropost.id.to_s]['content']
-      == highlights[micropost.id.to_s]['content'].first
-    - else
-      = micropost.content
-    - if micropost.image.attached?
-      = image_tag micropost.display_image
-  - if micropost.hashtags.any?
-    span.hashtags
-      - micropost.hashtags.each do |hashtag|
-        = link_to "##{hashtag.name}", root_path(hashtag: hashtag.name), class: "hashtag-link"
-  span.timestamp
-    | Posted #{time_ago_in_words(micropost.created_at)} ago.
-    a.view-micropost href="#" data-micropost-id=micropost.id View
+.micropost-card id="micropost-#{micropost.id}"
+  .micropost-header
+    .user-info
+      = link_to gravatar_for(micropost.user, size: 48), micropost.user, class: "user-avatar"
+      .user-details
+        = link_to micropost.user.name, micropost.user, class: "user-name"
+        .post-time
+          i.glyphicon.glyphicon-time
+          |  #{time_ago_in_words(micropost.created_at)} ago
     - if current_user?(micropost.user)
-      | 
-      a.edit-micropost href="#" data-micropost-id=micropost.id Edit
-      | 
-      a.delete-micropost href="#" data-micropost-id=micropost.id Delete
+      .post-actions-menu
+        .dropdown
+          button.btn.btn-link.dropdown-toggle data-toggle="dropdown"
+            i.glyphicon.glyphicon-option-vertical
+          ul.dropdown-menu.dropdown-menu-right
+            li
+              a.edit-micropost href="#" data-micropost-id=micropost.id
+                i.glyphicon.glyphicon-pencil
+                |  Edit
+            li
+              a.delete-micropost href="#" data-micropost-id=micropost.id
+                i.glyphicon.glyphicon-trash
+                |  Delete
+  
+  .micropost-body
+    .micropost-content
+      - if defined?(highlights) && highlights && highlights[micropost.id.to_s] && highlights[micropost.id.to_s]['content']
+        == highlights[micropost.id.to_s]['content'].first
+      - else
+        = micropost.content
+    
+    - if micropost.image.attached?
+      .micropost-image
+        = image_tag micropost.display_image, class: "img-responsive"
+    
+    - if micropost.hashtags.any?
+      .micropost-hashtags
+        - micropost.hashtags.each do |hashtag|
+          = link_to "##{hashtag.name}", root_path(hashtag: hashtag.name), class: "hashtag-badge"
+  
+  .micropost-footer
+    .post-stats
+      span.stat-item
+        i.glyphicon.glyphicon-heart
+        span.stat-count.like-count 12
+      span.stat-item
+        i.glyphicon.glyphicon-comment
+        span.stat-count.comment-count 5
+    
+    .post-interactions
+      button.btn-interaction.like-btn data-micropost-id=micropost.id
+        i.glyphicon.glyphicon-heart-empty
+        span Like
+      button.btn-interaction.comment-btn data-micropost-id=micropost.id
+        i.glyphicon.glyphicon-comment
+        span Comment
+      button.btn-interaction.share-btn data-micropost-id=micropost.id
+        i.glyphicon.glyphicon-share
+        span Share
+      button.btn-interaction.view-micropost data-micropost-id=micropost.id
+        i.glyphicon.glyphicon-eye-open
+        span View

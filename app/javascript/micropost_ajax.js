@@ -1,5 +1,13 @@
 // Micropost AJAX operations
+let micropostHandlersInitialized = false;
+
 function initializeMicropostAjax() {
+    // Prevent multiple initializations
+    if (micropostHandlersInitialized) {
+        return;
+    }
+    micropostHandlersInitialized = true;
+
     // AJAX form submission for creating micropost
     const micropostForm = document.querySelector('#new_micropost');
     if (micropostForm) {

@@ -4,4 +4,5 @@ import "controllers"
 import Rails from "@rails/ujs"
 import "search_autocomplete"
 import "micropost_ajax"
+import "micropost_interactions"
 Rails.start()
