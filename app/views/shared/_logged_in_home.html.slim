@@ -1,43 +1,15 @@
 .row
-  aside.col-md-4
+  / Left sidebar - User info
+  aside.col-md-3.col-sm-12
     section.user_info
       = render 'shared/user_info'
     section.stats
       = render 'shared/stats'
     section.micropost_form
       = render 'shared/micropost_form'
-  .col-md-8
-    .search-section
-      h4 Search Microposts
-      = form_with url: root_path, method: :get, local: true, class: "search-form-block" do |f|
-        .row
-          .col-md-12
-            .form-group.search-input-container
-              = f.text_field :q, value: params[:q], placeholder: "Search content...", class: "form-control search-input", id: "search-query", autocomplete: "off"
-              #autocomplete-results.autocomplete-dropdown
-        .row
-          .col-md-3
-            .form-group
-              = f.label :user_id, "Author", class: "control-label-sm"
-              = f.select :user_id, options_from_collection_for_select(@following_users, :id, :name, params[:user_id]), { include_blank: "All following" }, class: "form-control input-sm"
-          .col-md-3
-            .form-group
-              = f.label :hashtag, "Hashtag", class: "control-label-sm"
-              = f.text_field :hashtag, value: params[:hashtag], placeholder: "hashtag name", class: "form-control input-sm"
-          .col-md-3
-            .form-group
-              = f.label :from, "From Date", class: "control-label-sm"
-              = f.date_field :from, value: params[:from], class: "form-control input-sm"
-          .col-md-3
-            .form-group
-              = f.label :to, "To Date", class: "control-label-sm"
-              = f.date_field :to, value: params[:to], class: "form-control input-sm"
-        .row
-          .col-md-12
-            = f.submit "Search", class: "btn btn-primary btn-sm"
-            - if params[:q].present? || params[:hashtag].present? || params[:user_id].present? || params[:from].present? || params[:to].present?
-              = link_to "Clear", root_path, class: "btn btn-default btn-sm"
-    
+  
+  / Center - Feed/Results
+  .col-md-6.col-sm-12.feed-column
     - if params[:q].present? || params[:hashtag].present? || params[:user_id].present? || params[:from].present? || params[:to].present?
       h3 Search Results (#{@search_results.count})
       - if @search_results.any?
@@ -51,3 +23,38 @@
     - else
       h3 Micropost Feed
       = render 'shared/feed'
+  
+  / Right sidebar - Search
+  .col-md-3.col-sm-12.search-column
+    .search-section
+      .search-header
+        h3.search-title
+          i.glyphicon.glyphicon-search
+          |  Search
+      = form_with url: root_path, method: :get, local: true, class: "search-form-block" do |f|
+        .search-main-input
+          .form-group.search-input-container
+            = f.text_field :q, value: params[:q], placeholder: "Search...", class: "form-control search-input", id: "search-query", autocomplete: "off"
+            span.search-icon
+              i.glyphicon.glyphicon-search
+            #autocomplete-results.autocomplete-dropdown
+        
+        .search-filters
+          .filter-label Filters
+          .form-group
+            = f.label :user_id, "Author", class: "control-label-sm"
+            = f.select :user_id, options_from_collection_for_select(@following_users, :id, :name, params[:user_id]), { include_blank: "All" }, class: "form-control input-sm"
+          .form-group
+            = f.label :hashtag, "Hashtag", class: "control-label-sm"
+            = f.text_field :hashtag, value: params[:hashtag], placeholder: "#tag", class: "form-control input-sm"
+          .form-group
+            = f.label :from, "From", class: "control-label-sm"
+            = f.date_field :from, value: params[:from], class: "form-control input-sm"
+          .form-group
+            = f.label :to, "To", class: "control-label-sm"
+            = f.date_field :to, value: params[:to], class: "form-control input-sm"
+        
+        .search-actions
+          = f.submit "Search", class: "btn btn-primary btn-block"
+          - if params[:q].present? || params[:hashtag].present? || params[:user_id].present? || params[:from].present? || params[:to].present?
+            = link_to "Clear", root_path, class: "btn btn-default btn-block"
