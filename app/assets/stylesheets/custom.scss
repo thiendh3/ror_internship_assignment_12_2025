@@ -538,3 +538,26 @@ mark {
 		font-weight: 500;
 	}
 }
+
+.notification-header {
+	padding: 10px 15px !important;
+	background-color: #f8f9fa;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+
+	.unread-count-label {
+		font-size: 10px;
+		padding: 3px 8px;
+		border-radius: 12px;
+	}
+}
+
+.unread-notification {
+	background-color: #edf2fa; /* Blue background for new items */
+	transition: background-color 0.5s ease;
+
+	.notification-text {
+		font-weight: bold;
+	}
+}
