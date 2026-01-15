@@ -9,7 +9,6 @@ module ApplicationCable
     private
 
     def find_verified_user
-      
       if (user_id = request.session[:user_id])
         User.find_by(id: user_id) || reject_unauthorized_connection
       else

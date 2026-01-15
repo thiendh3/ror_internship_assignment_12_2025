@@ -1,7 +1,6 @@
 require 'test_helper'
 
 class UsersSearchTest < ActionDispatch::IntegrationTest
-
   test 'should return empty array for blank autocomplete query' do
     get autocomplete_users_path, params: { q: '' }, as: :json
     assert_response :success
