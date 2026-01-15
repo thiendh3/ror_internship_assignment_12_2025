@@ -19,16 +19,19 @@ class NotificationsController < ApplicationController
   def mark_as_read
     notification = current_user.notifications.find(params[:id])
     notification.update(read: true)
-    if notification.actor
-      redirect_to user_path(notification.actor)
-    else
-      redirect_to notifications_path
+    
+    respond_to do |format|
+      format.html { redirect_to notification.target_url }
+      format.json { render json: { success: true, target_url: notification.target_url } }
     end
   end
 
   def mark_all_as_read
     current_user.notifications.unread.update_all(read: true)
-    head :ok
+    respond_to do |format|
+      format.html { redirect_to notifications_path(tab: 'read'), notice: 'All notifications marked as read' }
+      format.json { head :ok }
+    end
   end
 
   def unread_count
@@ -47,22 +50,11 @@ class NotificationsController < ApplicationController
           name: n.actor&.name,
           email: n.actor&.email
         },
-        message: notification_message(n),
+        message: n.message,
+        target_url: n.target_url,
         created_at: n.created_at,
         read: n.read
       }
-    end
-  end
-
-  def notification_message(notification)
-    actor_name = notification.actor&.name || 'Someone'
-    case notification.notification_type
-    when 'follow'
-      "#{actor_name} started following you"
-    when 'unfollow'
-      "#{actor_name} unfollowed you"
-    else
-      'You have a new notification'
     end
   end
 end

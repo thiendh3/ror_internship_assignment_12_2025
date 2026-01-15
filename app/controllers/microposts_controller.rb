@@ -3,9 +3,9 @@
 class MicropostsController < ApplicationController
   include ActionView::Helpers::DateHelper
 
-  before_action :logged_in_user, only: %i[create destroy update]
+  before_action :logged_in_user, only: %i[create destroy update share]
   before_action :correct_user, only: %i[destroy update]
-  before_action :set_micropost, only: [:show]
+  before_action :set_micropost, only: [:show, :share]
 
   def show
     @micropost = Micropost.find(params[:id])
@@ -70,7 +70,46 @@ class MicropostsController < ApplicationController
     end
   end
 
+  # Share a post - creates a new micropost with original_post_id
+  def share
+    original = @micropost.root_post # Always share the root post
+    
+    shared_post = current_user.microposts.build(
+      content: params[:content].presence || '',
+      original_post_id: original.id
+    )
+
+    if shared_post.save
+      # Update shares_count on original
+      original.increment!(:shares_count)
+      
+      # Notify original post owner
+      notify_share(original, shared_post) if original.user_id != current_user.id
+      
+      broadcast_micropost(shared_post, 'create')
+      
+      render json: {
+        success: true,
+        micropost: micropost_json(shared_post),
+        html: render_micropost_html(shared_post),
+        redirect_url: user_path(current_user, anchor: "micropost-#{shared_post.id}")
+      }, status: :created
+    else
+      render json: { success: false, errors: shared_post.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   private
+
+  def notify_share(original, shared_post)
+    Notification.create!(
+      user: original.user,
+      notifiable: shared_post,
+      notification_type: 'share'
+    )
+  rescue StandardError => e
+    Rails.logger.error("Failed to notify share: #{e.message}")
+  end
 
   def micropost_params
     params.require(:micropost).permit(:content, :image)
