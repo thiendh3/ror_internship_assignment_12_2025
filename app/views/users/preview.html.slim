@@ -8,6 +8,7 @@
       
       .modal-body style="padding: 20px;"
         .row
+          / --- LEFT COLUMN: User Card (Static) ---
           .col-md-4
             .panel.panel-default style="box-shadow: 0 2px 5px rgba(0,0,0,0.05);"
               .panel-body.text-center style="padding: 30px 15px;"
@@ -25,6 +26,7 @@
 
                 div style="margin-top: 20px;"
                   div style="margin-bottom: 10px;"
+                    / Render the follow form (now has dynamic ID internally)
                     = render 'users/follow_form'
                   
                   = link_to "View Full Profile", @user, class: "btn btn-default btn-block"
@@ -38,9 +40,11 @@
                     strong.text-primary style="display: block; font-size: 1.2em;" = @user.following.count
                     span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" FOLLOWING
                   .col-xs-4
-                    strong.text-primary#modal-followers style="display: block; font-size: 1.2em;" = @user.followers.count
+                    / SCOPED ID: modal-followers-{id}
+                    strong.text-primary id="modal-followers-#{@user.id}" style="display: block; font-size: 1.2em;" = @user.followers.count
                     span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" FOLLOWERS
               
+          / --- RIGHT COLUMN: Recent Posts ---
           .col-md-8
             h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0;" 
               | Recent Activity

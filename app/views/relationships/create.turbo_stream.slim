@@ -1,11 +1,15 @@
-/ Replace the follow/unfollow button
-= turbo_stream.replace "follow_form" do
+/ 1. Replace the specific follow form (scoped by user ID)
+= turbo_stream.replace "follow_form_#{@user.id}" do
   = render partial: "users/follow_form", locals: { user: @user }
 
-/ Update the follower count stat (Main Page)
-= turbo_stream.update "followers" do
+/ 2. Update the TARGET user's follower count (Main Page)
+= turbo_stream.update "followers-#{@user.id}" do
   = @user.followers.count
 
-/ Update the follower count stat (Preview Modal)
-= turbo_stream.update "modal-followers" do
+/ 3. Update the TARGET user's follower count (Modal)
+= turbo_stream.update "modal-followers-#{@user.id}" do
   = @user.followers.count
+
+/ 4. Update the CURRENT user's following count (e.g. on Home or Profile page)
+= turbo_stream.update "following-#{current_user.id}" do
+  = current_user.following.count
