@@ -9,10 +9,10 @@
 #   end
 
 #Create a main sample user
-User.create!(name: "Tian Dn",
-            email: "thiendoan99999@gmail.com",
-            password: "password",
-            password_confirmation: "password",
+User.create!(name: "Nhan Dang",
+            email: "nhandang02@gmail.com",
+            password: "123456",
+            password_confirmation: "123456",
             admin: true,
             activated: true,
             activated_at: Time.zone.now)
@@ -39,5 +39,12 @@ users = User.all
 user = users.first
 following = users[2..50]
 followers = users[3..40]
-following.each {|followed| user.follow(followed)}
-followers.each {|follower| follower.follow(user)}
+following.each { |followed| user.follow(followed) }
+followers.each { |follower| follower.follow(user) }
+
+# Create additional relationships between other users for testing filters
+users[1..10].each do |u|
+  users.sample(rand(5..15)).each do |target|
+    u.follow(target) unless u == target || u.following?(target)
+  end
+end
