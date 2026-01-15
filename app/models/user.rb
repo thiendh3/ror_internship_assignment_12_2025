@@ -9,6 +9,7 @@ class User < ApplicationRecord
                                   dependent: :destroy
   has_many :following, through: :active_relationships, source: :followed
   has_many :followers, through: :passive_relationships
+  has_many :notifications, foreign_key: :recipient_id, dependent: :destroy
 
   # virtual attributes
   attr_accessor :remember_token, :activation_token, :reset_token
@@ -26,6 +27,7 @@ class User < ApplicationRecord
   format: {with: VALID_EMAIL_REGEX},uniqueness: true
   has_secure_password
   validates :password, presence: true, length: {minimum:6}, allow_nil: true
+  validates :bio, length: {maximum: 140}
 
   #Return the hash digest of the given string
   def User.digest(string)
@@ -100,7 +102,7 @@ class User < ApplicationRecord
 
   #Unfollow a user
   def unfollow(other_user)
-    following.delete(other_user)
+    following.destroy(other_user)
     index_to_solr
     SolrService.add(other_user)
   end

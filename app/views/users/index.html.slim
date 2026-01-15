@@ -8,15 +8,14 @@
 
   / --- RIGHT CONTENT (User List) ---
   .col-md-8
-    h1 style="margin-top: 0; text-align: left; margin-bottom: 20px;" All Users
-
-    - if @users.any?
-      ul.users
-        = render @users
-      
-      / Bottom Pagination
-      .digg_pagination
-        = will_paginate @users
-    - else
-      .alert.alert-warning style="margin-top: 20px;"
-        | No users found matching your criteria.
+    = turbo_frame_tag "users_list", data: { turbo_action: "advance" }
+			- if @users.any?
+				ul.users
+					= render @users
+				
+				/ Bottom Pagination
+				.digg_pagination
+					= will_paginate @users
+			- else
+				.alert.alert-warning style="margin-top: 20px;"
+					| No users found matching your criteria.
