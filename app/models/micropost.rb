@@ -1,6 +1,9 @@
 class Micropost < ApplicationRecord
   belongs_to :user
   has_one_attached :image
+  has_many :versions, class_name: 'MicropostVersion', dependent: :destroy
+
+  before_update :save_version
   default_scope -> { order(created_at: :desc) }
   validates :user_id, presence: true
   validates :content, presence: true, length: { maximum: 140 }
@@ -20,10 +23,10 @@ class Micropost < ApplicationRecord
   end
 
   # Auto-reindex when micropost is created or updated
-  after_commit :reindex, on: %i[create update]
+  after_commit :reindex_to_solr, on: %i[create update]
 
   # Reindex when micropost is destroyed
-  after_commit :remove_from_index, on: :destroy
+  after_commit :remove_from_solr, on: :destroy
 
   # Return a resized image for display
   def display_image
@@ -32,13 +35,26 @@ class Micropost < ApplicationRecord
 
   private
 
+  def save_version
+    return unless content_changed?
+
+    versions.create!(
+      content: content_was,
+      edited_at: updated_at || created_at
+    )
+  end
+
   # Reindex micropost to Solr
-  def reindex
+  def reindex_to_solr
     Sunspot.index(self)
+  rescue StandardError => e
+    Rails.logger.error("Failed to index micropost #{id}: #{e.message}")
   end
 
   # Remove micropost from Solr index
-  def remove_from_index
+  def remove_from_solr
     Sunspot.remove(self)
+  rescue StandardError => e
+    Rails.logger.error("Failed to remove micropost #{id} from index: #{e.message}")
   end
 end
