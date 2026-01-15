@@ -5,6 +5,8 @@
       h1
         = gravatar_for @user
         = @user.name
+      - if @user.bio.present?
+        p.bio = @user.bio
     section.stats
       = render 'shared/stats'
   .col-md-8

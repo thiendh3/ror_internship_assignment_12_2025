@@ -21,7 +21,7 @@ class User < ApplicationRecord
 
   # Sunspot searchable configuration
   searchable do
-    text :name, :email
+    text :name, :email, :bio
 
     boolean :activated
     time :created_at
