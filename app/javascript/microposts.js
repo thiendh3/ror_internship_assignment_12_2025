@@ -71,8 +71,10 @@ function initMicropostForm() {
           }
         }
         
-        // Clear form
+        // Clear form and reset visibility to public
         form.reset()
+        const visibilitySelect = document.getElementById('micropost_visibility')
+        if (visibilitySelect) visibilitySelect.value = 'public'
         showFlash('success', 'Micropost created!')
       } else {
         showFlash('danger', data.errors.join(', '))
@@ -136,6 +138,59 @@ function initMicropostActions() {
       enableInlineEdit(micropostId, isShared)
     })
   })
+
+  // Visibility toggle buttons
+  document.querySelectorAll('.visibility-toggle:not([data-ajax-initialized])').forEach(btn => {
+    btn.dataset.ajaxInitialized = 'true'
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const micropostId = btn.dataset.micropostId
+      const currentVisibility = btn.textContent.trim() === '🌍' ? 'public' : 'private'
+      const newVisibility = currentVisibility === 'public' ? 'private' : 'public'
+
+      try {
+        const response = await fetch(`/microposts/${micropostId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+          },
+          body: JSON.stringify({ micropost: { visibility: newVisibility } })
+        })
+
+        const data = await response.json()
+        if (data.success) {
+          // Update button icon
+          btn.textContent = newVisibility === 'public' ? '🌍' : '🔒'
+          // Update badge in header
+          const micropostEl = document.getElementById(`micropost-${micropostId}`)
+          const badge = micropostEl.querySelector('.visibility-badge')
+          if (newVisibility === 'private') {
+            if (!badge) {
+              const timestamp = micropostEl.querySelector('.timestamp')
+              if (timestamp) {
+                const newBadge = document.createElement('span')
+                newBadge.className = 'visibility-badge ms-2'
+                newBadge.title = 'Only you can see this'
+                newBadge.textContent = '🔒'
+                timestamp.appendChild(newBadge)
+              }
+            }
+          } else {
+            if (badge) badge.remove()
+          }
+          showFlash('success', `Post is now ${newVisibility}`)
+        } else {
+          showFlash('danger', 'Failed to update visibility')
+        }
+      } catch (error) {
+        console.error('Error updating visibility:', error)
+        showFlash('danger', 'Failed to update visibility')
+      }
+    })
+  })
   
   // Clickable micropost items (open modal)
   const clickableItems = document.querySelectorAll('.micropost-clickable:not([data-ajax-initialized])')
@@ -185,13 +240,23 @@ function enableInlineEdit(micropostId, isShared = false) {
   // Store original HTML
   contentEl.dataset.originalHtml = contentEl.innerHTML
 
+  // Get current visibility from edit button
+  const editBtn = micropostEl.querySelector('.micropost-edit')
+  const currentVisibility = editBtn?.dataset.visibility || 'public'
+
   // Create edit form
   contentEl.innerHTML = `
     <form class="inline-edit-form" data-micropost-id="${micropostId}">
       <textarea class="form-control mb-2" rows="2" placeholder="${isShared ? 'Add a caption...' : 'Edit content...'}">${currentContent}</textarea>
-      <div class="btn-group btn-group-sm">
-        <button type="submit" class="btn btn-primary btn-sm">Save</button>
-        <button type="button" class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
+      <div class="d-flex align-items-center gap-2">
+        <select class="form-select form-select-sm visibility-select" style="width: auto;">
+          <option value="public" ${currentVisibility === 'public' ? 'selected' : ''}>🌍 Public</option>
+          <option value="private" ${currentVisibility === 'private' ? 'selected' : ''}>🔒 Private</option>
+        </select>
+        <div class="btn-group btn-group-sm">
+          <button type="submit" class="btn btn-primary btn-sm">Save</button>
+          <button type="button" class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
+        </div>
       </div>
     </form>
   `
@@ -199,6 +264,9 @@ function enableInlineEdit(micropostId, isShared = false) {
   const form = contentEl.querySelector('.inline-edit-form')
   const textarea = form.querySelector('textarea')
   textarea.focus()
+
+  // Prevent clicks inside form from triggering modal
+  form.addEventListener('click', (e) => e.stopPropagation())
 
   // Cancel button
   form.querySelector('.cancel-edit').addEventListener('click', () => {
@@ -221,6 +289,7 @@ function enableInlineEdit(micropostId, isShared = false) {
     }
 
     try {
+      const newVisibility = form.querySelector('.visibility-select').value
       const response = await fetch(`/microposts/${micropostId}`, {
         method: 'PATCH',
         headers: {
@@ -228,7 +297,7 @@ function enableInlineEdit(micropostId, isShared = false) {
           'Accept': 'application/json',
           'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify({ micropost: { content: newContent } })
+        body: JSON.stringify({ micropost: { content: newContent, visibility: newVisibility } })
       })
 
       const data = await response.json()

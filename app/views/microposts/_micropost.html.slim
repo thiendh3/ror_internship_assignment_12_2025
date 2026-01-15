@@ -12,6 +12,8 @@ li id="micropost-#{micropost.id}" class="micropost-item micropost-clickable #{is
           span.share-label  shared a post
       span.timestamp
         | #{time_ago_in_words(micropost.created_at)} ago
+        - if micropost.private?
+          span.visibility-badge.ms-2 title="Only you can see this" 🔒
 
   - if is_shared
     /! Share caption
@@ -83,7 +85,7 @@ li id="micropost-#{micropost.id}" class="micropost-item micropost-clickable #{is
 
   - if current_user?(micropost.user)
     .micropost-actions.mt-2 onclick="event.stopPropagation();"
-      button.btn.btn-link.btn-sm.micropost-edit data-micropost-id="#{micropost.id}" data-is-shared="#{is_shared}" title="Edit"
+      button.btn.btn-link.btn-sm.micropost-edit data-micropost-id="#{micropost.id}" data-is-shared="#{is_shared}" data-visibility="#{micropost.visibility}" title="Edit"
         | ✏️ Edit
       button.btn.btn-link.btn-sm.text-danger.micropost-delete data-micropost-id="#{micropost.id}" title="Delete"
         | 🗑️ Delete

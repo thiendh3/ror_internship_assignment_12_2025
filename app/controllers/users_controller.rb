@@ -9,8 +9,9 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
     redirect_to root_url and return unless @user.activated?
 
-    # All microposts including shared ones
-    @microposts = @user.microposts.includes(:user, :original_post).to_a
+    # All microposts including shared ones, filtered by visibility
+    @microposts = @user.microposts.includes(:user, :original_post)
+                       .visible_to(current_user).to_a
 
     respond_to do |format|
       format.html

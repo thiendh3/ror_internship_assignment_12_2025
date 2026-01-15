@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_15_091549) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_15_110009) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -39,6 +39,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_091549) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "comments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "micropost_id", null: false
+    t.bigint "parent_id"
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "reactions_count", default: 0, null: false
+    t.index ["micropost_id", "created_at"], name: "index_comments_on_micropost_id_and_created_at"
+    t.index ["micropost_id"], name: "index_comments_on_micropost_id"
+    t.index ["parent_id"], name: "index_comments_on_parent_id"
+    t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
   create_table "micropost_versions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "micropost_id", null: false
     t.text "content"
@@ -53,8 +67,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_091549) do
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "comments_count", default: 0, null: false
+    t.integer "reactions_count", default: 0, null: false
+    t.integer "shares_count", default: 0, null: false
+    t.bigint "original_post_id"
+    t.boolean "is_repost", default: false, null: false
+    t.string "visibility", default: "public", null: false
+    t.index ["original_post_id"], name: "index_microposts_on_original_post_id"
     t.index ["user_id", "created_at"], name: "index_microposts_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_microposts_on_user_id"
+    t.index ["visibility"], name: "index_microposts_on_visibility"
   end
 
   create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -71,6 +93,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_091549) do
     t.index ["user_id"], name: "index_notifications_on_user_id"
   end
 
+  create_table "reactions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "reactable_type", null: false
+    t.bigint "reactable_id", null: false
+    t.string "reaction_type", default: "like", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["reactable_type", "reactable_id"], name: "index_reactions_on_reactable"
+    t.index ["user_id", "reactable_type", "reactable_id"], name: "index_reactions_uniqueness", unique: true
+    t.index ["user_id"], name: "index_reactions_on_user_id"
+  end
+
   create_table "relationships", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "follower_id"
     t.integer "followed_id"
@@ -79,6 +113,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_091549) do
     t.index ["followed_id"], name: "index_relationships_on_followed_id"
     t.index ["follower_id", "followed_id"], name: "index_relationships_on_follower_id_and_followed_id", unique: true
     t.index ["follower_id"], name: "index_relationships_on_follower_id"
+  end
+
+  create_table "shares", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "micropost_id", null: false
+    t.text "content"
+    t.string "share_type", default: "share"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["micropost_id"], name: "index_shares_on_micropost_id"
+    t.index ["user_id", "created_at"], name: "index_shares_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_shares_on_user_id"
   end
 
   create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -100,7 +146,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_091549) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "comments", "comments", column: "parent_id"
+  add_foreign_key "comments", "microposts"
+  add_foreign_key "comments", "users"
   add_foreign_key "micropost_versions", "microposts"
   add_foreign_key "microposts", "users"
   add_foreign_key "notifications", "users"
+  add_foreign_key "reactions", "users"
+  add_foreign_key "shares", "users"
 end

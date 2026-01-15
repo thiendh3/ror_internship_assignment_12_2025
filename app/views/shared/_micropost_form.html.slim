@@ -3,10 +3,13 @@ form#micropost-form action="/microposts" method="post" enctype="multipart/form-d
   = render 'shared/error_messages', object: @micropost
   .field
     textarea#micropost_content.form-control name="micropost[content]" placeholder="Compose new micropost..."
-  .mt-2
+  .mt-2.d-flex.align-items-center.gap-3
     button#micropost-submit-btn.btn.btn-primary type="button" Post
-    span.image.ms-2
+    span.image
       input#micropost_image type="file" name="micropost[image]" accept="image/jpeg,image/gif,image/png"
+    select#micropost_visibility.form-select.form-select-sm name="micropost[visibility]" style="width: auto;"
+      option value="public" selected="selected" 🌍 Public
+      option value="private" 🔒 Private
 
 javascript:
   document.getElementById("micropost_image")?.addEventListener("change", function(){

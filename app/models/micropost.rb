@@ -9,11 +9,26 @@ class Micropost < ApplicationRecord
  
   has_many :shared_posts, class_name: 'Micropost', foreign_key: 'original_post_id'
 
+  VISIBILITY_OPTIONS = %w[public private].freeze
+
   before_update :save_version
   before_destroy :decrement_original_shares_count
   default_scope -> { order(created_at: :desc) }
   validates :user_id, presence: true
   validates :content, presence: true, length: { maximum: 140 }, unless: :shared_post?
+  validates :visibility, inclusion: { in: VISIBILITY_OPTIONS }
+
+  scope :visible_to, ->(user) {
+    where(visibility: 'public').or(where(user_id: user&.id))
+  }
+
+  def public?
+    visibility == 'public'
+  end
+
+  def private?
+    visibility == 'private'
+  end
 
   # Check if this is a shared post
   def shared_post?
