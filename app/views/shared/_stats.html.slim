@@ -1,4 +1,5 @@
 - @user ||= current_user
+= turbo_stream_from "user_stats_#{@user.id}"
 - frame_target = local_assigns[:target_frame] 
 
 .stats

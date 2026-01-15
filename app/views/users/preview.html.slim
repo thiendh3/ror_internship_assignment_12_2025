@@ -1,6 +1,9 @@
 .modal.fade id="userPreviewModal" tabindex="-1" role="dialog"
   .modal-dialog.modal-lg role="document"
     .modal-content
+      / 1. SUBSCRIBE: Listen for updates here as well
+      = turbo_stream_from "user_stats_#{@user.id}"
+      
       .modal-header
         button.close type="button" data-dismiss="modal" aria-label="Close"
           span aria-hidden="true" &times;
@@ -26,7 +29,6 @@
 
                 div style="margin-top: 20px;"
                   div style="margin-bottom: 10px;"
-                    / Render the follow form (now has dynamic ID internally)
                     = render 'users/follow_form'
                   
                   = link_to "View Full Profile", @user, class: "btn btn-default btn-block"
@@ -34,13 +36,12 @@
               .panel-footer style="background-color: #f8f9fa;"
                 .row.text-center
                   .col-xs-4 style="border-right: 1px solid #ddd;"
-                    strong.text-primary style="display: block; font-size: 1.2em;" = @user.microposts.count
+                    strong.text-primary style="display: block; font-size: 1.2em;" = @user.microposts.size
                     span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" POSTS
                   .col-xs-4 style="border-right: 1px solid #ddd;"
                     strong.text-primary style="display: block; font-size: 1.2em;" = @user.following_count
                     span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" FOLLOWING
                   .col-xs-4
-                    / SCOPED ID: modal-followers-{id}
                     strong.text-primary id="modal-followers-#{@user.id}" style="display: block; font-size: 1.2em;" = @user.followers_count
                     span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" FOLLOWERS
               
