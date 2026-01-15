@@ -1,4 +1,4 @@
-= content_for :title, @user.name
+- provide(:title, @user.name)
 .row
   aside.col-md-4
     section.user_info
@@ -6,18 +6,18 @@
         = gravatar_for @user
         = @user.name
     section.stats
-      = render 'shared/stats'
-  .col-md-8
-    - if logged_in?
-      = render 'follow_form'
-    - if @user.microposts.any?
-      h3
-        | Microposts (#{@user.microposts.count})
+      = render 'shared/stats', target_frame: "users_content"
       
-      = turbo_frame_tag "microposts", data: { turbo_action: "advance" }
+  .col-md-8
+    = turbo_frame_tag "users_content" do
+      - if logged_in?
+        = render 'follow_form'
+      - if @user.microposts.any?
+        h3 Microposts (#{@user.microposts.count})
+        
         ol.microposts
           = render @microposts
         .digg_pagination
           = will_paginate @microposts
-    - else
-      h3 No post yet
+      - else
+        h3 No post yet

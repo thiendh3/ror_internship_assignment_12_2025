@@ -1,8 +1,10 @@
 - @user ||= current_user
+- frame_target = local_assigns[:target_frame] 
+
 .stats
-  a href=following_user_path(@user)
-    strong.stat id="following-#{@user.id}" = @user.following.count
+  a href=following_user_path(@user) data-turbo-frame=frame_target data-turbo-action=(frame_target ? "advance" : nil)
+    strong.stat id="following-#{@user.id}" = @user.following_count
     | following
-  a href=followers_user_path(@user)
-    strong.stat id="followers-#{@user.id}" = @user.followers.count
+  a href=followers_user_path(@user) data-turbo-frame=frame_target data-turbo-action=(frame_target ? "advance" : nil)
+    strong.stat id="followers-#{@user.id}" = @user.followers_count
     | followers
