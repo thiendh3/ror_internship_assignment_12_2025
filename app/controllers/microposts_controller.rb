@@ -101,7 +101,7 @@ class MicropostsController < ApplicationController
 
   private
     def micropost_params
-      params.require(:micropost).permit(:content, :image)
+      params.require(:micropost).permit(:content, :image, :privacy)
     end
 
     def correct_user
@@ -115,6 +115,15 @@ class MicropostsController < ApplicationController
     end
 
     def set_micropost
-      @micropost = Micropost.find(params[:id])
+      @micropost = Micropost.visible_for(current_user).find_by(id: params[:id])
+      unless @micropost
+        respond_to do |format|
+          format.html { 
+            flash[:danger] = "Post not found or you don't have permission to view it"
+            redirect_to root_url 
+          }
+          format.json { render json: { error: "Not found or unauthorized" }, status: :not_found }
+        end
+      end
     end
 end

@@ -14,6 +14,10 @@ class Micropost < ApplicationRecord
   has_many :comments, dependent: :destroy
 
   has_one_attached :image
+  
+  # Privacy levels: public (0), friends_only (1), only_me (2)
+  enum privacy: { public_post: 0, friends_only: 1, only_me: 2 }
+  
   default_scope -> { order(created_at: :desc)}
   validates :user_id, presence: true
   validates :content, presence: true, length: {maximum: 140}
@@ -62,6 +66,41 @@ class Micropost < ApplicationRecord
   
   def content_without_hashtags
     content.gsub(HASHTAG_REGEX, '').strip
+  end
+  
+  # Scope to get visible posts for a specific user
+  def self.visible_for(current_user)
+    if current_user
+      # Show: public posts + own posts + friends_only posts from followed users
+      where(privacy: :public_post)
+        .or(where(user_id: current_user.id))
+        .or(where(privacy: :friends_only, user_id: current_user.following.select(:id)))
+    else
+      # Not logged in: only public posts
+      where(privacy: :public_post)
+    end
+  end
+  
+  def privacy_icon
+    case privacy
+    when "public_post"
+      "🌐" # Globe for public
+    when "friends_only"
+      "👥" # People for friends
+    when "only_me"
+      "🔒" # Lock for private
+    end
+  end
+  
+  def privacy_label
+    case privacy
+    when "public_post"
+      "Public"
+    when "friends_only"
+      "Friends"
+    when "only_me"
+      "Only Me"
+    end
   end
 
   private

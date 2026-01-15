@@ -21,14 +21,15 @@ class StaticPagesController < ApplicationController
         micropost_ids = response['response']['docs'].map { |doc| doc['id'] }
         # Store highlighting data
         @highlights = response['highlighting']
-        # Fetch actual Micropost objects from database with pagination
-        @search_results = Micropost.where(id: micropost_ids)
+        # Fetch actual Micropost objects from database with pagination, filtered by privacy
+        @search_results = Micropost.visible_for(current_user)
+                                   .where(id: micropost_ids)
                                    .includes(:user, :hashtags)
                                    .order(created_at: :desc)
                                    .paginate(page: params[:page], per_page: 10)
       else
         @search_results = []
-        @feed_items = current_user.feed.paginate(page: params[:page])
+        @feed_items = current_user.feed.visible_for(current_user).paginate(page: params[:page])
       end
     end
   end

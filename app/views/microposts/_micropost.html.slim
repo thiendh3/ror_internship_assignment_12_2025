@@ -7,6 +7,8 @@
         .post-time
           i.glyphicon.glyphicon-time
           |  #{time_ago_in_words(micropost.created_at)} ago
+          span.privacy-badge data-privacy=micropost.privacy title=micropost.privacy_label
+            = micropost.privacy_icon
     - if current_user?(micropost.user)
       .post-actions-menu
         .dropdown

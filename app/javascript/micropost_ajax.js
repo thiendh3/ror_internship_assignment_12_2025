@@ -125,9 +125,13 @@ function initializeMicropostAjax() {
             const contentElement = micropostBody.querySelector('.micropost-content');
             const imageElement = micropostBody.querySelector('.micropost-image');
             const hashtagsElement = micropostBody.querySelector('.micropost-hashtags');
+            const privacyBadge = micropostElement.querySelector('.privacy-badge');
 
             // Get content
             let currentContent = contentElement.textContent.trim();
+
+            // Get current privacy
+            const currentPrivacy = privacyBadge ? privacyBadge.dataset.privacy : 'public_post';
 
             // Add hashtags back to content for editing
             if (hashtagsElement) {
@@ -149,6 +153,14 @@ function initializeMicropostAjax() {
             editForm.className = 'edit-micropost-form';
             editForm.innerHTML = `
         <textarea class="form-control" rows="3" name="content" required>${currentContent}</textarea>
+        <div style="margin-top: 10px;">
+          <label>Privacy:</label>
+          <select name="privacy" class="form-control" style="width: auto; display: inline-block;">
+            <option value="public_post" ${currentPrivacy === 'public_post' ? 'selected' : ''}>🌐 Public</option>
+            <option value="friends_only" ${currentPrivacy === 'friends_only' ? 'selected' : ''}>👥 Friends</option>
+            <option value="only_me" ${currentPrivacy === 'only_me' ? 'selected' : ''}>🔒 Only Me</option>
+          </select>
+        </div>
         <div style="margin-top: 10px;">
           ${hasImage ? `
             <div class="current-image-preview">
@@ -200,10 +212,12 @@ function initializeMicropostAjax() {
                 e.preventDefault();
                 const formData = new FormData();
                 const newContent = this.querySelector('textarea').value;
+                const privacy = this.querySelector('select[name="privacy"]').value;
                 const imageFile = this.querySelector('input[type="file"]').files[0];
                 const removeImage = this.querySelector('input[name="remove_image"]');
 
                 formData.append('micropost[content]', newContent);
+                formData.append('micropost[privacy]', privacy);
 
                 if (imageFile) {
                     formData.append('micropost[image]', imageFile);

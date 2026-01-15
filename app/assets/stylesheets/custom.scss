@@ -911,6 +911,30 @@ span.image{
                     font-size: 12px;
                     margin-right: 3px;
                 }
+                
+                .privacy-badge{
+                    margin-left: 8px;
+                    font-size: 14px;
+                    opacity: 0.7;
+                    cursor: help;
+                    transition: opacity 0.2s;
+                    
+                    &:hover{
+                        opacity: 1;
+                    }
+                    
+                    &[data-privacy="public_post"]{
+                        color: #1da1f2;
+                    }
+                    
+                    &[data-privacy="friends_only"]{
+                        color: #17bf63;
+                    }
+                    
+                    &[data-privacy="only_me"]{
+                        color: #f45d22;
+                    }
+                }
             }
         }
     }
@@ -1972,6 +1996,28 @@ span.image{
                 }
             }
         }
+    }
+}
+
+/* Privacy Form Select */
+.privacy-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #14171a;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+.privacy-select {
+    max-width: 200px !important;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #d1d8dd;
+    
+    &:focus {
+        border-color: #1da1f2;
+        box-shadow: 0 0 0 2px rgba(29, 161, 242, 0.1);
     }
 }
 

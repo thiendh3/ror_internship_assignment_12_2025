@@ -2,6 +2,9 @@
   = render 'shared/error_messages', object: f.object
   .field
     = f.text_area :content, placeholder: "Compose new micropost..."
+  .form-group style="margin-top: 10px;"
+    = f.label :privacy, "Privacy:", class: "privacy-label"
+    = f.select :privacy, options_for_select([['🌐 Public', 'public_post'], ['👥 Following', 'friends_only'], ['🔒 Only Me', 'only_me']], @micropost.privacy || 'public_post'), {}, class: "form-control privacy-select", style: "width: auto; display: inline-block;"
   span.image
     = f.file_field :image, accept: "image/jpeg,image/gif,image/png", id: "micropost_image"
   #image-preview-container.image-preview-container style="display:none;"
