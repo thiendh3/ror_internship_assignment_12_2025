@@ -1,0 +1,8 @@
+li class=(notification.read_at.nil? ? "unread-notification" : "")
+  = link_to notification.actor, class: "notification-item" do
+    = gravatar_for(notification.actor, size: 30)
+    .notification-content
+      span.notification-text 
+        strong = notification.actor.name
+        |  #{notification.action} you
+      span.notification-time = notification.created_at.strftime("%b %d, %H:%M")

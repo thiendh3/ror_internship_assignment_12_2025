@@ -1,3 +1,4 @@
+/ app/views/layouts/_header.html.slim
 header.navbar.navbar-fixed-top.navbar-inverse
   .container
     = link_to "sample app", root_path, id: "logo"
@@ -13,6 +14,30 @@ header.navbar.navbar-fixed-top.navbar-inverse
         li = link_to "Help", help_path
         - if logged_in?
           li = link_to "Users", users_path
+          
+          / Notification Dropdown
+          li.dropdown
+            a.dropdown-toggle#notification-toggle href="#" data-toggle="dropdown" data-url=mark_as_read_notifications_path
+              | Notifications 
+              - unread_count = current_user.notifications.where(read_at: nil).count
+              span.badge.badge-danger#notification-count style=("display: none" if unread_count == 0)
+                = unread_count
+              b.caret
+            ul.dropdown-menu#notification-list style="min-width: 300px; padding: 0; max-height: 400px; overflow-y: auto;"
+              li.dropdown-header.notification-header
+                span Recent Activity
+                - if unread_count > 0
+                  span.label.label-primary.pull-right.unread-count-label = "#{unread_count} new"
+              li.divider style="margin: 0;"
+              
+              / Initial load of 10 notifications with pagination metadata for infinite scroll
+              - initial_notifications = current_user.notifications.includes(:actor).order(created_at: :desc).paginate(page: 1, per_page: 10)
+              #notifications-container data-next-page=(initial_notifications.next_page || "null") data-total-pages=initial_notifications.total_pages
+                - if initial_notifications.any?
+                  = render partial: 'notifications/notification', collection: initial_notifications
+                - else
+                  li.text-center.small#no-notifications style="padding: 10px;" No new notifications
+          
           li.dropdown
             a.dropdown-toggle href="#" data-toggle="dropdown"
               | Account 
@@ -21,6 +46,6 @@ header.navbar.navbar-fixed-top.navbar-inverse
               li = link_to "Profile", current_user
               li = link_to "Settings", edit_user_path(current_user)
               li.divider
-              li = link_to "Log out", logout_path, method: :delete
+              li = link_to "Log out", logout_path, data: { "turbo-method": :delete }
         - else
           li = link_to "Log in", login_path

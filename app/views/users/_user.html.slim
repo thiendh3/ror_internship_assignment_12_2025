@@ -1,6 +1,42 @@
 li
   = gravatar_for user, size: 50
-  = link_to user.name, user
+  
+  / Action: Delete Button
   - if current_user.admin? && !current_user?(user)
-    |  | 
-    = link_to "delete", user, method: :delete, data: { confirm: "Are you sure?" }
+    = link_to user, method: :delete, data: { confirm: "You sure?" }, class: "btn btn-danger btn-xs pull-right", title: "Delete User", style: "margin-top: 5px;"
+      span.glyphicon.glyphicon-trash
+
+  / Content: User Details Wrapper
+  div style="margin-left: 60px;"
+    / 1. Name
+    div style="font-size: 1.1em; font-weight: bold;"
+      
+      / --- DEFINE DATA ATTRIBUTES FOR STIMULUS ---
+      - preview_opts = { \
+          controller: "user-preview", \
+          user_preview_url_value: preview_user_path(user), \
+          action: "click->user-preview#load" \
+        }
+
+      / Logic: Highlight if default OR explicitly searching name
+      - if params[:query].present? && (params[:search_field].blank? || params[:search_field] == 'name')
+        = link_to highlight(user.name, params[:query]), user, data: preview_opts
+      - else
+        = link_to user.name, user, data: preview_opts
+    
+    / 2. Stats
+    div.small.text-muted style="margin-bottom: 2px;"
+      | Followers: 
+      strong = user.followers_count
+      |  | 
+      | Following: 
+      strong = user.following_count
+    
+    / 3. Email (Admin Only)
+    - if current_user.admin?
+      div.small.text-info
+        span.glyphicon.glyphicon-envelope style="margin-right: 5px; color: #888;"
+        - if params[:query].present? && params[:search_field] == 'email'
+          = highlight(user.email, params[:query])
+        - else
+          = user.email

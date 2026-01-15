@@ -1,0 +1,10 @@
+.modal.fade id="editProfileModal" tabindex="-1" role="dialog"
+  .modal-dialog role="document"
+    .modal-content
+      .modal-header
+        button.close type="button" data-dismiss="modal" aria-label="Close"
+          span aria-hidden="true" &times;
+        h4.modal-title Edit Profile
+      
+      .modal-body
+        = render 'users/form_modal'

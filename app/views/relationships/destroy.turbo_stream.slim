@@ -1,0 +1,15 @@
+/ 1. Replace the specific follow form
+= turbo_stream.replace "follow_form_#{@user.id}" do
+  = render partial: "users/follow_form", locals: { user: @user }
+
+/ 2. Update the TARGET user's follower count (Main Page)
+= turbo_stream.update "followers-#{@user.id}" do
+  = @user.followers.count
+
+/ 3. Update the TARGET user's follower count (Modal)
+= turbo_stream.update "modal-followers-#{@user.id}" do
+  = @user.followers.count
+
+/ 4. Update the CURRENT user's following count
+= turbo_stream.update "following-#{current_user.id}" do
+  = current_user.following.count

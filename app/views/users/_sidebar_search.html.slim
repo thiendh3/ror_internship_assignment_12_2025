@@ -1,0 +1,52 @@
+.panel.panel-default style="position: -webkit-sticky; position: sticky; top: 20px; z-index: 10000; overflow: auto"
+  .panel-heading
+    h3.panel-title Search & Filter
+
+  .panel-body
+    div data-controller="autocomplete" data-autocomplete-url-value=autocomplete_users_path
+      = form_with(url: users_path, method: :get, html: { autocomplete: 'off' }, data: { turbo_frame: "users_list", turbo_action: "advance" }) do |f|
+        .form-group
+          label Search Query
+          
+          div style="display: flex; gap: 5px;"
+            - if current_user.admin?
+              = select_tag :search_field, 
+                  options_for_select([['Name', 'name'], ['Email', 'email']], params[:search_field]), 
+                  class: "form-control", style: "width: auto; min-width: 80px;"
+            
+            div style="flex-grow: 1; position: relative;"
+              = f.text_field :query, value: params[:query], class: "form-control", placeholder: "Search term...", data: { autocomplete_target: "input", action: "input->autocomplete#search blur->autocomplete#blur" }
+              
+              .list-group.autocomplete-results data-autocomplete-target="results" hidden=true style="position: absolute; top: 100%; left: 0; width: 350px; z-index: 100000; background-color: white; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"
+
+        .form-group
+          label Show Users
+          - filter_options = [['All Users', 'all'], ['Following', 'following'], ['Not Following', 'not_following']]
+          - if current_user.admin?
+            - filter_options += [['Activated', 'activated'], ['Not Activated', 'not_activated']]
+          
+          = select_tag :filter, options_for_select(filter_options, params[:filter] || 'all'), class: "form-control"
+
+        .form-group
+          label Advanced Filter
+          = select_tag :count_field, 
+              options_for_select([['Followers Count', 'followers'], ['Following Count', 'following']], params[:count_field]), 
+              class: "form-control input-sm", style: "margin-bottom: 5px;"
+          .row
+            .col-xs-6 style="padding-right: 5px;"
+              = select_tag :count_operator, 
+                  options_for_select([['At least (>=)', '>='], ['At most (<=)', '<=']], params[:count_operator]), 
+                  class: "form-control input-sm"
+            
+            .col-xs-6 style="padding-left: 5px;"
+              = number_field_tag :count_value, params[:count_value], class: "form-control input-sm", placeholder: "0"
+
+        hr style="margin: 15px 0;"
+        = f.submit "Apply Filters", class: "btn btn-primary btn-block"
+        = link_to "Reset All", users_path, class: "btn btn-default btn-block btn-sm"
+
+  .panel-footer.text-center
+    small.text-muted
+      | Found 
+      strong = total_found
+      |  users

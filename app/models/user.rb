@@ -1,4 +1,5 @@
 class User < ApplicationRecord
+  # associations
   has_many :microposts, dependent: :destroy
   has_many :active_relationships, class_name: "Relationship",
                                   foreign_key: "follower_id",
@@ -8,15 +9,25 @@ class User < ApplicationRecord
                                   dependent: :destroy
   has_many :following, through: :active_relationships, source: :followed
   has_many :followers, through: :passive_relationships
+  has_many :notifications, foreign_key: :recipient_id, dependent: :destroy
+
+  # virtual attributes
   attr_accessor :remember_token, :activation_token, :reset_token
+
+  # callbacks
   before_save :downcase_email
   before_create :create_activation_digest
+  after_save :index_to_solr
+  after_destroy :remove_from_solr
+
+  # validations
   validates :name, presence: true, length: {maximum: 50}
   VALID_EMAIL_REGEX = /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z\d\-]+)*\.[a-z]+\z/i
   validates :email, presence: true, length: {maximum: 255},
   format: {with: VALID_EMAIL_REGEX},uniqueness: true
   has_secure_password
   validates :password, presence: true, length: {minimum:6}, allow_nil: true
+  validates :bio, length: {maximum: 140}
 
   #Return the hash digest of the given string
   def User.digest(string)
@@ -50,6 +61,7 @@ class User < ApplicationRecord
   #Activate an account
   def activate
     update_columns(activated: true, activated_at: Time.zone.now)
+    index_to_solr
   end
 
   #Send activation email
@@ -84,16 +96,38 @@ class User < ApplicationRecord
   #Follow a user
   def follow(other_user)
     following << other_user
+    index_to_solr
+    SolrService.add(other_user)
   end
 
   #Unfollow a user
   def unfollow(other_user)
-    following.delete(other_user)
+    following.destroy(other_user)
+    index_to_solr
+    SolrService.add(other_user)
   end
 
   #Return true if the current user is following the other user
   def following?(other_user)
     following.include?(other_user)
+  end
+
+  # Map from user fields to solr doc fields
+  def to_solr_doc 
+    {
+      id: id,
+      name_text: name,
+      email_text: email,
+
+      name_ac: name,
+      email_ac: email,
+
+      followers_count_i: followers.count,
+      following_count_i: following.count,
+      
+      active_boolean: activated,
+      type: "User"
+    }
   end
 
   private
@@ -106,5 +140,13 @@ class User < ApplicationRecord
     def create_activation_digest
       self.activation_token = User.new_token
       self.activation_digest = User.digest(activation_token)
+    end
+
+    def index_to_solr
+      SolrService.add(self)
+    end
+
+    def remove_from_solr
+      SolrService.delete(self.id)
     end
 end
