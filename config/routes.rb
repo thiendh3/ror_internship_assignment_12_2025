@@ -31,4 +31,14 @@ Rails.application.routes.draw do
   resources :relationships, only: [ :create, :destroy ]
   get "/search", to: "search#index"
   get "/search/autocomplete", to: "search#autocomplete"
+  
+  resources :notifications, only: [:index] do
+    collection do
+      get :unread_count
+      put :mark_all_as_read
+    end
+    member do
+      put :mark_as_read
+    end
+  end
 end

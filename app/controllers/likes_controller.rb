@@ -19,6 +19,9 @@ class LikesController < ApplicationController
         end
 
         @micropost.like!(current_user)
+        
+        # Create notification
+        NotificationService.create_like_notification(current_user, @micropost)
 
         render json: {
             liked: true,
@@ -35,6 +38,9 @@ class LikesController < ApplicationController
         end
 
         @micropost.unlike!(current_user)
+        
+        # Remove notification
+        NotificationService.remove_like_notification(current_user, @micropost)
 
         render json: {
             liked: false,

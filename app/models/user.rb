@@ -10,6 +10,7 @@ class User < ApplicationRecord
   has_many :followers, through: :passive_relationships
   has_many :likes, dependent: :destroy
   has_many :liked_microposts, through: :likes, source: :micropost
+  has_many :notifications, foreign_key: :recipient_id, dependent: :destroy
   attr_accessor :remember_token, :activation_token, :reset_token
   before_save :downcase_email
   before_create :create_activation_digest
@@ -96,6 +97,12 @@ class User < ApplicationRecord
   #Return true if the current user is following the other user
   def following?(other_user)
     following.include?(other_user)
+  end
+  
+  # Return gravatar URL for JSON responses
+  def gravatar_url(size: 50)
+    gravatar_id = Digest::MD5::hexdigest(email.downcase)
+    "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}"
   end
 
   private

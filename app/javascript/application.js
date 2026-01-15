@@ -5,4 +5,5 @@ import Rails from "@rails/ujs"
 import "search_autocomplete"
 import "micropost_ajax"
 import "micropost_likes"
+import "notifications"
 Rails.start()
