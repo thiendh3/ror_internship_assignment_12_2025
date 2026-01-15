@@ -49,7 +49,7 @@ class MicropostPolicy
         # - Followers-only posts from users they follow
         # - Their own private posts
         scope.where(
-          "privacy = ? OR (privacy = ? AND user_id IN (?)) OR user_id = ?",
+          'privacy = ? OR (privacy = ? AND user_id IN (?)) OR user_id = ?',
           Micropost.privacies[:public_post],
           Micropost.privacies[:followers_only],
           user.following.pluck(:id),

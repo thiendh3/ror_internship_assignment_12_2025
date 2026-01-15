@@ -3,7 +3,7 @@ class Hashtag < ApplicationRecord
   has_many :microposts, through: :micropost_hashtags
 
   validates :name, presence: true, uniqueness: { case_sensitive: false }
-  
+
   before_validation :normalize_name
 
   private

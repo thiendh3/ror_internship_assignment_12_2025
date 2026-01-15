@@ -8,23 +8,9 @@ class LikesController < ApplicationController
 
     respond_to do |format|
       if @like.save
-        format.json { 
-          render json: { 
-            success: true, 
-            like_id: @like.id,
-            likes_count: @micropost.likes_count,
-            message: 'Liked successfully'
-          }, status: :created 
-        }
-        format.html { redirect_to request.referrer || root_url }
+        handle_like_create_success(format)
       else
-        format.json { 
-          render json: { 
-            success: false, 
-            errors: @like.errors.full_messages 
-          }, status: :unprocessable_entity 
-        }
-        format.html { redirect_to request.referrer || root_url, alert: 'Unable to like' }
+        handle_like_create_failure(format)
       end
     end
   end
@@ -36,22 +22,9 @@ class LikesController < ApplicationController
 
     respond_to do |format|
       if @like&.destroy
-        format.json { 
-          render json: { 
-            success: true, 
-            likes_count: @micropost.reload.likes_count,
-            message: 'Unliked successfully'
-          }, status: :ok 
-        }
-        format.html { redirect_to request.referrer || root_url }
+        handle_like_destroy_success(format)
       else
-        format.json { 
-          render json: { 
-            success: false, 
-            message: 'Unable to unlike' 
-          }, status: :unprocessable_entity 
-        }
-        format.html { redirect_to request.referrer || root_url, alert: 'Unable to unlike' }
+        handle_like_destroy_failure(format)
       end
     end
   end
@@ -62,9 +35,9 @@ class LikesController < ApplicationController
     @likes = @micropost.likes.includes(:user)
 
     respond_to do |format|
-      format.json { 
-        render json: @likes.map { |like| 
-          { 
+      format.json do
+        render json: @likes.map { |like|
+          {
             id: like.id,
             user: {
               id: like.user.id,
@@ -74,8 +47,53 @@ class LikesController < ApplicationController
             created_at: like.created_at
           }
         }
-      }
+      end
       format.html
     end
+  end
+
+  private
+
+  def handle_like_create_success(format)
+    format.json do
+      render json: {
+        success: true,
+        like_id: @like.id,
+        likes_count: @micropost.likes_count,
+        message: 'Liked successfully'
+      }, status: :created
+    end
+    format.html { redirect_to request.referrer || root_url }
+  end
+
+  def handle_like_create_failure(format)
+    format.json do
+      render json: {
+        success: false,
+        errors: @like.errors.full_messages
+      }, status: :unprocessable_entity
+    end
+    format.html { redirect_to request.referrer || root_url, alert: 'Unable to like' }
+  end
+
+  def handle_like_destroy_success(format)
+    format.json do
+      render json: {
+        success: true,
+        likes_count: @micropost.reload.likes_count,
+        message: 'Unliked successfully'
+      }, status: :ok
+    end
+    format.html { redirect_to request.referrer || root_url }
+  end
+
+  def handle_like_destroy_failure(format)
+    format.json do
+      render json: {
+        success: false,
+        message: 'Unable to unlike'
+      }, status: :unprocessable_entity
+    end
+    format.html { redirect_to request.referrer || root_url, alert: 'Unable to unlike' }
   end
 end

@@ -1,6 +1,6 @@
 class UsersController < ApplicationController
-  before_action :logged_in_user, only: [:index, :edit, :update, :destroy]
-  before_action :correct_user, only: [:edit, :update]
+  before_action :logged_in_user, only: %i[index edit update destroy]
+  before_action :correct_user, only: %i[edit update]
   before_action :admin_user, only: :destroy
 
   def show
@@ -17,11 +17,11 @@ class UsersController < ApplicationController
     @user = User.new(user_params)
     if @user.save
       @user.send_activation_email
-      flash[:info] = "Please check your email to activate your account."
+      flash[:info] = 'Please check your email to activate your account.'
       redirect_to root_url
-      #log_in @user
-      #flash[:success] = "Welcome to the Sample App!"
-      #redirect_to @user
+      # log_in @user
+      # flash[:success] = "Welcome to the Sample App!"
+      # redirect_to @user
     else
       render 'new'
     end
@@ -34,7 +34,7 @@ class UsersController < ApplicationController
   def update
     @user = User.find(params[:id])
     if @user.update(user_params)
-      flash[:success] = "Profile is updated"
+      flash[:success] = 'Profile is updated'
       redirect_to @user
     else
       render 'edit'
@@ -47,19 +47,19 @@ class UsersController < ApplicationController
 
   def destroy
     User.find(params[:id]).destroy
-    flash[:success] = "User is deleted!"
+    flash[:success] = 'User is deleted!'
     redirect_to users_url
   end
 
   def following
-    @title = "Following"
+    @title = 'Following'
     @user = User.find(params[:id])
     @users = @user.following.paginate(page: params[:page])
     render 'show_follow'
   end
 
   def followers
-    @title = "Followers"
+    @title = 'Followers'
     @user = User.find(params[:id])
     @users = @user.followers.paginate(page: params[:page])
     render 'show_follow'
@@ -68,24 +68,24 @@ class UsersController < ApplicationController
   # GET /users/autocomplete
   def autocomplete
     query = params[:q]
-    
+
     # Search users for @ mentions
     users = if query.present?
-      # Search following users first, then all activated users
-      if logged_in?
-        following_users = current_user.following.where('name LIKE ?', "#{query}%").limit(5)
-        other_users = User.where(activated: true)
-                         .where('name LIKE ?', "#{query}%")
-                         .where.not(id: following_users.pluck(:id))
-                         .limit(5)
-        (following_users + other_users).uniq.first(10)
-      else
-        User.where(activated: true).where('name LIKE ?', "#{query}%").limit(10)
-      end
-    else
-      # Return following users if logged in
-      logged_in? ? current_user.following.limit(10) : []
-    end
+              # Search following users first, then all activated users
+              if logged_in?
+                following_users = current_user.following.where('name LIKE ?', "#{query}%").limit(5)
+                other_users = User.where(activated: true)
+                                  .where('name LIKE ?', "#{query}%")
+                                  .where.not(id: following_users.pluck(:id))
+                                  .limit(5)
+                (following_users + other_users).uniq.first(10)
+              else
+                User.where(activated: true).where('name LIKE ?', "#{query}%").limit(10)
+              end
+            else
+              # Return following users if logged in
+              logged_in? ? current_user.following.limit(10) : []
+            end
 
     render json: {
       users: users.map { |u| { id: u.id, name: u.name, email: u.email } }
@@ -93,22 +93,22 @@ class UsersController < ApplicationController
   end
 
   private
-    #Strong param
-    def user_params
-      params.require(:user).permit(:name, :email, :password, :password_confirmation)
-    end
 
-    #Before filter
+  # Strong param
+  def user_params
+    params.require(:user).permit(:name, :email, :password, :password_confirmation)
+  end
 
-    #Confirm the correct user
-    def correct_user
-      @user = User.find(params[:id])
-      redirect_to(root_url) unless current_user?(@user)
-    end
+  # Before filter
 
-    #Confirm admin user
-    def admin_user
-      redirect_to(root_url) unless current_user.admin?
-    end
+  # Confirm the correct user
+  def correct_user
+    @user = User.find(params[:id])
+    redirect_to(root_url) unless current_user?(@user)
+  end
 
+  # Confirm admin user
+  def admin_user
+    redirect_to(root_url) unless current_user.admin?
+  end
 end

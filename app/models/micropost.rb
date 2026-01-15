@@ -1,7 +1,7 @@
 class Micropost < ApplicationRecord
   # Searchkick for Elasticsearch full-text search
   searchkick word_start: [:content]
-  
+
   # Associations
   belongs_to :user
   has_one_attached :image
@@ -13,25 +13,25 @@ class Micropost < ApplicationRecord
   has_many :notifications, as: :notifiable, dependent: :destroy
 
   # Scopes
-  default_scope -> { order(created_at: :desc)}
+  default_scope -> { order(created_at: :desc) }
 
   # Privacy enum (Rails 7+ syntax)
   enum :privacy, { public_post: 0, followers_only: 1, private_post: 2 }
 
   # Validations
   validates :user_id, presence: true
-  validates :content, presence: true, length: {maximum: 140}
+  validates :content, presence: true, length: { maximum: 140 }
   validates :image, content_type: { in: %w[image/jpeg image/gif image/png],
-                                    message: "must be a valid image format"},
-                    size:{ less_than: 5.megabytes,
-                            message: "should be less than 5MB"}
+                                    message: 'must be a valid image format' },
+                    size: { less_than: 5.megabytes,
+                            message: 'should be less than 5MB' }
 
   # Callbacks
-  after_commit :extract_and_save_hashtags, on: [:create, :update]
-  after_commit :create_mention_notifications, on: [:create, :update]
+  after_commit :extract_and_save_hashtags, on: %i[create update]
+  after_commit :create_mention_notifications, on: %i[create update]
   after_create_commit :broadcast_micropost
 
-  #Return a resized image for display
+  # Return a resized image for display
   def display_image
     image.variant(resize_to_limit: [500, 500])
   end
@@ -51,6 +51,7 @@ class Micropost < ApplicationRecord
   # Check if user liked this micropost
   def liked_by?(user)
     return false unless user
+
     likes.exists?(user_id: user.id)
   end
 

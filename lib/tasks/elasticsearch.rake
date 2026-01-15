@@ -1,26 +1,26 @@
 namespace :elasticsearch do
-  desc "Reindex all searchable models"
+  desc 'Reindex all searchable models'
   task reindex_all: :environment do
-    puts "Reindexing Microposts..."
+    puts 'Reindexing Microposts...'
     Micropost.reindex
 
-    puts "Reindexing Users..."
+    puts 'Reindexing Users...'
     User.reindex
 
-    puts "All models reindexed successfully!"
+    puts 'All models reindexed successfully!'
   end
 
-  desc "Reindex Microposts only"
+  desc 'Reindex Microposts only'
   task reindex_microposts: :environment do
-    puts "Reindexing Microposts..."
+    puts 'Reindexing Microposts...'
     Micropost.reindex
-    puts "Microposts reindexed successfully!"
+    puts 'Microposts reindexed successfully!'
   end
 
-  desc "Reindex Users only"
+  desc 'Reindex Users only'
   task reindex_users: :environment do
-    puts "Reindexing Users..."
+    puts 'Reindexing Users...'
     User.reindex
-    puts "Users reindexed successfully!"
+    puts 'Users reindexed successfully!'
   end
 end
