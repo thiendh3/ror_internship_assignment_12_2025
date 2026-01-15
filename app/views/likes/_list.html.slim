@@ -1,0 +1,11 @@
+-# Partial: list of users who liked a micropost (content only, modal wrapper is built by JS)
+- if likers.any?
+  ul.list-unstyled
+    - likers.each do |user|
+      li.media.mb-3.d-flex.align-items-center
+        = link_to gravatar_for(user, size: 45), user, class: 'mr-3'
+        .media-body
+          = link_to user.name, user, class: 'font-weight-bold d-block'
+          small.text-muted= user.email
+- else
+  p.mb-0.text-muted.text-center No likes yet

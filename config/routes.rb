@@ -24,6 +24,7 @@ Rails.application.routes.draw do
   resources :microposts, only: [ :create, :destroy, :show, :update ] do
     member do
       post "like", to: "likes#create"
+      get "likes", to: "likes#index"
       delete "like", to: "likes#destroy"
     end
   end
