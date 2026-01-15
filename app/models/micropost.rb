@@ -44,8 +44,18 @@ class Micropost < ApplicationRecord
     likes.exists?(user_id: user.id)
   end
 
-  def like!(user)
-    likes.create!(user_id: user.id)
+  def reaction_for(user)
+    return nil unless user
+
+    likes.find_by(user_id: user.id)&.reaction_type
+  end
+
+  def reaction_counts
+    likes.group(:reaction_type).count
+  end
+
+  def like!(user, reaction_type = :like)
+    likes.create!(user_id: user.id, reaction_type: reaction_type)
   end
 
   def unlike!(user)

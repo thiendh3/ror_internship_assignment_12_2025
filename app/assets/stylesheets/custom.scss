@@ -1140,6 +1140,131 @@ span.image{
             }
         }
     }
+
+    .reaction-summary{
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        color: #657786;
+        font-size: 13px;
+        cursor: pointer;
+    }
+
+    .reaction-summary .reaction-icon{
+        font-size: 13px;
+        margin-right: -2px;
+    }
+
+    .reaction-summary .reaction-total{
+        font-weight: 600;
+        margin-left: 6px;
+    }
+
+    .reactions-tabs{
+        display: inline-flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        background: #f7f9fa;
+        border: 1px solid #e1e8ed;
+        border-radius: 999px;
+        padding: 6px;
+    }
+
+    .reactions-tabs button.reaction-tab{
+        border: none !important;
+        background: transparent !important;
+        border-radius: 999px !important;
+        padding: 6px 14px !important;
+        font-size: 13px !important;
+        color: #657786 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+        line-height: 1 !important;
+        font-weight: 600 !important;
+    }
+
+    .reactions-tabs button.reaction-tab:hover{
+        background: #eef3f7 !important;
+        color: #14171a !important;
+    }
+
+    .reactions-tabs button.reaction-tab.active{
+        background: #ffffff !important;
+        color: #1da1f2 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+        font-weight: 700 !important;
+    }
+
+    .reaction-dropdown{
+        position: relative;
+        margin-right: 10px;
+    }
+
+    .reaction-toggle{
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .reaction-toggle.muted{
+        color: #657786;
+    }
+
+    .reaction-toggle.active{
+        color: #1da1f2;
+        background: #e8f5fe;
+    }
+
+    .reaction-toggle .reaction-emoji{
+        font-size: 16px;
+        margin-right: 6px;
+    }
+
+    .reaction-menu{
+        position: absolute;
+        bottom: 100%;
+        left: 0;
+        display: none;
+        flex-direction: row;
+        gap: 6px;
+        background: #fff;
+        border: 1px solid #e1e8ed;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+        border-radius: 999px;
+        padding: 6px 10px;
+        z-index: 5;
+        align-items: center;
+    }
+
+    .reaction-dropdown:hover .reaction-menu{
+        display: flex;
+    }
+
+    .reaction-option{
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .reaction-option:hover{
+        background: #f7f9fa;
+        transform: translateY(-2px);
+    }
+
+    .reaction-option .reaction-emoji{
+        font-size: 18px;
+        margin: 0;
+    }
 }
 
 /* Edit form inline */

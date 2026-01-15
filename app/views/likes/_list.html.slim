@@ -1,11 +1,34 @@
--# Partial: list of users who liked a micropost (content only, modal wrapper is built by JS)
-- if likers.any?
-  ul.list-unstyled
-    - likers.each do |user|
-      li.media.mb-3.d-flex.align-items-center
+-# Partial: list of users who reacted to a micropost (content only, modal wrapper is built by JS)
+- if likes.any?
+  - reaction_counts = likes.group_by(&:reaction_type).transform_values(&:count)
+  - total_count = likes.size
+  .reactions-tabs.mb-3
+    button.reaction-tab.active type="button" data-filter="all"
+      | All (#{total_count})
+    - if reaction_counts['like'].to_i > 0
+      button.reaction-tab type="button" data-filter="like"
+        | 👍 Like (#{reaction_counts['like'].to_i})
+    - if reaction_counts['love'].to_i > 0
+      button.reaction-tab type="button" data-filter="love"
+        | ❤️ Love (#{reaction_counts['love'].to_i})
+    - if reaction_counts['haha'].to_i > 0
+      button.reaction-tab type="button" data-filter="haha"
+        | 😂 Haha (#{reaction_counts['haha'].to_i})
+  ul.list-unstyled.reaction-list
+    - likes.each do |like|
+      - user = like.user
+      li.media.mb-3.d-flex.align-items-center data-reaction-type=like.reaction_type
         = link_to gravatar_for(user, size: 45), user, class: 'mr-3'
         .media-body
           = link_to user.name, user, class: 'font-weight-bold d-block'
-          small.text-muted= user.email
+          p.text-muted= user.email
+        span.badge.badge-default style="margin-left: 8px;"
+          - case like.reaction_type
+          - when 'love'
+            | ❤️ Love
+          - when 'haha'
+            | 😂 Haha
+          - else
+            | 👍 Like
 - else
-  p.mb-0.text-muted.text-center No likes yet
+  p.mb-0.text-muted.text-center No reactions yet

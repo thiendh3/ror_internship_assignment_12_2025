@@ -1,30 +1,41 @@
-# ASSIGNMENTS
-- Source code được built dùng để training interns ROR
-- Bao gồm source code base và 4 bài tập khác nhau
-- Interns bắt buộc sử dụng docker để chạy web
-## Quy tắc đặt tên branch
-- Mỗi intern sẽ được assign 1 issue khác nhau
-- Checkout từ main đặt tên theo cú pháp:
-```
- feature/<số_issue>_<miêu tả feature>
-```
-- Ví dụ: Issue 1: tạo page user profile -> `feature/1_user_profile_page`
+# ROR Internship Assignment
 
-## Workflow
-- Intern nhận issue, đọc hiểu phân tích spec và QA xác nhận (nếu có)
-- Viết Detail Design (DD) chi tiết bao gồm ý tưởng, những việc sẽ làm (thêm/xoá/sửa code ở đâu), Flow chart (optional) và estimate time cho từng đầu mục. Ví dụ:
-  - Tạo db mới: 4h
-  - Tạo UI/UX page: 8h
-  - ...
-  - Total: X
-- Gửi DD cho mentor review, bổ sung chỉnh sửa nếu cần
-- Sau khi mentor đồng ý với DD thì intern bắt đầu coding
-- Kết thúc coding gửi PR cho các intern khác review chéo lẫn nhau
-- Intern review chéo xong thì gửi cho các mentors, lưu ý PR cần pass CI rubocop trước khi gửi cho mentors review
-- Mentors review xong approve PR, intern tiến hành deploy để testing/fix bugs nếu có
+## Tổng quan
+Ứng dụng mạng xã hội mini xây dựng bằng Ruby on Rails, tập trung vào microposts, tương tác người dùng và realtime features. Dùng Docker để đồng bộ môi trường phát triển và hỗ trợ Solr cho tìm kiếm.
 
+## Tính năng chính
+- Microposts: tạo/sửa/xóa bằng AJAX, preview image trước khi upload, hiển thị theo card UI hiện đại
+- Realtime feed: cập nhật micropost mới qua ActionCable
+- Reactions (Like/Love/Haha): AJAX + danh sách người react (modal)
+- Comments: AJAX, UI bubble, realtime notifications
+- Mentions: @username -> link + notification
+- Share: copy link micropost
+- Privacy: Public / Friends / Only Me
+- Hashtags: tự động extract, link & search
+- Search: Solr full-text + fuzzy search + filters + highlight + autocomplete
+- Notifications: realtime cho like/comment/mention
 
-## Docker
-- Run command:
-1. docker compose build
-2. docker compose up
+## Yêu cầu hệ thống
+- Docker + Docker Compose
+- Ruby 3.0.6 (đã cấu hình trong container)
+- MySQL + Solr (chạy qua Docker Compose)
+
+## Cài đặt & chạy dự án
+1. Build image
+   - docker compose build
+2. Chạy services
+   - docker compose up
+3. Tạo database và migrate (nếu cần)
+   - docker compose exec web bin/rails db:create db:migrate
+
+## Solr
+- Core và schema đã cấu hình cho micropost search
+- Index tự động qua callbacks
+
+## Quy tắc làm việc
+- Tạo branch theo format:
+  - feature/<so_issue>_<mo_ta>
+- Luồng làm việc: Detail Design -> Review -> Coding -> PR -> Review chéo -> Mentor review
+
+## Ghi chú
+- Ưu tiên phát triển trên Docker để đảm bảo môi trường thống nhất

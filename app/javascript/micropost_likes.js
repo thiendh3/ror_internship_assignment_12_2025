@@ -1,74 +1,123 @@
-// Handle like/unlike micropost with AJAX
+// Handle reactions with AJAX (event delegation)
+let reactionsInitialized = false;
+
 function initializeMicropostLikes() {
-    const likeButtons = document.querySelectorAll('.like-btn');
+    if (reactionsInitialized) return;
+    reactionsInitialized = true;
 
-    likeButtons.forEach(button => {
-        button.addEventListener('click', function (e) {
-            e.preventDefault();
+    document.addEventListener('click', function (e) {
+        const option = e.target.closest('.reaction-option');
+        const toggle = e.target.closest('.reaction-toggle');
+        if (!option && !toggle) return;
 
-            if (this.disabled) return;
+        e.preventDefault();
 
-            const micropostId = this.dataset.micropostId;
-            const action = this.dataset.action;
-            const url = `/microposts/${micropostId}/like`;
-            const method = action === 'like' ? 'POST' : 'DELETE';
+        const dropdown = (option || toggle).closest('.reaction-dropdown');
+        if (!dropdown) return;
 
-            // Disable button during request
-            this.disabled = true;
+        const micropostId = dropdown.dataset.micropostId;
+        const currentReaction = dropdown.dataset.currentReaction || null;
+        const reactionType = option ? option.dataset.reactionType : 'like';
+        const url = `/microposts/${micropostId}/like`;
+        const method = currentReaction === reactionType ? 'DELETE' : 'POST';
 
-            fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
+        const targetButton = option || toggle;
+        if (targetButton.disabled) return;
+        targetButton.disabled = true;
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: method === 'POST' ? JSON.stringify({ reaction_type: reactionType }) : null
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                dropdown.dataset.currentReaction = data.liked ? data.reaction_type : '';
+                updateReactionToggle(dropdown, data.liked ? data.reaction_type : null);
+
+                const likeCountElement = document.querySelector(
+                    `.like-count[data-micropost-id="${micropostId}"]`
+                );
+                if (likeCountElement) {
+                    likeCountElement.textContent = data.likes_count;
+                }
+
+                if (data.reaction_counts) {
+                    updateReactionCounts(micropostId, data.reaction_counts, data.likes_count);
                 }
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-
-                    // Update button state
-                    const icon = this.querySelector('i');
-                    const span = this.querySelector('span');
-
-                    if (data.liked) {
-                        // User just liked
-                        icon.classList.remove('glyphicon-heart-empty');
-                        icon.classList.add('glyphicon-heart');
-                        span.textContent = 'Unlike';
-                        this.classList.add('liked');
-                        this.dataset.action = 'unlike';
-                    } else {
-                        // User just unliked
-                        icon.classList.remove('glyphicon-heart');
-                        icon.classList.add('glyphicon-heart-empty');
-                        span.textContent = 'Like';
-                        this.classList.remove('liked');
-                        this.dataset.action = 'like';
-                    }
-
-                    // Update likes count
-                    const likeCountElement = document.querySelector(
-                        `.like-count[data-micropost-id="${micropostId}"]`
-                    );
-                    if (likeCountElement) {
-                        likeCountElement.textContent = data.likes_count;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                })
-                .finally(() => {
-                    // Re-enable button
-                    this.disabled = false;
-                });
-        });
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            })
+            .finally(() => {
+                targetButton.disabled = false;
+            });
     });
+}
+
+function updateReactionCounts(micropostId, reactionCounts, totalCount) {
+    const summary = document.querySelector(
+        `.reaction-summary[data-micropost-id="${micropostId}"]`
+    );
+    if (!summary) return;
+
+    const totalEl = summary.querySelector('[data-reaction-total]');
+    if (totalEl && typeof totalCount !== 'undefined') totalEl.textContent = totalCount;
+
+    toggleReactionIcon(summary, 'like', reactionCounts.like || 0);
+    toggleReactionIcon(summary, 'love', reactionCounts.love || 0);
+    toggleReactionIcon(summary, 'haha', reactionCounts.haha || 0);
+}
+
+function toggleReactionIcon(summary, type, count) {
+    const icon = summary.querySelector(`[data-reaction-type="${type}"]`);
+    if (!icon) return;
+
+    icon.style.display = count > 0 ? 'inline-flex' : 'none';
+}
+
+function updateReactionToggle(dropdown, reactionType) {
+    const toggle = dropdown.querySelector('.reaction-toggle');
+    if (!toggle) return;
+
+    const emoji = toggle.querySelector('.reaction-emoji');
+    const label = toggle.querySelector('.reaction-label');
+
+    toggle.classList.remove('active');
+    toggle.classList.remove('muted');
+
+    switch (reactionType) {
+        case 'love':
+            emoji.textContent = '❤️';
+            label.textContent = 'Love';
+            toggle.classList.add('active');
+            break;
+        case 'haha':
+            emoji.textContent = '😂';
+            label.textContent = 'Haha';
+            toggle.classList.add('active');
+            break;
+        case 'like':
+            emoji.textContent = '👍';
+            label.textContent = 'Like';
+            toggle.classList.add('active');
+            break;
+        default:
+            emoji.textContent = '👍';
+            label.textContent = 'Like';
+            toggle.classList.add('muted');
+            break;
+    }
 }
 
 // Initialize on page load
@@ -79,7 +128,7 @@ document.addEventListener('turbo:render', initializeMicropostLikes);
 // Open modal showing likers when clicking likes count
 function initializeLikersModal() {
     document.addEventListener('click', function (e) {
-        const el = e.target.closest('.like-count');
+        const el = e.target.closest('.reaction-summary, .like-count');
         if (!el) return;
 
         e.preventDefault();
@@ -113,11 +162,34 @@ function initializeLikersModal() {
                     return;
                 }
                 showModalWithContent(data.html);
+                initializeReactionTabs();
             })
             .catch(err => {
                 console.error('Fetch error:', err);
                 alert('Could not load likes list: ' + err.message);
             });
+    });
+}
+
+function initializeReactionTabs() {
+    const tabs = document.querySelectorAll('.reaction-tab');
+    const listItems = document.querySelectorAll('.reaction-list [data-reaction-type]');
+    if (!tabs.length || !listItems.length) return;
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            tabs.forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+
+            const filter = this.dataset.filter;
+            listItems.forEach(item => {
+                if (filter === 'all' || item.dataset.reactionType === filter) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
     });
 }
 

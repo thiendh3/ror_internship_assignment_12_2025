@@ -4,28 +4,38 @@ class LikesController < ApplicationController
 
   # GET /microposts/:id/likes
   def index
-    @likers = @micropost.liked_by_users.limit(500)
+    likes = @micropost.likes.includes(:user).limit(500)
     # Force rendering the partial as HTML even when request.format == :json
-    html = render_to_string(partial: 'likes/list', locals: { likers: @likers }, formats: [:html])
+    html = render_to_string(partial: 'likes/list', locals: { likes: likes }, formats: [:html])
     render json: { html: html }
   rescue StandardError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
 
   def create
-    if @micropost.liked_by?(current_user)
-      render json: { error: 'Already liked' }, status: :unprocessable_entity
-      return
+    reaction_type = params[:reaction_type].presence || 'like'
+
+    existing_like = @micropost.likes.find_by(user_id: current_user.id)
+    if existing_like
+      if existing_like.reaction_type == reaction_type
+        render json: { error: 'Already reacted' }, status: :unprocessable_entity
+        return
+      end
+      existing_like.update(reaction_type: reaction_type)
+    else
+      @micropost.like!(current_user, reaction_type)
     end
 
-    @micropost.like!(current_user)
-
     # Create notification
-    NotificationService.create_like_notification(current_user, @micropost)
+    NotificationService.create_like_notification(current_user, @micropost, reaction_type)
+
+    broadcast_reaction_update
 
     render json: {
       liked: true,
-      likes_count: @micropost.likes_count
+      reaction_type: reaction_type,
+      likes_count: @micropost.likes_count,
+      reaction_counts: @micropost.reaction_counts
     }, status: :created
   rescue StandardError => e
     render json: { error: e.message }, status: :unprocessable_entity
@@ -42,9 +52,12 @@ class LikesController < ApplicationController
     # Remove notification
     NotificationService.remove_like_notification(current_user, @micropost)
 
+    broadcast_reaction_update
+
     render json: {
       liked: false,
-      likes_count: @micropost.likes_count
+      likes_count: @micropost.likes_count,
+      reaction_counts: @micropost.reaction_counts
     }, status: :ok
   rescue StandardError => e
     render json: { error: e.message }, status: :unprocessable_entity
@@ -56,5 +69,17 @@ class LikesController < ApplicationController
     @micropost = Micropost.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Micropost not found' }, status: :not_found
+  end
+
+  def broadcast_reaction_update
+    ActionCable.server.broadcast(
+      'microposts',
+      {
+        type: 'reaction',
+        micropost_id: @micropost.id,
+        reaction_counts: @micropost.reaction_counts,
+        likes_count: @micropost.likes_count
+      }
+    )
   end
 end

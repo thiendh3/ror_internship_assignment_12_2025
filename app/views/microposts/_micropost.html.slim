@@ -41,30 +41,45 @@
           = link_to "##{hashtag.name}", root_path(hashtag: hashtag.name), class: "hashtag-badge"
   
   .micropost-footer
+    - reaction_counts = micropost.reaction_counts
+    - total_reactions = micropost.likes_count
     .post-stats
-      span.stat-item
-        i.glyphicon.glyphicon-heart
-        span.stat-count.like-count data-micropost-id=micropost.id
-          = micropost.likes_count
+      span.stat-item.reaction-summary data-micropost-id=micropost.id role="button" tabindex="0" title="View reactions"
+        span.reaction-icon.badge-like title="Like" data-reaction-type="like" style=(reaction_counts['like'].to_i.zero? ? 'display: none;' : nil)
+          | 👍
+        span.reaction-icon.badge-love title="Love" data-reaction-type="love" style=(reaction_counts['love'].to_i.zero? ? 'display: none;' : nil)
+          | ❤️
+        span.reaction-icon.badge-haha title="Haha" data-reaction-type="haha" style=(reaction_counts['haha'].to_i.zero? ? 'display: none;' : nil)
+          | 😂
+        span.reaction-total data-reaction-total=true
+          = total_reactions
       span.stat-item
         i.glyphicon.glyphicon-comment
         span.stat-count.comment-count data-micropost-id=micropost.id
           = micropost.comments.count
     
     .post-interactions
+      - current_reaction = logged_in? ? micropost.reaction_for(current_user) : nil
+      - reaction_label = current_reaction.present? ? current_reaction.titleize : 'Like'
+      - reaction_emoji = { 'love' => '❤️', 'haha' => '😂', 'like' => '👍' }[current_reaction] || '👍'
+      - reaction_active = current_reaction.present?
       - if logged_in?
-        - if micropost.liked_by?(current_user)
-          button.btn-interaction.like-btn.liked data-micropost-id=micropost.id data-action="unlike"
-            i.glyphicon.glyphicon-heart
-            span Unlike
-        - else
-          button.btn-interaction.like-btn data-micropost-id=micropost.id data-action="like"
-            i.glyphicon.glyphicon-heart-empty
-            span Like
+        .reaction-dropdown data-micropost-id=micropost.id data-current-reaction=current_reaction
+          button.btn-interaction.reaction-toggle class=(reaction_active ? 'active' : 'muted')
+            span.reaction-emoji = reaction_emoji
+            span.reaction-label = reaction_label
+          .reaction-menu
+            button.btn-interaction.reaction-option data-reaction-type="like" title="Like"
+              span.reaction-emoji 👍
+            button.btn-interaction.reaction-option data-reaction-type="love" title="Love"
+              span.reaction-emoji ❤️
+            button.btn-interaction.reaction-option data-reaction-type="haha" title="Haha"
+              span.reaction-emoji 😂
       - else
-        button.btn-interaction.like-btn disabled=true
-          i.glyphicon.glyphicon-heart-empty
-          span Like
+        .reaction-dropdown
+          button.btn-interaction.reaction-toggle.muted disabled=true
+            span.reaction-emoji 👍
+            span.reaction-label Like
       button.btn-interaction.comment-btn data-micropost-id=micropost.id
         i.glyphicon.glyphicon-comment
         span Comment

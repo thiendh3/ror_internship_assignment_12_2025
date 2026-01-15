@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_15_153845) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_15_174159) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -62,7 +62,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_15_153845) do
     t.bigint "micropost_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "reaction_type", default: 0, null: false
     t.index ["micropost_id"], name: "index_likes_on_micropost_id"
+    t.index ["reaction_type"], name: "index_likes_on_reaction_type"
     t.index ["user_id", "micropost_id"], name: "index_likes_on_user_id_and_micropost_id", unique: true
     t.index ["user_id"], name: "index_likes_on_user_id"
   end

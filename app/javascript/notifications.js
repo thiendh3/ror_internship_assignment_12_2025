@@ -87,6 +87,10 @@ function showToastNotification(data) {
     let message = '';
     if (data.type === 'like') {
         message = `<strong>${data.actor.name}</strong> liked your post`;
+    } else if (data.type === 'love') {
+        message = `<strong>${data.actor.name}</strong> loved your post`;
+    } else if (data.type === 'haha') {
+        message = `<strong>${data.actor.name}</strong> reacted 😂 to your post`;
     } else if (data.type === 'comment') {
         message = `<strong>${data.actor.name}</strong> commented on your post`;
     } else if (data.type === 'mention') {
@@ -178,6 +182,10 @@ function renderNotifications(notifications) {
         let message = '';
         if (notif.type === 'like') {
             message = `<strong>${notif.actor.name}</strong> liked your post`;
+        } else if (notif.type === 'love') {
+            message = `<strong>${notif.actor.name}</strong> loved your post`;
+        } else if (notif.type === 'haha') {
+            message = `<strong>${notif.actor.name}</strong> reacted 😂 to your post`;
         } else if (notif.type === 'comment') {
             message = `<strong>${notif.actor.name}</strong> commented on your post`;
         } else if (notif.type === 'mention') {

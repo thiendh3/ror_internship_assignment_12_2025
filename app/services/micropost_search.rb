@@ -62,20 +62,26 @@ class MicropostSearch
     escaped = RSolr.solr_escape(cleaned)
     return if escaped.blank?
 
-    if cleaned.length < 3
-      build_short_token_query(escaped)
+    if cleaned.length < 2
+      build_prefix_query(escaped)
     else
-      build_long_token_query(escaped)
+      build_fuzzy_prefix_query(escaped, fuzzy_distance(cleaned.length))
     end
   end
 
-  def self.build_short_token_query(escaped)
+  def self.build_prefix_query(escaped)
     field_queries = SEARCH_FIELDS.map { |f| "#{f}:#{escaped}*" }
     "(#{field_queries.join(' OR ')})"
   end
 
-  def self.build_long_token_query(escaped)
-    field_queries = SEARCH_FIELDS.map { |f| "#{f}:(#{escaped}~1 OR #{escaped}*)" }
+  def self.build_fuzzy_prefix_query(escaped, distance)
+    field_queries = SEARCH_FIELDS.map { |f| "#{f}:(#{escaped}~#{distance} OR #{escaped}*)" }
     "(#{field_queries.join(' OR ')})"
+  end
+
+  def self.fuzzy_distance(length)
+    return 1 if length < 5
+
+    2
   end
 end

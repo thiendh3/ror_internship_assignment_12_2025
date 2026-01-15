@@ -1,41 +1,47 @@
 class NotificationService
-  # Create notification when someone likes a micropost
-  def self.create_like_notification(liker, micropost)
-    # Don't notify if user likes their own post
+  # Create notification when someone reacts to a micropost
+  def self.create_like_notification(liker, micropost, reaction_type = 'like')
+    # Don't notify if user reacts to their own post
     return if liker.id == micropost.user_id
 
-    # Check if notification already exists (avoid duplicates)
+    reaction_type = reaction_type.to_s
+
     existing = Notification.find_by(
       recipient_id: micropost.user_id,
       actor_id: liker.id,
       notifiable: micropost,
-      notification_type: 'like'
+      notification_type: %w[like love haha]
     )
 
-    return existing if existing
+    if existing
+      existing.update(
+        notification_type: reaction_type,
+        content: reaction_message(liker, micropost, reaction_type)
+      )
+      broadcast_notification(existing)
+      return existing
+    end
 
-    # Create new notification
     notification = Notification.create(
       recipient_id: micropost.user_id,
       actor_id: liker.id,
       notifiable: micropost,
-      notification_type: 'like',
-      content: "#{liker.name} liked your post: #{micropost.content.truncate(50)}"
+      notification_type: reaction_type,
+      content: reaction_message(liker, micropost, reaction_type)
     )
 
-    # Broadcast to recipient via WebSocket
     broadcast_notification(notification) if notification.persisted?
 
     notification
   end
 
-  # Delete notification when someone unlikes
+  # Delete notification when someone removes reaction
   def self.remove_like_notification(unliker, micropost)
     Notification.where(
       recipient_id: micropost.user_id,
       actor_id: unliker.id,
       notifiable: micropost,
-      notification_type: 'like'
+      notification_type: %w[like love haha]
     ).destroy_all
   end
 
@@ -76,6 +82,19 @@ class NotificationService
       type: notifiable_type,
       content: notifiable.respond_to?(:content) ? notifiable.content : nil
     }
+  end
+
+  def self.reaction_message(liker, micropost, reaction_type)
+    verb = case reaction_type
+           when 'love'
+             'loved'
+           when 'haha'
+             'reacted 😂 to'
+           else
+             'liked'
+           end
+
+    "#{liker.name} #{verb} your post: #{micropost.content.truncate(50)}"
   end
 
   # Create notification when someone comments

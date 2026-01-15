@@ -22,11 +22,16 @@ function initializeMicropostRealtime() {
             },
 
             received(data) {
+                if (data.type === "reaction") {
+                    updateReactionCountsRealtime(data);
+                    return;
+                }
+
                 console.log("Received new micropost:", data);
 
                 // Don't show notification for own posts
                 const currentUserId = getCurrentUserId();
-                if (currentUserId && data.user.id === currentUserId) {
+                if (currentUserId && data.user && data.user.id === currentUserId) {
                     // Add directly to feed for own posts
                     prependMicropostToFeed(data.html);
                     return;
@@ -100,6 +105,32 @@ function updateNewPostsBanner() {
         this.style.background = '#1da1f2';
         this.style.transform = 'translateX(-50%) scale(1)';
     };
+}
+
+function updateReactionCountsRealtime(data) {
+    const { micropost_id: micropostId, reaction_counts: reactionCounts, likes_count: likesCount } = data;
+    if (!micropostId) return;
+
+    const summary = document.querySelector(
+        `.reaction-summary[data-micropost-id="${micropostId}"]`
+    );
+    if (!summary) return;
+
+    if (reactionCounts) {
+        toggleReactionIcon(summary, "like", reactionCounts.like || 0);
+        toggleReactionIcon(summary, "love", reactionCounts.love || 0);
+        toggleReactionIcon(summary, "haha", reactionCounts.haha || 0);
+    }
+
+    const totalEl = summary.querySelector('[data-reaction-total]');
+    if (totalEl && typeof likesCount !== "undefined") totalEl.textContent = likesCount;
+}
+
+function toggleReactionIcon(summary, type, count) {
+    const icon = summary.querySelector(`[data-reaction-type="${type}"]`);
+    if (!icon) return;
+
+    icon.style.display = count > 0 ? "inline-flex" : "none";
 }
 
 function loadNewPosts() {
