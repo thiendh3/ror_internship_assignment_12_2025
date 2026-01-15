@@ -7,11 +7,15 @@ class Notification < ApplicationRecord
 
   private
     def broadcast_notification
+      gravatar_id = Digest::MD5::hexdigest(actor.email.downcase)
+      avatar_url = "https://secure.gravatar.com/avatar/#{gravatar_id}?s=30"
+
       NotificationChannel.broadcast_to(
         recipient,
         {
           action: action,
           actor_name: actor.name,
+          actor_avatar_url: avatar_url,
           notifiable_type: notifiable_type,
           created_at: created_at.strftime("%b %d, %H:%M")
         }

@@ -16,21 +16,31 @@ header.navbar.navbar-fixed-top.navbar-inverse
           
           / Notification Dropdown
           li.dropdown
-            a.dropdown-toggle#notification-toggle href="#" data-toggle="dropdown" data-url=mark_as_read_notifications_path
-              | Notifications 
-              - unread_count = current_user.notifications.where(read_at: nil).count
-              span.badge.badge-danger#notification-count style=("display: none" if unread_count == 0)
-                = unread_count
-              b.caret
-            ul.dropdown-menu#notification-list style="min-width: 250px;"
-              li.dropdown-header Recent Activity
-              li.divider
-              #notifications-container
-                - if current_user.notifications.any?
-                  - current_user.notifications.includes(:actor).order(created_at: :desc).limit(10).each do |notification|
-                    li = link_to "#{notification.actor.name} #{notification.action} you", "#"
-                - else
-                  li.text-center.small#no-notifications No new notifications
+						a.dropdown-toggle#notification-toggle href="#" data-toggle="dropdown" data-url=mark_as_read_notifications_path
+							| Notifications 
+							- unread_count = current_user.notifications.where(read_at: nil).count
+							span.badge.badge-danger#notification-count style=("display: none" if unread_count == 0)
+								= unread_count
+							b.caret
+						ul.dropdown-menu#notification-list style="min-width: 300px; padding: 0;"
+							li.dropdown-header.notification-header
+								span Recent Activity
+								- if unread_count > 0
+									span.label.label-primary.pull-right = "#{unread_count} new"
+							li.divider style="margin: 0;"
+							#notifications-container
+								- if current_user.notifications.any?
+									- current_user.notifications.includes(:actor).order(created_at: :desc).limit(10).each do |notification|
+										li class=(notification.read_at.nil? ? "unread-notification" : "")
+											= link_to "#", class: "notification-item" do
+												= gravatar_for(notification.actor, size: 30)
+												.notification-content
+													span.notification-text 
+														strong = notification.actor.name
+														|  #{notification.action} you
+													span.notification-time = notification.created_at.strftime("%b %d, %H:%M")
+								- else
+									li.text-center.small#no-notifications style="padding: 10px;" No new notifications
           
           li.dropdown
             a.dropdown-toggle href="#" data-toggle="dropdown"

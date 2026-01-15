@@ -18,7 +18,19 @@ consumer.subscriptions.create("NotificationChannel", {
 
 		if (noNotifMessage) noNotifMessage.remove();
 
-		const newNotificationHtml = `<li><a href="#">${data.actor_name} ${data.action} you</a></li>`;
+		// Updated HTML to include avatar and matching structure
+		const newNotificationHtml = `
+        <li class="unread-notification">
+            <a href="#" class="notification-item">
+                <img src="${data.actor_avatar_url}" class="gravatar" style="width: 30px; height: 30px;">
+                <div class="notification-content">
+                    <span class="notification-text">
+                        <strong>${data.actor_name}</strong> ${data.action} you
+                    </span>
+                    <span class="notification-time">${data.created_at}</span>
+                </div>
+            </a>
+        </li>`;
 		if (container) {
 			container.insertAdjacentHTML("afterbegin", newNotificationHtml);
 		}
