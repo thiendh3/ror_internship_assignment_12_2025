@@ -5,6 +5,20 @@
       h1
         = gravatar_for @user
         = @user.name
+
+    - if @user.bio.present?
+        div style="margin-top: 10px; color: #555; font-style: italic;"
+          = @user.bio
+
+    - if current_user?(@user)
+      section.edit_profile_btn style="margin-top: 10px; margin-bottom: 20px;"
+        - edit_opts = { \
+            controller: "edit-profile", \
+            edit_profile_url_value: edit_modal_user_path(@user), \
+            action: "click->edit-profile#load" \
+          }
+        = link_to "Edit Profile", "#", class: "btn btn-default btn-block", data: edit_opts
+
     section.stats
       = render 'shared/stats', target_frame: "users_content"
       

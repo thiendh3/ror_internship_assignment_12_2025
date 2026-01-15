@@ -32,13 +32,32 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
   end
 
+  def edit_modal
+    @user = User.find(params[:id])
+    render layout: false
+  end
+
   def update
     @user = User.find(params[:id])
     if @user.update(user_params)
       flash[:success] = "Profile is updated"
-      redirect_to @user
+      
+      respond_to do |format|
+        format.html { redirect_to @user }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "edit_user_form", 
+            "<script>window.location.href = '#{user_path(@user)}'</script>".html_safe
+          )
+        end
+      end
     else
-      render 'edit'
+      respond_to do |format|
+        format.html { render 'edit', status: :unprocessable_entity }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace("edit_user_form", partial: "users/form_modal")
+        end
+      end
     end
   end
 
@@ -170,7 +189,7 @@ class UsersController < ApplicationController
   private
     #Strong param
     def user_params
-      params.require(:user).permit(:name, :email, :password, :password_confirmation)
+      params.require(:user).permit(:name, :email, :password, :password_confirmation, :bio)
     end
 
 
