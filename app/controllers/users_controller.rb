@@ -91,8 +91,6 @@ class UsersController < ApplicationController
     
     # Store total found count for the view
     @total_found = result[:total]
-
-    @is_search_mode = true
   end
 
   def destroy
@@ -131,7 +129,6 @@ class UsersController < ApplicationController
 
     users = User.where(id: result[:ids])
 
-    # --- REAL-WORLD QUERY SUGGESTIONS LOGIC ---
     # Instead of full names, we suggest the specific word/token being typed
     # or broad categories (like just the First Name)
     suggested_queries = users.map do |u|
@@ -145,7 +142,6 @@ class UsersController < ApplicationController
       matching_word ? matching_word.capitalize : nil
     end.compact.uniq.first(3)
 
-    # --- INSTANT USER RESULTS ---
     users_by_id = users.index_by(&:id)
     ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
 
