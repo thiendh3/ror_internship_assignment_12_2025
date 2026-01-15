@@ -1,9 +1,9 @@
 source "https://rubygems.org"
 
-ruby "3.0.6"
+ruby "3.2.0"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 7.1.3", ">= 7.1.3.3"
+gem "rails", "~> 7.2.3"
 gem 'bootstrap-sass'
 gem "bcrypt"
 gem "slim-rails"
@@ -16,7 +16,7 @@ gem 'active_storage_validations'
 gem 'image_processing'
 gem 'mini_magick'
 gem 'searchkick'
-gem 'rsolr'
+gem 'elasticsearch', '~> 8.0'
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
 gem "sprockets-rails"
@@ -59,9 +59,14 @@ gem "bootsnap", require: false
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
-  #gem "debug", platforms: %i[ mri mswin mswin64 mingw x64_mingw ]
+  # gem "debug", platforms: %i[ mri mswin mswin64 mingw x64_mingw ]
   gem "mysql2", "~> 0.5"
-  gem 'byebug', platforms:[:mri, :mingw, :x64_mingw]
+  gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+
+  # RuboCop and extensions for static code analysis
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
+  gem 'rubocop-rspec', require: false
 end
 
 group :development do
@@ -70,6 +75,7 @@ group :development do
   gem "listen"
   gem "spring"
   gem "spring-watcher-listen"
+  gem "letter_opener_web" # Web interface for viewing emails at /letter_opener
 
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
   # gem "rack-mini-profiler"
@@ -82,4 +88,5 @@ group :test do
   # Use system testing [https://guides.rubyonrails.org/testing.html#system-testing]
   gem "capybara"
   gem "selenium-webdriver"
+  gem "minitest", "~> 5.20"
 end

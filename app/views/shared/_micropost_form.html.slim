@@ -1,10 +1,14 @@
 = form_with(model: @micropost, local: true, data: {turbo: false}) do |f|
   = render 'shared/error_messages', object: f.object
-  .field
-    = f.text_area :content, placeholder: "Compose new micropost..."
-  = f.submit "Post", class: "btn btn-primary"
-  span.image
-    = f.file_field :image, accept: "image/jpeg,image/gif,image/png"
+  .field.micropost-form-container data-controller="autocomplete"
+    = f.text_area :content, placeholder: "Compose new micropost... Use #hashtags and @mentions", rows: 3, class: "form-control", data: { action: "input->autocomplete#onInput keydown->autocomplete#onKeyDown" }
+  .field.mt-2
+    = f.select :privacy, Micropost.privacies.keys.map { |k| [k.humanize, k] }, {}, class: "form-select"
+  .field.mt-2
+    span.image
+      = f.file_field :image, accept: "image/jpeg,image/gif,image/png", class: "form-control"
+  .field.mt-2
+    = f.submit "Post", class: "btn btn-primary"
 
 javascript:
   $("#micropost_image").bind("change", function(){

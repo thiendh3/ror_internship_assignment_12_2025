@@ -1,0 +1,23 @@
+- provide(:title, 'Search Results')
+
+.row
+  .col-md-8.offset-md-2
+    .search-results
+      h2.mb-4
+        | Search Results
+        - if params[:hashtag].present?
+          |  for ##{params[:hashtag]}
+        - elsif @query.present?
+          |  for "#{@query}"
+      
+      - if @microposts.any?
+        p.text-muted= "#{@microposts.count} #{@microposts.count == 1 ? 'result' : 'results'} found"
+        
+        .microposts-list
+          = render @microposts
+      - else
+        .alert.alert-info
+          | No microposts found. Try different search terms.
+        
+        .mt-3
+          = link_to 'Back to Home', root_path, class: 'btn btn-primary'

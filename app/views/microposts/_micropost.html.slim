@@ -1,12 +1,91 @@
-li id="micropost-#{micropost.id}"
-  = link_to gravatar_for(micropost.user, size: 50), micropost.user
-  span.user
-    = link_to micropost.user.name, micropost.user
-  span.content
-    = micropost.content
+.micropost-card id="micropost-#{micropost.id}" data-controller="micropost" data-micropost-id=micropost.id
+  .micropost-header
+    .d-flex.align-items-center
+      = link_to gravatar_for(micropost.user, size: 40), micropost.user, class: "micropost-avatar"
+      .micropost-user-info
+        = link_to micropost.user.name, micropost.user, class: "micropost-username"
+        .micropost-timestamp
+          = time_ago_in_words(micropost.created_at) 
+          |  ago
+          - if micropost.privacy != 'public_post'
+            span.privacy-badge class="badge-#{micropost.privacy}"
+              = micropost.privacy.humanize
+    .micropost-actions-menu
+      - if current_user?(micropost.user)
+        .dropdown
+          a.btn.btn-link.dropdown-toggle href="#" data-toggle="dropdown" aria-expanded="false"
+            i.fa.fa-ellipsis-h
+          ul.dropdown-menu.dropdown-menu-right
+            li
+              a href="#" data-action="click->micropost#edit" Edit
+            li
+              a href="#" data-action="click->micropost#delete" Delete
+
+  .micropost-body
+    .micropost-content data-content=micropost.content
+      = render_micropost_content(micropost.content)
     - if micropost.image.attached?
-      = image_tag micropost.display_image
-  span.timestamp
-    | Posted #{time_ago_in_words(micropost.created_at)} ago.
-    - if current_user?(micropost.user)
-      = link_to "delete", micropost, method: :delete, data: {confirm: "Are you sure?"}
+      .micropost-image
+        = image_tag micropost.display_image, class: "img-fluid"
+    
+    - if micropost.hashtags.any?
+      .micropost-hashtags.mt-2
+        - micropost.hashtags.each do |hashtag|
+          = link_to "##{hashtag.name}", search_microposts_path(q: "##{hashtag.name}"), class: "hashtag-link"
+
+  .micropost-footer
+    .micropost-stats
+      span.likes-count data-count=micropost.likes_count
+        i.far.fa-heart
+        = " #{micropost.likes_count}"
+      span.comments-count data-count=micropost.comments_count
+        i.far.fa-comment
+        = " #{micropost.comments_count}"
+    
+    .micropost-interaction-buttons
+      button.btn.btn-sm.like-btn class=(micropost.liked_by?(current_user) ? 'liked' : '') data-controller="like" data-micropost-id=micropost.id data-action="click->like#toggle" data-like-id=(micropost.like_for(current_user)&.id)
+        i class=(micropost.liked_by?(current_user) ? 'fa' : 'fa') + ' fa-heart'
+        = " Like"
+      button.btn.btn-sm.comment-btn data-toggle="collapse" data-target="#comments-section-#{micropost.id}"
+        i.fa.fa-comment
+        = " Comment"
+      .dropdown.d-inline-block
+        button.btn.btn-sm.share-btn.dropdown-toggle data-toggle="dropdown" aria-expanded="false"
+          i.fa.fa-share
+          = " Share "
+          span.caret
+        ul.dropdown-menu
+          li
+            = link_to micropost_path(micropost)
+              i.fa.fa-eye
+              |  View Details
+          li
+            a href="#" data-micropost-id=micropost.id data-action="click->micropost#copyLink"
+              i.fa.fa-link
+              |  Copy Link
+          li.divider
+          li
+            a href="#" data-micropost-id=micropost.id data-action="click->micropost#shareTwitter"
+              i.fa.fa-twitter
+              |  Share on Twitter
+          li
+            a href="#" data-micropost-id=micropost.id data-action="click->micropost#shareFacebook"
+              i.fa.fa-facebook
+              |  Share on Facebook
+  
+  .micropost-comments-section.collapse id="comments-section-#{micropost.id}" data-controller="comment" data-micropost-id=micropost.id data-action="show.bs.collapse->comment#load"
+    .comments-list id="comments-list-#{micropost.id}"
+      .text-center.py-3
+        .spinner-border.spinner-border-sm role="status"
+          span.visually-hidden Loading...
+    .comment-form.mt-3
+      - if logged_in?
+        = form_with model: Comment.new, url: micropost_comments_path(micropost), class: "comment-form-ajax", data: { controller: "autocomplete", action: "submit->comment#submit" } do |f|
+          .input-group.micropost-form-container
+            = f.text_field :content, class: "form-control", placeholder: "Write a comment...", autocomplete: "off", required: true, data: { action: "input->autocomplete#onInput keydown->autocomplete#onKeyDown" }
+            = f.submit "Post", class: "btn btn-primary"
+      - else
+        .alert.alert-info.mb-0
+          | Please 
+          = link_to "login", login_path
+          |  to comment.
