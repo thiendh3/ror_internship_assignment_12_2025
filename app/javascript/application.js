@@ -2,5 +2,7 @@
 import "@hotwired/turbo-rails"
 import "controllers"
 import "channels/notifications_channel"
+import "channels/microposts_channel"
+import "./microposts"
 import Rails from "@rails/ujs"
 Rails.start()

@@ -1,16 +1,18 @@
-= form_with(model: @micropost, local: true, data: {turbo: false}) do |f|
-  = render 'shared/error_messages', object: f.object
+form#micropost-form action="/microposts" method="post" enctype="multipart/form-data" data-turbo="false" onsubmit="return false;"
+  = hidden_field_tag :authenticity_token, form_authenticity_token
+  = render 'shared/error_messages', object: @micropost
   .field
-    = f.text_area :content, placeholder: "Compose new micropost..."
-  = f.submit "Post", class: "btn btn-primary"
-  span.image
-    = f.file_field :image, accept: "image/jpeg,image/gif,image/png"
+    textarea#micropost_content.form-control name="micropost[content]" placeholder="Compose new micropost..."
+  .mt-2
+    button#micropost-submit-btn.btn.btn-primary type="button" Post
+    span.image.ms-2
+      input#micropost_image type="file" name="micropost[image]" accept="image/jpeg,image/gif,image/png"
 
 javascript:
-  $("#micropost_image").bind("change", function(){
+  document.getElementById("micropost_image")?.addEventListener("change", function(){
     const size_in_megabytes = this.files[0].size/1024/1024;
     if (size_in_megabytes > 5){
       alert("Maximum file size is 5MB. Please choose a smaller file.");
-      $("#micropost_image").val("");
+      this.value = "";
     }
   })

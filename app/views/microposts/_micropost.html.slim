@@ -1,12 +1,20 @@
-li id="micropost-#{micropost.id}"
-  = link_to gravatar_for(micropost.user, size: 50), micropost.user
-  span.user
-    = link_to micropost.user.name, micropost.user
-  span.content
-    = micropost.content
+li id="micropost-#{micropost.id}" class="micropost-item micropost-clickable" data-micropost-id="#{micropost.id}" style="cursor: pointer;"
+  .micropost-header
+    = link_to gravatar_for(micropost.user, size: 50), micropost.user, onclick: "event.stopPropagation();"
+    .micropost-user-info
+      span.user
+        = link_to micropost.user.name, micropost.user, onclick: "event.stopPropagation();"
+      span.timestamp
+        | #{time_ago_in_words(micropost.created_at)} ago
+  .micropost-body
+    span.content
+      = micropost.content
     - if micropost.image.attached?
-      = image_tag micropost.display_image
-  span.timestamp
-    | Posted #{time_ago_in_words(micropost.created_at)} ago.
-    - if current_user?(micropost.user)
-      = link_to "delete", micropost, method: :delete, data: {confirm: "Are you sure?"}
+      .micropost-image.mt-2
+        = image_tag micropost.display_image, class: "img-fluid"
+  - if current_user?(micropost.user)
+    .micropost-actions.mt-2 onclick="event.stopPropagation();"
+      button.btn.btn-link.btn-sm.micropost-edit data-micropost-id="#{micropost.id}" title="Edit"
+        | ✏️ Edit
+      button.btn.btn-link.btn-sm.text-danger.micropost-delete data-micropost-id="#{micropost.id}" title="Delete"
+        | 🗑️ Delete
