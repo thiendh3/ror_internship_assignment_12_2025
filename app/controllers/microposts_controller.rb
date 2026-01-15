@@ -9,6 +9,22 @@ class MicropostsController < ApplicationController
     
     respond_to do |format|
       if @micropost.save
+        # Broadcast new micropost to all connected users
+        ActionCable.server.broadcast(
+          "microposts",
+          {
+            id: @micropost.id,
+            user: {
+              id: @micropost.user.id,
+              name: @micropost.user.name,
+              gravatar_url: @micropost.user.gravatar_url
+            },
+            content: @micropost.content,
+            created_at: @micropost.created_at,
+            html: render_to_string(partial: 'microposts/micropost', locals: { micropost: @micropost }, formats: [:html])
+          }
+        )
+        
         format.html {
           flash[:success] = "Micropost created!"
           redirect_to root_url
@@ -25,9 +41,26 @@ class MicropostsController < ApplicationController
   end
 
   def show
+    @comments = @micropost.comments.includes(:user).order(created_at: :asc)
+    
     respond_to do |format|
-      format.html { redirect_to root_url }
-      format.json { render json: { micropost: @micropost.as_json(include: { user: { only: [:id, :name] }, hashtags: { only: [:name] } }, methods: [:display_image_url]) } }
+      format.html # Will render show.html.slim
+      format.json { 
+        render json: { 
+          micropost: @micropost.as_json(
+            include: { 
+              user: { only: [:id, :name], methods: [:gravatar_url] }, 
+              hashtags: { only: [:name] },
+              comments: {
+                include: {
+                  user: { only: [:id, :name], methods: [:gravatar_url] }
+                }
+              }
+            }, 
+            methods: [:display_image_url, :likes_count]
+          ) 
+        } 
+      }
     end
   end
 

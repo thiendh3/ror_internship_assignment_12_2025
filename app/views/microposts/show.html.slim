@@ -1,0 +1,34 @@
+- provide(:title, "Post by #{@micropost.user.name}")
+
+.row
+  .col-md-8.col-md-offset-2
+    .micropost-detail-page
+      .back-navigation
+        = link_to root_path, class: "back-link" do
+          i.glyphicon.glyphicon-arrow-left
+          span Back to Feed
+      
+      .micropost-detail-container
+        = render partial: 'microposts/micropost', locals: { micropost: @micropost }
+      
+      / Engagement Section
+      .engagement-section
+        .engagement-stats
+          .stat-item
+            i.glyphicon.glyphicon-heart
+            span.stat-number = @micropost.likes_count
+            span.stat-label = pluralize(@micropost.likes_count, 'like')
+          .stat-item
+            i.glyphicon.glyphicon-comment
+            span.stat-number = @micropost.comments.count
+            span.stat-label = pluralize(@micropost.comments.count, 'comment')
+        
+        - if @micropost.likes.any?
+          .likes-preview
+            span.likes-text Liked by
+            - @micropost.likes.limit(3).each do |like|
+              = link_to like.user.name, like.user, class: "liker-name"
+              - if like != @micropost.likes.limit(3).last
+                span.separator ,
+            - if @micropost.likes_count > 3
+              span.and-more and #{@micropost.likes_count - 3} others

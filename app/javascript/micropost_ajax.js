@@ -92,10 +92,12 @@ function initializeMicropostAjax() {
 
     // Show micropost in modal
     document.addEventListener('click', function (e) {
-        if (e.target.classList.contains('view-micropost')) {
+        if (e.target.classList.contains('view-micropost') || e.target.closest('.view-micropost')) {
             e.preventDefault();
-            const micropostId = e.target.dataset.micropostId;
+            const btn = e.target.classList.contains('view-micropost') ? e.target : e.target.closest('.view-micropost');
+            const micropostId = btn.dataset.micropostId;
 
+            // Fetch micropost data via AJAX
             fetch(`/microposts/${micropostId}`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -257,16 +259,13 @@ function showMicropostModal(micropost) {
         modal.id = 'micropost-modal';
         modal.className = 'modal fade';
         modal.innerHTML = `
-      <div class="modal-dialog">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal">&times;</button>
-            <h4 class="modal-title">Micropost Details</h4>
+            <h4 class="modal-title">Post Details</h4>
           </div>
           <div class="modal-body"></div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-          </div>
         </div>
       </div>
     `;
@@ -275,28 +274,80 @@ function showMicropostModal(micropost) {
 
     // Populate modal
     const modalBody = modal.querySelector('.modal-body');
+
     let imageHtml = '';
     if (micropost.display_image_url) {
-        imageHtml = `<img src="${micropost.display_image_url}" class="img-responsive" style="margin: 10px 0;">`;
+        imageHtml = `
+            <div class="micropost-modal-image">
+                <img src="${micropost.display_image_url}" class="img-responsive" style="border-radius: 8px; margin: 15px 0;">
+            </div>
+        `;
     }
 
     const hashtagsHtml = micropost.hashtags && micropost.hashtags.length > 0
-        ? micropost.hashtags.map(h => `<span class="hashtag-badge">#${h.name}</span>`).join(' ')
+        ? `<div class="micropost-modal-hashtags">${micropost.hashtags.map(h => `<span class="hashtag-badge">#${h.name}</span>`).join(' ')}</div>`
         : '';
 
+    const commentsHtml = micropost.comments && micropost.comments.length > 0
+        ? `
+            <div class="micropost-modal-comments">
+                <h5 style="margin-top: 20px; margin-bottom: 15px; font-weight: 600;">Comments (${micropost.comments.length})</h5>
+                ${micropost.comments.map(comment => `
+                    <div class="comment-item" style="display: flex; gap: 10px; margin-bottom: 12px;">
+                        <img src="${comment.user.gravatar_url}" style="width: 32px; height: 32px; border-radius: 50%;">
+                        <div style="flex: 1; background: #f0f2f5; padding: 8px 12px; border-radius: 18px;">
+                            <div style="font-weight: 600; font-size: 13px;">${comment.user.name}</div>
+                            <div style="font-size: 14px; color: #050505;">${escapeHtml(comment.content)}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `
+        : '<div style="margin-top: 20px; color: #657786; font-size: 14px;">No comments yet</div>';
+
     modalBody.innerHTML = `
-    <div class="micropost-detail">
-      <p><strong>Author:</strong> ${micropost.user.name}</p>
-      <p><strong>Content:</strong></p>
-      <p>${micropost.content}</p>
+    <div class="micropost-modal-detail">
+      <div class="micropost-modal-header" style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+        <img src="${micropost.user.gravatar_url}" style="width: 48px; height: 48px; border-radius: 50%;">
+        <div>
+          <div style="font-weight: 600; font-size: 15px;">${micropost.user.name}</div>
+          <div style="font-size: 13px; color: #657786;">${timeAgo(micropost.created_at)}</div>
+        </div>
+      </div>
+      
+      <div class="micropost-modal-content" style="font-size: 15px; line-height: 1.6; margin-bottom: 10px;">
+        ${escapeHtml(micropost.content)}
+      </div>
+      
+      ${hashtagsHtml}
       ${imageHtml}
-      ${hashtagsHtml ? `<p><strong>Hashtags:</strong> ${hashtagsHtml}</p>` : ''}
-      <p><small class="text-muted">Posted ${timeAgo(micropost.created_at)}</small></p>
+      
+      <div class="micropost-modal-stats" style="display: flex; gap: 20px; padding: 15px 0; border-top: 1px solid #e6ecf0; margin-top: 15px;">
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <i class="glyphicon glyphicon-heart" style="color: #657786;"></i>
+          <span style="font-weight: 600;">${micropost.likes_count || 0}</span>
+          <span style="color: #657786;">likes</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 5px;">
+          <i class="glyphicon glyphicon-comment" style="color: #657786;"></i>
+          <span style="font-weight: 600;">${micropost.comments ? micropost.comments.length : 0}</span>
+          <span style="color: #657786;">comments</span>
+        </div>
+      </div>
+      
+      ${commentsHtml}
     </div>
   `;
 
     // Show modal using Bootstrap's modal
     $(modal).modal('show');
+}
+
+// Helper to escape HTML
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Helper function for flash messages

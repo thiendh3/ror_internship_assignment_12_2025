@@ -1177,6 +1177,116 @@ span.image{
     }
 }
 
+/* Micropost Detail Page */
+.micropost-detail-page {
+    padding: 20px 0;
+    
+    .back-navigation {
+        margin-bottom: 20px;
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #657786;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 20px;
+            transition: all 0.2s;
+            
+            &:hover {
+                background: #f7f9fa;
+                color: #1da1f2;
+            }
+            
+            i {
+                font-size: 16px;
+            }
+        }
+    }
+    
+    .micropost-detail-container {
+        .micropost-card {
+            margin-bottom: 0;
+        }
+        
+        .micropost-comments-section {
+            .comments-list {
+                max-height: none;
+                
+                .comment-item {
+                    display: flex;
+                }
+            }
+        }
+    }
+    
+    .engagement-section {
+        background: white;
+        border: 1px solid #e1e8ed;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        padding: 16px 20px;
+        
+        .engagement-stats {
+            display: flex;
+            gap: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e6ecf0;
+            margin-bottom: 12px;
+            
+            .stat-item {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                
+                i {
+                    color: #657786;
+                    font-size: 16px;
+                }
+                
+                .stat-number {
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #14171a;
+                }
+                
+                .stat-label {
+                    font-size: 14px;
+                    color: #657786;
+                }
+            }
+        }
+        
+        .likes-preview {
+            font-size: 14px;
+            color: #657786;
+            
+            .likes-text {
+                margin-right: 6px;
+            }
+            
+            .liker-name {
+                color: #14171a;
+                font-weight: 600;
+                text-decoration: none;
+                
+                &:hover {
+                    color: #1da1f2;
+                    text-decoration: underline;
+                }
+            }
+            
+            .separator,
+            .and-more {
+                margin: 0 3px;
+            }
+        }
+    }
+}
+
 /* Responsive */
 @media (max-width: 768px){
     .micropost-card{

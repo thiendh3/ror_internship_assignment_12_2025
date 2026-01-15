@@ -7,4 +7,6 @@ import "micropost_ajax"
 import "micropost_likes"
 import "notifications"
 import "comments"
+import "share"
+import "micropost_realtime"
 Rails.start()
