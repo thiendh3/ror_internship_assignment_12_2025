@@ -1,0 +1,7 @@
+/ Replace the follow/unfollow button
+= turbo_stream.replace "follow_form" do
+  = render partial: "users/follow_form", locals: { user: @user }
+
+/ Update the follower count stat
+= turbo_stream.update "followers" do
+  = @user.followers.count
