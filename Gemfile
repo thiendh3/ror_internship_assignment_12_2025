@@ -15,7 +15,8 @@ gem 'will_paginate', '~> 4.0'
 gem 'active_storage_validations'
 gem 'image_processing'
 gem 'mini_magick'
-gem 'searchkick'
+gem 'sunspot_rails'
+gem 'sunspot_solr'
 gem 'rsolr'
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]

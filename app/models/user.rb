@@ -18,6 +18,30 @@ class User < ApplicationRecord
   has_secure_password
   validates :password, presence: true, length: {minimum:6}, allow_nil: true
 
+  # Sunspot searchable configuration
+  searchable do
+    text :name, :email
+    
+    boolean :activated
+    time :created_at
+    integer :id
+    
+    # Index followers and following count 
+    integer :followers_count, stored: true do
+      followers.count
+    end
+    
+    integer :following_count, stored: true do
+      following.count
+    end
+  end
+
+  # Auto-reindex when user is created or updated
+  after_commit :reindex, on: [:create, :update]
+  
+  # Reindex when user is destroyed
+  after_commit :remove_from_index, on: :destroy
+
   #Return the hash digest of the given string
   def User.digest(string)
     cost = ActiveModel::SecurePassword.min_cost ? BCrypt::Engine::MIN_COST : BCrypt::Engine.cost
@@ -106,5 +130,15 @@ class User < ApplicationRecord
     def create_activation_digest
       self.activation_token = User.new_token
       self.activation_digest = User.digest(activation_token)
+    end
+
+    # Reindex user to Solr
+    def reindex
+      Sunspot.index(self)
+    end
+    
+    # Remove user from Solr index
+    def remove_from_index
+      Sunspot.remove(self)
     end
 end
