@@ -20,7 +20,7 @@ Rails.application.routes.draw do
       get :autocomplete
     end
     member do
-      get :following, :followers
+      get :following, :followers, :microposts
     end
   end
   resources :account_activations, only: [:edit]

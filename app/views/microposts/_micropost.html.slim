@@ -1,9 +1,9 @@
 li id="micropost-#{micropost.id}" class="micropost-item micropost-clickable" data-micropost-id="#{micropost.id}" style="cursor: pointer;"
   .micropost-header
-    = link_to gravatar_for(micropost.user, size: 50), micropost.user, onclick: "event.stopPropagation();"
+    = link_to gravatar_for(micropost.user, size: 50), micropost.user, class: "user-profile-link", data: { user_id: micropost.user.id }, onclick: "event.stopPropagation();"
     .micropost-user-info
       span.user
-        = link_to micropost.user.name, micropost.user, onclick: "event.stopPropagation();"
+        = link_to micropost.user.name, micropost.user, class: "user-profile-link", data: { user_id: micropost.user.id }, onclick: "event.stopPropagation();"
       span.timestamp
         | #{time_ago_in_words(micropost.created_at)} ago
   .micropost-body

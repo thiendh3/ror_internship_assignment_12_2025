@@ -2,11 +2,12 @@
 .row
   aside.col-md-4
     section.user_info
-      h1
-        = gravatar_for @user
-        = @user.name
+      .text-center
+        = gravatar_for @user, size: 100
+      h1.text-center = @user.name
+      p.text-center.text-muted = @user.email
       - if @user.bio.present?
-        p.bio = @user.bio
+        p.bio.text-center = @user.bio
     section.stats
       = render 'shared/stats'
   .col-md-8
@@ -15,9 +16,8 @@
     - if @user.microposts.any?
       h3
         | Microposts (#{@user.microposts.count})
-      ol.microposts
+      ol.microposts#user-microposts
         = render @microposts
-      .digg_pagination
-        = will_paginate @microposts
+      = render 'shared/ajax_pagination', collection: @microposts, user: @user
     - else
       h3 No post yet

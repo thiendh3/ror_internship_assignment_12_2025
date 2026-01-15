@@ -1,12 +1,19 @@
 class UsersController < ApplicationController
+  include ActionView::Helpers::DateHelper
+
   before_action :logged_in_user, only: %i[index edit update destroy]
   before_action :correct_user, only: %i[edit update]
   before_action :admin_user, only: :destroy
 
   def show
     @user = User.find(params[:id])
-    @microposts = @user.microposts.paginate(page: params[:page])
+    @microposts = @user.microposts.paginate(page: params[:page], per_page: 10)
     redirect_to root_url and return unless @user.activated?
+
+    respond_to do |format|
+      format.html
+      format.json { render json: user_json(@user) }
+    end
   end
 
   def new
@@ -43,6 +50,33 @@ class UsersController < ApplicationController
 
   def index
     @users = User.where(activated: true).paginate(page: params[:page])
+
+    respond_to do |format|
+      format.html
+      format.json do
+        render json: {
+          html: render_to_string(partial: 'users/user_list', locals: { users: @users }, formats: [:html]),
+          pagination: render_to_string(partial: 'shared/pagination', locals: { collection: @users }, formats: [:html])
+        }
+      end
+    end
+  end
+
+  def microposts
+    @user = User.find(params[:id])
+    @microposts = @user.microposts.paginate(page: params[:page], per_page: 10)
+
+    respond_to do |format|
+      format.html { redirect_to @user }
+      format.json do
+        render json: {
+          html: render_to_string(partial: 'microposts/micropost', collection: @microposts, formats: [:html]),
+          pagination: render_to_string(partial: 'shared/ajax_pagination', locals: { collection: @microposts, user: @user }, formats: [:html]),
+          total: @user.microposts.count,
+          page: params[:page] || 1
+        }
+      end
+    end
   end
 
   def search
@@ -88,14 +122,34 @@ class UsersController < ApplicationController
     @title = 'Following'
     @user = User.find(params[:id])
     @users = @user.following.paginate(page: params[:page])
-    render 'show_follow'
+
+    respond_to do |format|
+      format.html { render 'show_follow' }
+      format.json do
+        render json: {
+          html: render_to_string(partial: 'users/user_list', locals: { users: @users }, formats: [:html]),
+          pagination: render_to_string(partial: 'shared/pagination', locals: { collection: @users }, formats: [:html]),
+          count: @user.following.count
+        }
+      end
+    end
   end
 
   def followers
     @title = 'Followers'
     @user = User.find(params[:id])
     @users = @user.followers.paginate(page: params[:page])
-    render 'show_follow'
+
+    respond_to do |format|
+      format.html { render 'show_follow' }
+      format.json do
+        render json: {
+          html: render_to_string(partial: 'users/user_list', locals: { users: @users }, formats: [:html]),
+          pagination: render_to_string(partial: 'shared/pagination', locals: { collection: @users }, formats: [:html]),
+          count: @user.followers.count
+        }
+      end
+    end
   end
 
   private
@@ -143,5 +197,40 @@ class UsersController < ApplicationController
   # Confirm admin user
   def admin_user
     redirect_to(root_url) unless current_user.admin?
+  end
+
+  def user_json(user)
+    result = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      bio: user.bio,
+      gravatar_url: gravatar_url(user, size: 80),
+      microposts_count: user.microposts.count,
+      following_count: user.following.count,
+      followers_count: user.followers.count
+    }
+
+    if logged_in? && current_user != user
+      relationship = current_user.active_relationships.find_by(followed_id: user.id)
+      result[:is_following] = relationship.present?
+      result[:relationship_id] = relationship&.id
+      result[:follow_button_html] = render_follow_button(user, relationship)
+    end
+
+    result
+  end
+
+  def gravatar_url(user, size: 80)
+    gravatar_id = Digest::MD5.hexdigest(user.email.downcase)
+    "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}"
+  end
+
+  def render_follow_button(user, relationship)
+    if relationship
+      "<button class='follow-btn' data-user-id='#{user.id}' data-following='true' data-relationship-id='#{relationship.id}' style='padding: 8px 24px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;'>Unfollow</button>"
+    else
+      "<button class='follow-btn' data-user-id='#{user.id}' data-following='false' style='padding: 8px 24px; background: #0d6efd; color: white; border: none; border-radius: 4px; cursor: pointer;'>Follow</button>"
+    end
   end
 end

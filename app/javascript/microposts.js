@@ -1,14 +1,28 @@
 // AJAX handlers for Microposts
 
 document.addEventListener('DOMContentLoaded', () => {
+  cleanupMicropostModals()
   initMicropostForm()
   initMicropostActions()
 })
 
 document.addEventListener('turbo:load', () => {
+  cleanupMicropostModals()
   initMicropostForm()
   initMicropostActions()
 })
+
+document.addEventListener('turbo:before-visit', () => {
+  cleanupMicropostModals()
+})
+
+function cleanupMicropostModals() {
+  const modal = document.getElementById('micropost-modal')
+  const backdrop = document.getElementById('micropost-modal-backdrop')
+  if (modal) modal.remove()
+  if (backdrop) backdrop.remove()
+  document.body.style.overflow = ''
+}
 
 function initMicropostForm() {
   const form = document.getElementById('micropost-form')

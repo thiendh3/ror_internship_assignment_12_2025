@@ -1,0 +1,11 @@
+- users.each do |user|
+  li.user-item style="list-style: none; padding: 12px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 12px;"
+    = link_to user, class: 'user-profile-link', data: { user_id: user.id }
+      = gravatar_for user, size: 50
+    .user-info style="flex: 1;"
+      = link_to user.name, user, class: 'user-profile-link', data: { user_id: user.id }, style: 'font-weight: bold; text-decoration: none; color: #333;'
+      - if user.bio.present?
+        p style="margin: 4px 0 0 0; font-size: 14px; color: #65676b;"
+          = truncate(user.bio, length: 50)
+    - if logged_in? && current_user.admin? && !current_user?(user)
+      = link_to "delete", user, method: :delete, data: { confirm: "Are you sure?" }, class: 'btn btn-sm btn-danger'

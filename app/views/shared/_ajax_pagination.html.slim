@@ -1,0 +1,13 @@
+.ajax-pagination#microposts-pagination
+  - if collection.total_pages > 1
+    nav
+      ul.pagination.justify-content-center
+        - if collection.previous_page
+          li.page-item
+            a.page-link href="/users/#{user.id}/microposts.json?page=#{collection.previous_page}" Previous
+        - (1..collection.total_pages).each do |page|
+          li.page-item class=(page == collection.current_page ? 'active' : '')
+            a.page-link href="/users/#{user.id}/microposts.json?page=#{page}" = page
+        - if collection.next_page
+          li.page-item
+            a.page-link href="/users/#{user.id}/microposts.json?page=#{collection.next_page}" Next
