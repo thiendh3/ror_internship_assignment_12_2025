@@ -15,6 +15,10 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "static_pages#home"
   resources :users do
+    collection do
+      get :search
+      get :autocomplete
+    end
     member do
       get :following, :followers
     end

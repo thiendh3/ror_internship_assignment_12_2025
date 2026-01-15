@@ -45,6 +45,39 @@ class UsersController < ApplicationController
     @users = User.where(activated: true).paginate(page: params[:page])
   end
 
+  def search
+    @search_service = UserSearchService.new(params, current_user)
+    @query = @search_service.query
+    @filter = @search_service.filter
+    @min_followers = @search_service.min_followers
+    @min_following = @search_service.min_following
+
+    @search = @search_service.search
+    @users = @search.results
+    @highlights = build_highlights(@search)
+
+    respond_to do |format|
+      format.html
+      format.js
+      format.json { render json: search_json_response }
+    end
+  end
+
+  def autocomplete
+    query = params[:q].to_s.strip
+    return render json: [] if query.blank?
+
+    search = User.search do
+      fulltext query do
+        fields(:name, :bio)
+      end
+      with(:activated, true)
+      paginate page: 1, per_page: 5
+    end
+    users = search.results.map { |u| { id: u.id, name: u.name, email: u.email } }
+    render json: users
+  end
+
   def destroy
     User.find(params[:id]).destroy
     flash[:success] = 'User is deleted!'
@@ -66,6 +99,33 @@ class UsersController < ApplicationController
   end
 
   private
+
+  def build_highlights(search)
+    search.hits.each_with_object({}) do |hit, hash|
+      field_highlights = {}
+      hit.highlights.each do |hl|
+        field_highlights[hl.field_name] = hl
+      end
+      hash[hit.primary_key.to_i] = field_highlights
+    end
+  end
+
+  def search_json_response
+    @users.map do |user|
+      highlights = @highlights[user.id] || {}
+      {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        bio: user.bio,
+        highlights: {
+          name: highlights[:name]&.format { |word| "<mark>#{word}</mark>" },
+          email: highlights[:email]&.format { |word| "<mark>#{word}</mark>" },
+          bio: highlights[:bio]&.format { |word| "<mark>#{word}</mark>" }
+        }
+      }
+    end
+  end
 
   # Strong param
   def user_params

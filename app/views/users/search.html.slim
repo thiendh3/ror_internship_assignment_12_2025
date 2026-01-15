@@ -1,0 +1,58 @@
+= content_for :title, 'Search Users'
+
+h1 Search Users
+
+= form_with url: search_users_path, method: :get, local: true, class: 'search-form mb-4' do |f|
+  .row
+    .col-md-6.mb-2
+      = f.text_field :q, value: @query, class: 'form-control', placeholder: 'Search by name or email...', autofocus: true
+
+    .col-md-3.mb-2
+      = f.select :filter, options_for_select([['All Users', ''], ['Following', 'following'], ['Followers', 'followers']], @filter), {}, class: 'form-control'
+
+    .col-md-3.mb-2
+      = f.submit 'Search', class: 'btn btn-primary btn-block'
+
+  - if current_user&.admin?
+    .row.mt-2
+      .col-md-3
+        = f.label :min_followers, 'Min Followers'
+        = f.number_field :min_followers, value: @min_followers, class: 'form-control', min: 0
+      .col-md-3
+        = f.label :min_following, 'Min Following'
+        = f.number_field :min_following, value: @min_following, class: 'form-control', min: 0
+
+- if @query.present? || @filter.present?
+  p.text-muted
+    | Found #{@users.size} user(s)
+    - if @query.present?
+      |  for "#{@query}"
+
+- if @users.any?
+  ul.users.list-unstyled
+    - @users.each do |user|
+      - highlights = @highlights[user.id] || {}
+      li.media.mb-3.p-2.border.rounded
+        = link_to user do
+          = gravatar_for user, size: 50
+        .media-body.ml-3
+          h5.mt-0
+            = link_to user do
+              - if highlights[:name].present?
+                == highlights[:name].format { |word| "<mark>#{word}</mark>" }
+              - else
+                = user.name
+          p.mb-1.text-muted
+            - if highlights[:email].present?
+              == highlights[:email].format { |word| "<mark>#{word}</mark>" }
+            - else
+              = user.email
+          - if user.bio.present?
+            p.mb-0.small
+              - if highlights[:bio].present?
+                == highlights[:bio].format { |word| "<mark>#{word}</mark>" }
+              - else
+                = truncate(user.bio, length: 100)
+- else
+  - if @query.present? || @filter.present?
+    p No users found.
