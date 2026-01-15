@@ -101,7 +101,7 @@ class User < ApplicationRecord
 
   #Unfollow a user
   def unfollow(other_user)
-    following.delete(other_user)
+    following.destroy(other_user)
     index_to_solr
     SolrService.add(other_user)
   end
