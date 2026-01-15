@@ -72,7 +72,7 @@ namespace :solr do
 
     User.find_each do |user|
       begin
-        SolrService.add(user)
+        user.index_to_solr
         count += 1
         print "." if count % 50 == 0
       rescue StandardError => e

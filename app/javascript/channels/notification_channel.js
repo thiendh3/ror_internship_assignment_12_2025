@@ -45,7 +45,7 @@ document.addEventListener("turbo:load", () => {
 	const csrfToken = document.querySelector("[name='csrf-token']").content;
 
 	if ($toggle.length) {
-		// 1. Remove the red notification count badge immediately on OPEN
+		// remove the count badge
 		$toggle.on("click", () => {
 			const badge = document.querySelector("#notification-count");
 			if (badge && badge.style.display !== "none") {
@@ -54,7 +54,7 @@ document.addEventListener("turbo:load", () => {
 			}
 		});
 
-		// 2. Clear internal "new" indicators and update server only on CLOSE
+		// clear internal "new" state on close
 		$dropdownParent.on("hidden.bs.dropdown", () => {
 			const internalBadge = document.querySelector(".unread-count-label");
 			const unreadItems = document.querySelectorAll(
@@ -68,13 +68,12 @@ document.addEventListener("turbo:load", () => {
 					item.classList.remove("unread-notification")
 				);
 
-				// POST request to mark all as read with security headers
+				// POST request to mark all as read 
 				fetch($toggle.data("url"), {
 					method: "POST",
 					headers: {
 						"X-CSRF-Token": csrfToken,
 						"Content-Type": "application/json",
-						"X-Requested-With": "XMLHttpRequest", // Prevents 422 security error
 					},
 				}).catch((err) =>
 					console.error("Notification request failed:", err)
@@ -83,7 +82,7 @@ document.addEventListener("turbo:load", () => {
 		});
 	}
 
-	// 3. Infinite Scroll Logic
+	// infinite scroll
 	if (listContainer) {
 		listContainer.addEventListener("scroll", () => {
 			const container = document.querySelector(
@@ -112,7 +111,6 @@ document.addEventListener("turbo:load", () => {
 				})
 					.then((res) => (res.ok ? res.text() : Promise.reject()))
 					.then((code) => {
-						// Execute the JavaScript returned by the Rails controller
 						const script = document.createElement("script");
 						script.text = code;
 						document.head

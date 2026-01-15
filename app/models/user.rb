@@ -95,15 +95,16 @@ class User < ApplicationRecord
   #Follow a user
   def follow(other_user)
     following << other_user
+    # Now we can update both SOLR records cleanly
     index_to_solr
-    SolrService.add(other_user)
+    other_user.index_to_solr
   end
 
   #Unfollow a user
   def unfollow(other_user)
     following.destroy(other_user)
     index_to_solr
-    SolrService.add(other_user)
+    other_user.index_to_solr
   end
 
   #Return true if the current user is following the other user
@@ -126,6 +127,14 @@ class User < ApplicationRecord
       type: "User"
     }
   end
+  
+  def index_to_solr
+    SolrService.add(self)
+  end
+
+  def remove_from_solr
+    SolrService.delete(self.id)
+  end
 
   private
     #Convert email to dall lower-case
@@ -137,13 +146,5 @@ class User < ApplicationRecord
     def create_activation_digest
       self.activation_token = User.new_token
       self.activation_digest = User.digest(activation_token)
-    end
-
-    def index_to_solr
-      SolrService.add(self)
-    end
-
-    def remove_from_solr
-      SolrService.delete(self.id)
     end
 end
