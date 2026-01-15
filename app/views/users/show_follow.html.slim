@@ -1,4 +1,4 @@
-= content_for :title, @title
+- provide(:title, @title)
 .row
   aside.col-md-4
     section.user_info
@@ -13,11 +13,19 @@
       - if @users.any?
         .user_avatars
           - @users.each do |user|
-            = link_to gravatar_for(user, size: 30), user
+            - preview_opts = { \
+                controller: "user-preview", \
+                user_preview_url_value: preview_user_path(user), \
+                action: "click->user-preview#load" \
+              }
+            = link_to gravatar_for(user, size: 30), user, data: preview_opts
+            
   .col-md-8
     h3 = @title
-    - if @users.any?
-      ul.users.follow
-        = render @users
-      .digg_pagination
-        = will_paginate @microposts
+    
+    = turbo_frame_tag "users_list", data: { turbo_action: "advance" } do
+      - if @users.any?
+        ul.users.follow
+          = render @users
+        .digg_pagination
+          = will_paginate @users
