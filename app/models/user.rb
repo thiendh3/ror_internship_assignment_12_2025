@@ -86,7 +86,6 @@ class User < ApplicationRecord
   end
 
   #Define a proto-feed
-  #See "Following users" for the full implementation
   def feed
     following_ids = "SELECT followed_id FROM relationships
                      WHERE follower_id = :user_id"
@@ -118,14 +117,12 @@ class User < ApplicationRecord
       id: id,
       name_text: name,
       email_text: email,
-
       name_ac: name,
       email_ac: email,
-
       followers_count_i: followers.count,
       following_count_i: following.count,
-      
       active_boolean: activated,
+      created_at_dt: created_at,
       type: "User"
     }
   end

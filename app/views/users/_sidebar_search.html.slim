@@ -1,52 +1,69 @@
-.panel.panel-default style="position: -webkit-sticky; position: sticky; top: 20px; z-index: 10000; overflow: auto"
-  .panel-heading
-    h3.panel-title Search & Filter
-
+.panel.panel-default.sidebar-search
   .panel-body
+    .row style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;"
+      .col-xs-12
+        h4 style="margin: 0; color: #333;"
+          span.glyphicon.glyphicon-user style="margin-right: 8px;"
+          | Found 
+          strong = @total_found
+          |  Users
+
     div data-controller="autocomplete" data-autocomplete-url-value=autocomplete_users_path
       = form_with(url: users_path, method: :get, html: { autocomplete: 'off' }, data: { turbo_frame: "users_list", turbo_action: "advance" }) do |f|
+        
+        / --- Search Bar ---
         .form-group
-          label Search Query
+          label.text-uppercase.text-muted style="font-size: 11px; letter-spacing: 1px;" Keywords
           
-          div style="display: flex; gap: 5px;"
-            - if current_user.admin?
-              = select_tag :search_field, 
-                  options_for_select([['Name', 'name'], ['Email', 'email']], params[:search_field]), 
-                  class: "form-control", style: "width: auto; min-width: 80px;"
-            
-            div style="flex-grow: 1; position: relative;"
-              = f.text_field :query, value: params[:query], class: "form-control", placeholder: "Search term...", data: { autocomplete_target: "input", action: "input->autocomplete#search blur->autocomplete#blur" }
-              
-              .list-group.autocomplete-results data-autocomplete-target="results" hidden=true style="position: absolute; top: 100%; left: 0; width: 350px; z-index: 100000; background-color: white; border: 1px solid #ddd; box-shadow: 0 4px 8px rgba(0,0,0,0.2);"
-
-        .form-group
-          label Show Users
-          - filter_options = [['All Users', 'all'], ['Following', 'following'], ['Not Following', 'not_following']]
           - if current_user.admin?
-            - filter_options += [['Activated', 'activated'], ['Not Activated', 'not_activated']]
+             div style="display: flex; gap: 5px; margin-bottom: 5px;"
+               = select_tag(:search_field, 
+                   options_for_select([['Name', 'name'], ['Email', 'email']], params[:search_field]), 
+                   class: "form-control input-sm", 
+                   style: "width: auto;", 
+                   data: { action: "change->autocomplete#updateParams" })
+
+          div style="position: relative;"
+            = f.text_field :query, value: params[:query], class: "form-control", placeholder: (current_user.admin? ? "Name or email..." : "Name..."), data: { autocomplete_target: "input", action: "input->autocomplete#search blur->autocomplete#blur" }
+            .autocomplete-results data-autocomplete-target="results" hidden=true
+
+        / --- Filter Checkboxes ---
+        .form-group style="margin-top: 20px;"
+          label.text-uppercase.text-muted style="font-size: 11px; letter-spacing: 1px; display: block; margin-bottom: 10px;" Show Users
           
-          = select_tag :filter, options_for_select(filter_options, params[:filter] || 'all'), class: "form-control"
-
-        .form-group
-          label Advanced Filter
-          = select_tag :count_field, 
-              options_for_select([['Followers Count', 'followers'], ['Following Count', 'following']], params[:count_field]), 
-              class: "form-control input-sm", style: "margin-bottom: 5px;"
-          .row
-            .col-xs-6 style="padding-right: 5px;"
-              = select_tag :count_operator, 
-                  options_for_select([['At least (>=)', '>='], ['At most (<=)', '<=']], params[:count_operator]), 
-                  class: "form-control input-sm"
+          - current_scopes = params[:scope] || ['following', 'discover']
+          
+          - if current_user
+            .checkbox style="margin-bottom: 10px;"
+              label
+                = check_box_tag 'scope[]', 'following', current_scopes.include?('following'), onchange: "this.form.requestSubmit()"
+                | People I Follow
             
-            .col-xs-6 style="padding-left: 5px;"
-              = number_field_tag :count_value, params[:count_value], class: "form-control input-sm", placeholder: "0"
+            .checkbox style="margin-bottom: 10px;"
+              label
+                = check_box_tag 'scope[]', 'discover', current_scopes.include?('discover'), onchange: "this.form.requestSubmit()"
+                | Discover (New People)
+          - else
+             p.text-muted.small Log in to filter by relationship.
 
-        hr style="margin: 15px 0;"
-        = f.submit "Apply Filters", class: "btn btn-primary btn-block"
-        = link_to "Reset All", users_path, class: "btn btn-default btn-block btn-sm"
+          / Admin Deactivated Toggle
+          - if current_user.admin?
+            hr style="margin: 10px 0;"
+            .checkbox style="margin-bottom: 10px;"
+              label.text-danger
+                = check_box_tag :include_deactivated, '1', params[:include_deactivated] == '1', onchange: "this.form.requestSubmit()"
+                | Show Deactivated Users
 
-  .panel-footer.text-center
-    small.text-muted
-      | Found 
-      strong = total_found
-      |  users
+        / --- Sorting ---
+        .form-group style="margin-top: 20px;"
+          label.text-uppercase.text-muted style="font-size: 11px; letter-spacing: 1px;" Sort By
+          = select_tag :sort, 
+              options_for_select([ \
+                ['Relevance', 'relevance'], \
+                ['Newest Joined', 'newest'], \
+                ['Most Popular', 'popular'] \
+              ], params[:sort]), 
+              class: "form-control",
+              onchange: "this.form.requestSubmit()"
+
+        = f.submit "Search", class: "hidden"

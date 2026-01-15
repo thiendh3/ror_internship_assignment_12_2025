@@ -8,6 +8,10 @@ export default class extends Controller {
 		this.resultsTarget.hidden = true;
 	}
 
+	updateParams() {
+		this.search();
+	}
+
 	search() {
 		clearTimeout(this.timeout);
 		this.timeout = setTimeout(() => {
@@ -16,20 +20,16 @@ export default class extends Controller {
 	}
 
 	async performSearch() {
-		const query = this.inputTarget.value;
+		const query = this.inputTarget.value.trim();
 
 		if (query.length < 1) {
 			this.resultsTarget.hidden = true;
-			this.resultsTarget.innerHTML = "";
 			return;
 		}
 
-		const searchFieldSelect = this.element.querySelector(
-			'select[name="search_field"]'
-		);
-		const searchField = searchFieldSelect
-			? searchFieldSelect.value
-			: "name";
+		const searchField =
+			document.querySelector('select[name="search_field"]')?.value ||
+			"name";
 
 		try {
 			const response = await fetch(
@@ -41,70 +41,43 @@ export default class extends Controller {
 				}
 			);
 			const data = await response.json();
-			this.renderResults(data);
+			this.renderResults(data.queries);
 		} catch (error) {
 			console.error("Autocomplete error:", error);
 		}
 	}
 
-	renderResults(data) {
-		if (data.queries.length === 0 && data.users.length === 0) {
+	renderResults(queries) {
+		if (!queries || queries.length === 0) {
 			this.resultsTarget.hidden = true;
 			return;
 		}
 
-		let html = "";
+		let html = `<div class="list-group" style="margin-bottom: 0; box-shadow: 0 6px 12px rgba(0,0,0,.175);">`;
 
-		// 1. Search Suggestions
-		if (data.queries.length > 0) {
-			html += `<div class="autocomplete-header">Search Suggestions</div>`;
-			data.queries.forEach((q) => {
-				html += `
-        <a href="#" class="list-group-item query-suggestion-item" data-action="click->autocomplete#selectQuery">
-          <span class="glyphicon glyphicon-search"></span> <span>${this.escapeHtml(
-				q
-			)}</span>
-        </a>`;
-			});
-		}
+		queries.forEach((term) => {
+			html += `
+        <a href="#" class="list-group-item" data-action="click->autocomplete#selectQuery">
+          <span class="glyphicon glyphicon-search text-muted" style="margin-right: 10px;"></span>
+          ${this.escapeHtml(term)}
+        </a>
+      `;
+		});
 
-		// 2. People Results
-		if (data.users.length > 0) {
-			html += `<div class="autocomplete-header">People</div>`;
-			data.users.forEach((user) => {
-				const emailHtml = user.email
-					? `<small class="text-info">${this.escapeHtml(
-							user.email
-					  )}</small>`
-					: "";
-				html += `
-        <a href="${user.url}" class="list-group-item user-result-item">
-          <img src="${
-				user.gravatar_url
-			}" class="gravatar" style="width: 36px; height: 36px;">
-          <div class="media-body">
-            <strong>${this.escapeHtml(user.name)}</strong>
-            ${emailHtml}
-          </div>
-        </a>`;
-			});
-		}
+		html += `</div>`;
 
 		this.resultsTarget.innerHTML = html;
 		this.resultsTarget.hidden = false;
 	}
 
-	// Fills the input and submits the form when a query suggestion is clicked
 	selectQuery(event) {
 		event.preventDefault();
-		const query = event.currentTarget.textContent.trim();
-		this.inputTarget.value = query;
+		this.inputTarget.value = event.currentTarget.innerText.trim();
 		this.resultsTarget.hidden = true;
-		this.inputTarget.form.submit();
+		this.inputTarget.form.requestSubmit();
 	}
 
-	blur(event) {
-		// Timeout allows clicks on suggestions to register before the list disappears
+	blur() {
 		setTimeout(() => {
 			this.resultsTarget.hidden = true;
 		}, 200);

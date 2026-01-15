@@ -383,84 +383,25 @@ span.image {
 
 /* Autocomplete Results */
 .autocomplete-results {
-	position: absolute !important;
+	position: absolute;
 	top: 100%;
 	left: 0;
-	width: 380px; /* Slightly wider for better readability */
-	background-color: white !important;
-	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-	border: 1px solid #d1d5db;
-	border-radius: 8px;
-	margin-top: 5px;
-	z-index: 100000 !important;
-	max-height: 480px;
-	overflow-y: auto;
-	padding: 4px 0;
+	right: 0;
+	z-index: 9999;
+	background: white;
+	border-radius: 0 0 4px 4px;
 
-	/* Section Headers */
-	.autocomplete-header {
-		background: #f9fafb;
-		padding: 10px 15px;
-		font-size: 11px;
-		font-weight: 700;
-		color: #6b7280;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		border-top: 1px solid #f3f4f6;
-		border-bottom: 1px solid #f3f4f6;
-
-		&:first-child {
-			border-top: none;
-			border-radius: 8px 8px 0 0;
-		}
-	}
-
-	/* Shared item styles */
+	// Clean up the list group look
 	.list-group-item {
-		border: none;
-		padding: 12px 15px;
-		margin: 0;
-		transition: background 0.2s ease;
-		display: flex;
-		align-items: center;
-		text-decoration: none !important;
-
+		border-left: 1px solid #ddd;
+		border-right: 1px solid #ddd;
+		&:first-child {
+			border-top-left-radius: 0;
+			border-top-right-radius: 0;
+		}
 		&:hover {
-			background-color: #f3f4f6 !important;
-		}
-	}
-
-	/* Query Suggestion Specifics */
-	.query-suggestion-item {
-		color: #2563eb;
-		font-weight: 500;
-
-		.glyphicon {
-			font-size: 12px;
-			margin-right: 12px;
-			color: #9ca3af;
-		}
-	}
-
-	/* User Result Specifics */
-	.user-result-item {
-		gap: 12px;
-
-		.media-body {
-			strong {
-				color: #111827;
-				font-size: 14px;
-				display: block;
-			}
-			small {
-				font-size: 12px;
-			}
-		}
-
-		.gravatar {
-			border: 1px solid #e5e7eb;
-			border-radius: 50%;
-			flex-shrink: 0;
+			background-color: #f8f9fa;
+			cursor: pointer;
 		}
 	}
 }

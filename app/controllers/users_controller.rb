@@ -37,6 +37,7 @@ class UsersController < ApplicationController
     render layout: false
   end
 
+  # NEED UPDATE
   def update
     @user = User.find(params[:id])
     if @user.update(user_params)
@@ -62,54 +63,15 @@ class UsersController < ApplicationController
   end
 
   def index
-    page = params[:page] || 1
-    per_page = 30
-    
-    # Logic for Filters (unchanged)
-    @filter_type = params[:filter] || 'all'
-    unless current_user.admin?
-      @filter_type = 'all' if ['activated', 'not_activated'].include?(@filter_type)
-    end
+    @search = UserSearch.new(params, current_user)
+    result = @search.results
 
-    # Solr Search
-    is_admin = current_user&.admin?
-    query = params[:query] || ""
-
-    @search_field = if is_admin && params[:search_field] == 'email'
-                      'email'
-                    else
-                      'name'
-                    end
-
-    count_filter = {
-      field: params[:count_field],       # 'followers' or 'following'
-      operator: params[:count_operator], # '>' or '<'
-      value: params[:count_value]        # e.g., '50'
-    }
-
-    result = SolrService.search(
-      query, 
-      page: page, 
-      per_page: per_page, 
-      is_admin: is_admin,
-      filter_type: @filter_type,
-      following_ids: current_user.following.ids,
-      current_user_id: current_user.id,
-      search_field: @search_field,
-      count_filter: count_filter
-    )
-
-    # Reorder results
-    users_by_id = User.where(id: result[:ids]).index_by(&:id)
-    ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
-
-    # Create paginated collection
-    @users = WillPaginate::Collection.create(page, per_page, result[:total]) do |pager|
-      pager.replace(ordered_users)
+    @users = WillPaginate::Collection.create(result.page, result.per_page, result.total_count) do |pager|
+      pager.replace(result.records)
     end
     
-    # Store total found count for the view
-    @total_found = result[:total]
+    @total_found = result.total_count
+    @filter_type = params[:filter]
   end
 
   def destroy
@@ -134,49 +96,35 @@ class UsersController < ApplicationController
 
   def autocomplete
     query = params[:query].to_s.strip
-    return render json: { queries: [], users: [] } if query.blank?
+    return render json: { queries: [] } if query.blank?
 
-    search_field = (current_user&.admin? && params[:search_field] == 'email') ? 'email' : 'name'
-
-    result = SolrService.search(
-      query, 
+    search = UserSearch.new(
+      query: query, 
+      search_field: params[:search_field], 
       page: 1, 
-      per_page: 10,
-      is_admin: current_user&.admin?,
-      search_field: search_field
+      per_page: 30, 
+      user: current_user
     )
-
-    users = User.where(id: result[:ids])
-
-    # Instead of full names, we suggest the specific word/token being typed
-    # or broad categories (like just the First Name)
-    suggested_queries = users.map do |u|
-      val = search_field == 'email' ? u.email : u.name
-      
-      # Logic: If they typed "Jo", suggest "John" instead of "Johnathan Applebee"
-      # This finds the specific word in the name that starts with the query
-      words = val.split(/[\s@.]/) # Split by space, @, or dot
-      matching_word = words.find { |w| w.downcase.start_with?(query.downcase) }
-      
-      matching_word ? matching_word.capitalize : nil
-    end.compact.uniq.first(3)
-
-    users_by_id = users.index_by(&:id)
-    ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
-
-    user_suggestions = ordered_users.map do |u|
-      {
-        id: u.id,
-        name: u.name,
-        gravatar_url: "https://secure.gravatar.com/avatar/#{Digest::MD5::hexdigest(u.email.downcase)}?s=50",
-        followers_count: u.followers.count,
-        following_count: u.following.count,
-        url: user_path(u),
-        email: (current_user&.admin? ? u.email : nil)
-      }
+    result = search.results
+    result = search.results
+    
+    suggestions = result.records.flat_map do |user|
+      # if searching email, suggest email parts
+      if current_user&.admin? && params[:search_field] == 'email'
+        [user.email]
+      else
+        # otherwise suggest name parts
+        user.name.split(/\s+/)
+      end
     end
+    
+    final_suggestions = suggestions
+      .select { |w| w.downcase.start_with?(query.downcase) }
+      .map(&:downcase)
+      .uniq
+      .first(8)
 
-    render json: { queries: suggested_queries, users: user_suggestions }
+    render json: { queries: final_suggestions }
   end
 
   def preview
@@ -191,7 +139,6 @@ class UsersController < ApplicationController
     def user_params
       params.require(:user).permit(:name, :email, :password, :password_confirmation, :bio)
     end
-
 
     #Confirm the correct user
     def correct_user
