@@ -8,6 +8,9 @@ class Micropost < ApplicationRecord
   has_many :micropost_hashtags, dependent: :destroy
   has_many :hashtags, through: :micropost_hashtags
 
+  has_many :likes, dependent: :destroy
+  has_many :liked_by_users, through: :likes, source: :user
+
   has_one_attached :image
   default_scope -> { order(created_at: :desc)}
   validates :user_id, presence: true
@@ -25,6 +28,23 @@ class Micropost < ApplicationRecord
   def display_image_url
     return nil unless image.attached?
     Rails.application.routes.url_helpers.rails_blob_path(display_image, only_path: true)
+  end
+
+  def likes_count
+    likes.count
+  end
+
+  def liked_by?(user)
+    return false unless user
+    likes.exists?(user_id: user.id)
+  end
+
+  def like!(user)
+    likes.create!(user_id: user.id)
+  end
+
+  def unlike!(user)
+    likes.find_by(user_id: user.id)&.destroy
   end
 
   HASHTAG_REGEX = /#\w+/
