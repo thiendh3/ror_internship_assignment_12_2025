@@ -8,6 +8,7 @@ class User < ApplicationRecord
                                    dependent: :destroy
   has_many :following, through: :active_relationships, source: :followed
   has_many :followers, through: :passive_relationships
+  has_many :notifications, dependent: :destroy
   attr_accessor :remember_token, :activation_token, :reset_token
 
   before_save :downcase_email
@@ -114,7 +115,7 @@ class User < ApplicationRecord
 
   # Unfollow a user
   def unfollow(other_user)
-    following.delete(other_user)
+    active_relationships.find_by(followed_id: other_user.id)&.destroy
   end
 
   # Return true if the current user is following the other user

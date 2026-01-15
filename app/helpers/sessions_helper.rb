@@ -2,6 +2,7 @@ module SessionsHelper
   # Logs in the given user.
   def log_in(user)
     session[:user_id] = user.id
+    cookies.encrypted[:user_id] = { value: user.id, expires: 1.day.from_now }
   end
 
   # Remember a user in a persistent session
@@ -56,6 +57,6 @@ module SessionsHelper
 
   # Store the URL trying to be accesssed
   def store_location
-    session[:forwarding_url] = request.original_url if request.get?
+    session[:forwarding_url] = request.original_url if request.get? && !request.xhr? && request.format.html?
   end
 end
