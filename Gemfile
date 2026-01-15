@@ -69,6 +69,9 @@ group :development do
   gem "listen"
   gem "spring"
   gem "spring-watcher-listen"
+  
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
 
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
   # gem "rack-mini-profiler"

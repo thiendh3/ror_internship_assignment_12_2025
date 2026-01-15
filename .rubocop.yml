@@ -1,3 +1,6 @@
+require:
+  - rubocop-rails
+
 AllCops:
   NewCops: enable
 
@@ -81,4 +84,7 @@ Naming/AccessorMethodName:
 
 # Disable Style/SafeNavigation temporarily due to RuboCop 1.76.0 bug
 Style/SafeNavigation:
+  Enabled: false
+
+Rails/I18nLocaleTexts:
   Enabled: false

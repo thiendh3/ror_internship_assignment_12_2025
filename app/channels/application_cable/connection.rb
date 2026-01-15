@@ -7,22 +7,33 @@ module ApplicationCable
     end
 
     private
-      def find_verified_user
-        user_id = request.session[:user_id] || cookies.encrypted[:user_id]
-        
-        if user_id && (verified_user = User.find_by(id: user_id))
-          if request.session[:user_id].nil? && cookies[:remember_token]
-            if verified_user.authenticated?(:remember, cookies[:remember_token])
-              verified_user
-            else
-              reject_unauthorized_connection
-            end
-          else
-            verified_user
-          end
-        else
-          reject_unauthorized_connection
-        end
+
+    def find_verified_user
+      user_id = request.session[:user_id] || cookies.encrypted[:user_id]
+      return reject_unauthorized_connection unless user_id
+
+      verified_user = User.find_by(id: user_id)
+      return reject_unauthorized_connection unless verified_user
+
+      verify_user_authentication(verified_user)
+    end
+
+    def verify_user_authentication(user)
+      return user if session_authenticated?
+
+      verify_remember_token(user)
+    end
+
+    def session_authenticated?
+      request.session[:user_id].present?
+    end
+
+    def verify_remember_token(user)
+      if cookies[:remember_token] && user.authenticated?(:remember, cookies[:remember_token])
+        user
+      else
+        reject_unauthorized_connection
       end
+    end
   end
 end

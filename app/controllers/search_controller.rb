@@ -1,7 +1,7 @@
 class SearchController < ApplicationController
   def index
     @response = MicropostSearch.search(
-      q: params[:q],
+      query: params[:q],
       user_id: params[:user_id],
       hashtag: params[:hashtag],
       from: params[:from],

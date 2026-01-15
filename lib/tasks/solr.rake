@@ -1,4 +1,3 @@
-# rubocop:disable Style/FrozenStringLiteralComment
 namespace :solr do
   desc 'Reindex Microposts into Solr by re-saving each record'
   task reindex_microposts: :environment do

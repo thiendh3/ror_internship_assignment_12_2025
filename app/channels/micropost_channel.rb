@@ -1,6 +1,6 @@
 class MicropostChannel < ApplicationCable::Channel
   def subscribed
-    stream_from "microposts"
+    stream_from 'microposts'
   end
 
   def unsubscribed
