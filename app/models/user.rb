@@ -11,6 +11,16 @@ class User < ApplicationRecord
                                   dependent: :destroy
   has_many :following, through: :active_relationships, source: :followed
   has_many :followers, through: :passive_relationships
+  
+  # Likes and Comments
+  has_many :likes, dependent: :destroy
+  has_many :liked_microposts, through: :likes, source: :micropost
+  has_many :comments, dependent: :destroy
+  
+  # Notifications
+  has_many :notifications, foreign_key: :recipient_id, dependent: :destroy
+  has_many :sent_notifications, class_name: 'Notification', foreign_key: :actor_id, dependent: :destroy
+  
   attr_accessor :remember_token, :activation_token, :reset_token
   before_save :downcase_email
   before_create :create_activation_digest
@@ -80,8 +90,14 @@ class User < ApplicationRecord
   #See "Following users" for the full implementation
   def feed
     following_ids = "SELECT followed_id FROM relationships
-                     WHERE follower_id = :user_id"
-    Micropost.where("user_id IN (#{following_ids}) OR user_id = :user_id", user_id: id)
+                     WHERE follower_id = ?"
+    Micropost.where(
+      "(user_id IN (#{following_ids}) AND (privacy = ? OR privacy = ?)) OR (user_id = ?)",
+      id,
+      Micropost.privacies[:public_post],
+      Micropost.privacies[:followers_only],
+      id
+    )
   end
 
   #Follow a user

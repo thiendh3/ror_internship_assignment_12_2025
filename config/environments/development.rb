@@ -45,12 +45,10 @@ Rails.application.configure do # rubocop:disable Metrics/BlockLength
   config.action_mailer.default_url_options = { host: host, protocol: 'http' }
   config.action_mailer.default_options = { from: 'noreply@example.com' }
 
-  # Use file delivery in development to avoid SMTP authentication errors
-  # Emails will be saved to tmp/mail directory
-  config.action_mailer.delivery_method = :file
-  config.action_mailer.file_settings = {
-    location: Rails.root.join('tmp', 'mail')
-  }
+  # Use letter_opener_web to view emails at http://localhost:3000/letter_opener
+  # Emails won't open automatically - visit /letter_opener to see them
+  config.action_mailer.delivery_method = :letter_opener_web
+  config.action_mailer.perform_deliveries = true
 
   # Uncomment below to use SMTP (requires valid credentials)
   # config.action_mailer.delivery_method = :smtp

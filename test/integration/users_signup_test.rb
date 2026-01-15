@@ -9,6 +9,7 @@ password:
 "foo",
 password_confirmation: "bar" } }
 end
-assert_template 'users/new'
+assert_response :success # render 'new' returns 200 in Rails 7.2
+assert_select 'form[action="/users"]'
 end
 end

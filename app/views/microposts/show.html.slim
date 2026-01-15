@@ -1,0 +1,29 @@
+- provide(:title, 'Micropost')
+
+.row
+  .col-md-8.offset-md-2
+    .card.micropost-detail-card
+      .card-body
+        / Back button
+        .mb-3
+          = link_to '← Back', :back, class: 'btn btn-sm btn-outline-secondary'
+        
+        / Micropost content
+        = render @micropost
+        
+        / Share actions
+        .share-actions.mt-3.p-3.border-top data-controller="micropost" data-micropost-id=@micropost.id
+          h6.mb-3 Share this post
+          .btn-group role="group"
+            button.btn.btn-outline-primary.btn-sm type="button" data-action="click->micropost#shareTwitter" data-micropost-id=@micropost.id
+              i.fa.fa-twitter
+              |  Twitter
+            button.btn.btn-outline-primary.btn-sm type="button" data-action="click->micropost#shareFacebook" data-micropost-id=@micropost.id
+              i.fa.fa-facebook
+              |  Facebook
+            button.btn.btn-outline-primary.btn-sm type="button" data-action="click->micropost#copyLink" data-micropost-id=@micropost.id
+              i.fa.fa-link
+              |  Copy Link
+          
+          / Share URL (hidden, for copying)
+          input#share-url.form-control.mt-2 type="text" readonly=true value=micropost_url(@micropost) style="display:none;"

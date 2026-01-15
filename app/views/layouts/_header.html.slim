@@ -10,8 +10,20 @@ header.navbar.navbar-fixed-top.navbar-inverse
           span.icon-bar
       ul.nav.navbar-nav.navbar-right.collapse.navbar-collapse#bs-example-navbar-collapse-1
         li = link_to "Home", root_path
-        li = link_to "Help", help_path
         - if logged_in?
+          li
+            .search-form data-controller="search"
+              input.form-control.search-input type="text" placeholder="Search microposts..." data-search-target="input" data-action="input->search#search keyup.enter->search#submitSearch"
+              .search-suggestions data-search-target="suggestions"
+          li.dropdown data-controller="notifications"
+            a.dropdown-toggle href="#" data-toggle="dropdown" role="button" aria-expanded="false"
+              i.fa.fa-bell
+              span.notification-badge.badge data-notifications-target="badge" style="display:none;" 0
+            ul.dropdown-menu.notifications-dropdown data-notifications-target="list"
+              / Notifications will be loaded here
+              li.dropdown-header
+                | Notifications
+                a.pull-right href="#" data-action="click->notifications#markAllAsRead" style="color: #337ab7; font-size: 12px; margin-left: 10px;" Mark all as read
           li = link_to "Users", users_path
           li.dropdown
             a.dropdown-toggle href="#" data-toggle="dropdown"
@@ -21,6 +33,7 @@ header.navbar.navbar-fixed-top.navbar-inverse
               li = link_to "Profile", current_user
               li = link_to "Settings", edit_user_path(current_user)
               li.divider
-              li = link_to "Log out", logout_path, method: :delete
+              li = link_to "Log out", logout_path, data: { turbo_method: :delete }
         - else
+          li = link_to "Help", help_path
           li = link_to "Log in", login_path

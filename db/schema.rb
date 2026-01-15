@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2024_06_06_072227) do
+ActiveRecord::Schema[7.2].define(version: 2026_01_15_062810) do
   create_table "active_storage_attachments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -39,13 +39,69 @@ ActiveRecord::Schema[7.2].define(version: 2024_06_06_072227) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "comments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "micropost_id", null: false
+    t.text "content"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["micropost_id"], name: "index_comments_on_micropost_id"
+    t.index ["user_id"], name: "index_comments_on_user_id"
+  end
+
+  create_table "hashtags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_hashtags_on_name", unique: true
+  end
+
+  create_table "likes", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "micropost_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["micropost_id"], name: "index_likes_on_micropost_id"
+    t.index ["user_id", "micropost_id"], name: "index_likes_on_user_id_and_micropost_id", unique: true
+    t.index ["user_id"], name: "index_likes_on_user_id"
+  end
+
+  create_table "micropost_hashtags", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "micropost_id", null: false
+    t.bigint "hashtag_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["hashtag_id"], name: "index_micropost_hashtags_on_hashtag_id"
+    t.index ["micropost_id", "hashtag_id"], name: "index_micropost_hashtags_on_micropost_id_and_hashtag_id", unique: true
+    t.index ["micropost_id"], name: "index_micropost_hashtags_on_micropost_id"
+  end
+
   create_table "microposts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "content"
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "privacy", default: 0, null: false
+    t.integer "likes_count", default: 0, null: false
+    t.integer "comments_count", default: 0, null: false
     t.index ["user_id", "created_at"], name: "index_microposts_on_user_id_and_created_at"
     t.index ["user_id"], name: "index_microposts_on_user_id"
+  end
+
+  create_table "notifications", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "recipient_id", null: false
+    t.bigint "actor_id", null: false
+    t.string "notifiable_type", null: false
+    t.bigint "notifiable_id", null: false
+    t.string "action", null: false
+    t.boolean "read", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["actor_id"], name: "index_notifications_on_actor_id"
+    t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable"
+    t.index ["notifiable_type", "notifiable_id"], name: "index_notifications_on_notifiable_type_and_notifiable_id"
+    t.index ["recipient_id", "read", "created_at"], name: "index_notifications_on_recipient_id_and_read_and_created_at"
+    t.index ["recipient_id"], name: "index_notifications_on_recipient_id"
   end
 
   create_table "relationships", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -76,5 +132,13 @@ ActiveRecord::Schema[7.2].define(version: 2024_06_06_072227) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "comments", "microposts"
+  add_foreign_key "comments", "users"
+  add_foreign_key "likes", "microposts"
+  add_foreign_key "likes", "users"
+  add_foreign_key "micropost_hashtags", "hashtags"
+  add_foreign_key "micropost_hashtags", "microposts"
   add_foreign_key "microposts", "users"
+  add_foreign_key "notifications", "users", column: "actor_id"
+  add_foreign_key "notifications", "users", column: "recipient_id"
 end

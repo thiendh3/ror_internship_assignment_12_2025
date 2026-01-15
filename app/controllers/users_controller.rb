@@ -65,6 +65,33 @@ class UsersController < ApplicationController
     render 'show_follow'
   end
 
+  # GET /users/autocomplete
+  def autocomplete
+    query = params[:q]
+    
+    # Search users for @ mentions
+    users = if query.present?
+      # Search following users first, then all activated users
+      if logged_in?
+        following_users = current_user.following.where('name LIKE ?', "#{query}%").limit(5)
+        other_users = User.where(activated: true)
+                         .where('name LIKE ?', "#{query}%")
+                         .where.not(id: following_users.pluck(:id))
+                         .limit(5)
+        (following_users + other_users).uniq.first(10)
+      else
+        User.where(activated: true).where('name LIKE ?', "#{query}%").limit(10)
+      end
+    else
+      # Return following users if logged in
+      logged_in? ? current_user.following.limit(10) : []
+    end
+
+    render json: {
+      users: users.map { |u| { id: u.id, name: u.name, email: u.email } }
+    }
+  end
+
   private
     #Strong param
     def user_params
