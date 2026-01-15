@@ -12,6 +12,14 @@ const notificationsChannel = consumer.subscriptions.create("NotificationsChannel
 
   received(data) {
     console.log("Received notification:", data)
+    
+    // Extra safety check: skip if actor is current user
+    const currentUserId = document.body.dataset.currentUserId
+    if (currentUserId && data.actor && parseInt(currentUserId) === data.actor.id) {
+      console.log("Skipping notification from self")
+      return
+    }
+    
     this.showNotification(data)
     this.updateBadge()
     this.addToNotificationsList(data)
@@ -20,14 +28,21 @@ const notificationsChannel = consumer.subscriptions.create("NotificationsChannel
   showNotification(data) {
     const toast = document.createElement('div')
     toast.className = 'notification-toast alert alert-info'
-    toast.style.cssText = 'position: fixed; top: 70px; right: 20px; z-index: 9999; min-width: 300px; cursor: pointer;'
+    toast.style.cssText = 'position: fixed; top: 70px; right: 20px; z-index: 9999; min-width: 300px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);'
+    
+    const actorName = data.actor?.name || 'Someone'
+    const targetUrl = data.target_url || '/notifications'
+    
     toast.innerHTML = `
-      <strong>${data.actor?.name || 'Someone'}</strong>
-      <br>${data.message}
-      <button type="button" class="close" onclick="event.stopPropagation(); this.parentElement.remove()">&times;</button>
+      <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div>
+          <strong>${actorName}</strong> ${data.message}
+        </div>
+        <button type="button" class="close" style="background: none; border: none; font-size: 20px; cursor: pointer;" onclick="event.stopPropagation(); this.closest('.notification-toast').remove()">&times;</button>
+      </div>
     `
     toast.addEventListener('click', () => {
-      window.location.href = '/notifications'
+      window.location.href = targetUrl
     })
     document.body.appendChild(toast)
 
@@ -43,24 +58,34 @@ const notificationsChannel = consumer.subscriptions.create("NotificationsChannel
     if (url.searchParams.get('tab') === 'read') return
 
     const li = document.createElement('li')
-    li.className = 'list-group-item'
+    li.className = 'list-group-item notification-item unread'
     li.dataset.notificationId = data.id
+    li.style.cursor = 'pointer'
 
-    const actorLink = data.actor?.id ? `/notifications/${data.id}/mark_as_read` : '#'
     const actorName = data.actor?.name || 'Someone'
+    const targetUrl = data.target_url || '/notifications'
 
     li.innerHTML = `
       <div class="d-flex justify-content-between align-items-start">
         <div class="ms-2 me-auto">
-          <a href="${actorLink}" data-method="post">
-            <div class="fw-bold">${actorName}</div>
-          </a>
-          <span class="text-muted">${data.type === 'follow' ? 'started following you' : 'unfollowed you'}</span>
+          <div class="fw-bold">${actorName}</div>
+          <span class="text-muted">${data.message}</span>
           <small class="text-muted d-block">just now</small>
         </div>
         <span class="badge bg-primary rounded-pill">New</span>
       </div>
     `
+    
+    li.addEventListener('click', async () => {
+      // Mark as read first
+      await fetch(`/notifications/${data.id}/mark_as_read`, { 
+        method: 'POST',
+        headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content }
+      })
+      // Then navigate to target
+      window.location.href = targetUrl
+    })
+    
     list.insertBefore(li, list.firstChild)
   },
 

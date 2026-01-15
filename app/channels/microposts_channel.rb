@@ -2,7 +2,8 @@
 
 class MicropostsChannel < ApplicationCable::Channel
   def subscribed
-    stream_from 'microposts:feed'
+    # Stream for all micropost updates (posts, reactions, comments, shares)
+    stream_for 'feed'
   end
 
   def unsubscribed
