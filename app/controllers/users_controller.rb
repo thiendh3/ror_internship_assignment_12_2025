@@ -9,6 +9,8 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
     @microposts = @user.microposts.paginate(page: params[:page])
     redirect_to root_url and return unless @user.activated?
+    
+    render layout: false if turbo_frame_request?
   end
 
   def new
@@ -30,13 +32,32 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
   end
 
+  def edit_modal
+    @user = User.find(params[:id])
+    render layout: false
+  end
+
   def update
     @user = User.find(params[:id])
     if @user.update(user_params)
       flash[:success] = "Profile is updated"
-      redirect_to @user
+      
+      respond_to do |format|
+        format.html { redirect_to @user }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            "edit_user_form", 
+            "<script>window.location.href = '#{user_path(@user)}'</script>".html_safe
+          )
+        end
+      end
     else
-      render 'edit'
+      respond_to do |format|
+        format.html { render 'edit', status: :unprocessable_entity }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace("edit_user_form", partial: "users/form_modal")
+        end
+      end
     end
   end
 
@@ -89,8 +110,6 @@ class UsersController < ApplicationController
     
     # Store total found count for the view
     @total_found = result[:total]
-
-    @is_search_mode = true
   end
 
   def destroy
@@ -129,7 +148,6 @@ class UsersController < ApplicationController
 
     users = User.where(id: result[:ids])
 
-    # --- REAL-WORLD QUERY SUGGESTIONS LOGIC ---
     # Instead of full names, we suggest the specific word/token being typed
     # or broad categories (like just the First Name)
     suggested_queries = users.map do |u|
@@ -143,7 +161,6 @@ class UsersController < ApplicationController
       matching_word ? matching_word.capitalize : nil
     end.compact.uniq.first(3)
 
-    # --- INSTANT USER RESULTS ---
     users_by_id = users.index_by(&:id)
     ordered_users = result[:ids].map { |id| users_by_id[id.to_i] }.compact
 
@@ -162,10 +179,17 @@ class UsersController < ApplicationController
     render json: { queries: suggested_queries, users: user_suggestions }
   end
 
+  def preview
+    @user = User.find(params[:id])
+    @microposts = @user.microposts.order(created_at: :desc).limit(10)
+    
+    render layout: false
+  end
+
   private
     #Strong param
     def user_params
-      params.require(:user).permit(:name, :email, :password, :password_confirmation)
+      params.require(:user).permit(:name, :email, :password, :password_confirmation, :bio)
     end
 
 

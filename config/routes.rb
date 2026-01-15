@@ -20,6 +20,8 @@ Rails.application.routes.draw do
     end
     member do
       get :following, :followers
+      get :preview
+      get :edit_modal
     end
   end
   resources :account_activations, only: [:edit]

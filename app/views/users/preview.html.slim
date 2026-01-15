@@ -1,0 +1,73 @@
+.modal.fade id="userPreviewModal" tabindex="-1" role="dialog"
+  .modal-dialog.modal-lg role="document"
+    .modal-content
+      / 1. SUBSCRIBE: Listen for updates here as well
+      = turbo_stream_from "user_stats_#{@user.id}"
+      
+      .modal-header
+        button.close type="button" data-dismiss="modal" aria-label="Close"
+          span aria-hidden="true" &times;
+        h4.modal-title User Preview
+      
+      .modal-body style="padding: 20px;"
+        .row
+          / --- LEFT COLUMN: User Card (Static) ---
+          .col-md-4
+            .panel.panel-default style="box-shadow: 0 2px 5px rgba(0,0,0,0.05);"
+              .panel-body.text-center style="padding: 30px 15px;"
+                
+                div.center-block style="margin-bottom: 15px;"
+                  style
+                    | .modal-gravatar .gravatar { float: none !important; margin: 0 auto; }
+                  .modal-gravatar
+                    = gravatar_for @user, size: 120
+                
+                h3 style="margin: 0 0 5px 0; font-weight: bold;" = @user.name
+                
+                - if current_user.admin?
+                   p.text-muted.small = @user.email
+
+                div style="margin-top: 20px;"
+                  div style="margin-bottom: 10px;"
+                    = render 'users/follow_form'
+                  
+                  = link_to "View Full Profile", @user, class: "btn btn-default btn-block"
+
+              .panel-footer style="background-color: #f8f9fa;"
+                .row.text-center
+                  .col-xs-4 style="border-right: 1px solid #ddd;"
+                    strong.text-primary style="display: block; font-size: 1.2em;" = @user.microposts.size
+                    span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" POSTS
+                  .col-xs-4 style="border-right: 1px solid #ddd;"
+                    strong.text-primary style="display: block; font-size: 1.2em;" = @user.following_count
+                    span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" FOLLOWING
+                  .col-xs-4
+                    strong.text-primary id="modal-followers-#{@user.id}" style="display: block; font-size: 1.2em;" = @user.followers_count
+                    span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" FOLLOWERS
+              
+          / --- RIGHT COLUMN: Recent Posts ---
+          .col-md-8
+            h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0;" 
+              | Recent Activity
+            
+            div style="max-height: 450px; overflow-y: auto; overflow-x: hidden; padding-right: 5px;"
+              - if @microposts.any?
+                ul.media-list style="margin-top: 10px;"
+                  - @microposts.each do |post|
+                    li.media style="border-bottom: 1px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 15px;"
+                      .media-left
+                        = link_to gravatar_for(post.user, size: 40), post.user
+                      .media-body
+                        div = post.content
+                        - if post.image.attached?
+                          div style="margin-top: 10px;"
+                            = image_tag post.display_image, class: "img-thumbnail", style: "max-height: 150px;"
+                        small.text-muted
+                          span.glyphicon.glyphicon-time style="margin-right: 5px;"
+                          | Posted #{time_ago_in_words(post.created_at)} ago
+              - else
+                .alert.alert-info.text-center style="margin-top: 20px;"
+                  | This user has not posted anything yet.
+              
+      .modal-footer
+        button.btn.btn-default type="button" data-dismiss="modal" Close

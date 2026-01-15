@@ -1,0 +1,17 @@
+= turbo_frame_tag "edit_user_form" do
+  = form_with(model: @user) do |f|
+    = render 'shared/error_messages', object: f.object
+    
+    .form-group
+      = f.label :name
+      = f.text_field :name, class: 'form-control'
+
+    .form-group
+      = f.label :email
+      = f.email_field :email, class: 'form-control'
+
+    .form-group
+      = f.label :bio
+      = f.text_area :bio, class: 'form-control', rows: 4
+
+    = f.submit "Save changes", class: "btn btn-primary btn-block"
