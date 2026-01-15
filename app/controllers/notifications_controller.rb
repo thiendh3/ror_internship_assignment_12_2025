@@ -10,12 +10,14 @@ class NotificationsController < ApplicationController
       format.html
       format.json do
         render json: {
-          notifications: @notifications.as_json(
-            include: {
-              actor: { only: [:id, :name, :email], methods: [:gravatar_url] },
-              notifiable: { only: [:id, :content, :created_at] }
-            }
-          ),
+          notifications: @notifications.map { |n|
+            n.as_json(
+              include: {
+                actor: { only: [:id, :name, :email], methods: [:gravatar_url] },
+                notifiable: { only: [:id, :content, :created_at] }
+              }
+            ).merge(type: n.notification_type)
+          },
           unread_count: @unread_count
         }
       end

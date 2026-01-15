@@ -30,6 +30,7 @@ Rails.application.routes.draw do
       get "likes", to: "likes#index"
       delete "like", to: "likes#destroy"
     end
+    resources :comments, only: [:create, :destroy]
   end
   resources :relationships, only: [ :create, :destroy ]
   get "/search", to: "search#index"

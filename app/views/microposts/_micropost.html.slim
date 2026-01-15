@@ -46,7 +46,8 @@
           = micropost.likes_count
       span.stat-item
         i.glyphicon.glyphicon-comment
-        span.stat-count.comment-count 5
+        span.stat-count.comment-count data-micropost-id=micropost.id
+          = micropost.comments.count
     
     .post-interactions
       - if logged_in?
@@ -71,3 +72,27 @@
       button.btn-interaction.view-micropost data-micropost-id=micropost.id
         i.glyphicon.glyphicon-eye-open
         span View
+  
+  / Comments section
+  .micropost-comments-section data-micropost-id=micropost.id
+    .comments-list
+      - micropost.comments.limit(3).each do |comment|
+        .comment-item data-comment-id=comment.id
+          = link_to gravatar_for(comment.user, size: 32), comment.user, class: "comment-avatar"
+          .comment-content
+            .comment-header
+              = link_to comment.user.name, comment.user, class: "comment-author"
+              span.comment-time = time_ago_in_words(comment.created_at) + " ago"
+            .comment-text = comment.content
+            - if current_user?(comment.user)
+              .comment-actions
+                a.delete-comment href="#" data-comment-id=comment.id data-micropost-id=micropost.id
+                  i.glyphicon.glyphicon-trash
+    
+    - if logged_in?
+      .comment-form
+        = form_with(model: [micropost, Comment.new], local: false, class: "new-comment-form") do |f|
+          .comment-input-group
+            = link_to gravatar_for(current_user, size: 32), current_user, class: "comment-avatar"
+            = f.text_field :content, class: "comment-input", placeholder: "Write a comment...", autocomplete: "off"
+            = f.submit "Post", class: "btn btn-primary btn-sm comment-submit"

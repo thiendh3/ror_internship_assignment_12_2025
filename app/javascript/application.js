@@ -6,4 +6,5 @@ import "search_autocomplete"
 import "micropost_ajax"
 import "micropost_likes"
 import "notifications"
+import "comments"
 Rails.start()

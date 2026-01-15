@@ -84,13 +84,20 @@ function updateBadgeCount(count) {
 
 function showToastNotification(data) {
     // Optional: Show a brief toast/notification at top of page
+    let message = '';
+    if (data.type === 'like') {
+        message = `<strong>${data.actor.name}</strong> liked your post`;
+    } else if (data.type === 'comment') {
+        message = `<strong>${data.actor.name}</strong> commented on your post`;
+    } else if (data.type === 'mention') {
+        message = `<strong>${data.actor.name}</strong> mentioned you`;
+    }
+
     const toast = document.createElement('div');
     toast.className = 'notification-toast';
     toast.innerHTML = `
         <img src="${data.actor.gravatar_url}" alt="${data.actor.name}">
-        <div>
-            <strong>${data.actor.name}</strong> liked your post
-        </div>
+        <div>${message}</div>
     `;
     toast.style.cssText = `
         position: fixed;
@@ -167,20 +174,31 @@ function renderNotifications(notifications) {
         return;
     }
 
-    container.innerHTML = notifications.map(notif => `
-        <div class="notification-item ${notif.read ? 'read' : 'unread'}" 
-             data-notification-id="${notif.id}"
-             data-micropost-id="${notif.notifiable?.id}">
-            <img src="${notif.actor.gravatar_url}" alt="${notif.actor.name}" class="notification-avatar">
-            <div class="notification-content">
-                <div class="notification-message">
-                    <strong>${notif.actor.name}</strong> liked your post
+    container.innerHTML = notifications.map(notif => {
+        let message = '';
+        if (notif.type === 'like') {
+            message = `<strong>${notif.actor.name}</strong> liked your post`;
+        } else if (notif.type === 'comment') {
+            message = `<strong>${notif.actor.name}</strong> commented on your post`;
+        } else if (notif.type === 'mention') {
+            message = `<strong>${notif.actor.name}</strong> mentioned you`;
+        }
+
+        return `
+            <div class="notification-item ${notif.read ? 'read' : 'unread'}" 
+                 data-notification-id="${notif.id}"
+                 data-micropost-id="${notif.notifiable?.id}">
+                <img src="${notif.actor.gravatar_url}" alt="${notif.actor.name}" class="notification-avatar">
+                <div class="notification-content">
+                    <div class="notification-message">
+                        ${message}
+                    </div>
+                    <div class="notification-preview">${truncate(notif.notifiable?.content, 50)}</div>
+                    <div class="notification-time">${timeAgo(notif.created_at)}</div>
                 </div>
-                <div class="notification-preview">${truncate(notif.notifiable?.content, 50)}</div>
-                <div class="notification-time">${timeAgo(notif.created_at)}</div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
     // Add click handlers
     container.querySelectorAll('.notification-item').forEach(item => {

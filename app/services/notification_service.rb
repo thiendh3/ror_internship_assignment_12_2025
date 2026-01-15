@@ -72,13 +72,18 @@ class NotificationService
   def self.create_comment_notification(commenter, micropost, comment)
     return if commenter.id == micropost.user_id
     
-    Notification.create(
+    notification = Notification.create(
       recipient_id: micropost.user_id,
       actor_id: commenter.id,
       notifiable: comment,
       notification_type: 'comment',
       content: "#{commenter.name} commented on your post: #{comment.content.truncate(50)}"
     )
+    
+    # Broadcast to recipient via WebSocket
+    broadcast_notification(notification) if notification.persisted?
+    
+    notification
   end
   
   # Create notification when someone mentions you
