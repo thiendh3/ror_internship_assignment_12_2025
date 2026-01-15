@@ -4,25 +4,15 @@ class Relationship < ApplicationRecord
   validates :follower_id, presence: true
   validates :followed_id, presence: true
 
-  after_create_commit :create_notification
-  after_destroy_commit :create_unfollow_notification
+  after_create_commit :notify_follow
+  after_destroy_commit :notify_unfollow
 
   private
-    def create_notification
-      Notification.create(
-        recipient: followed,
-        actor: follower,
-        action: "followed",
-        notifiable: self
-      )
+    def notify_follow
+      NotificationService.create_notification(follower, "followed", followed, self)
     end
 
-    def create_unfollow_notification
-      Notification.create(
-        recipient: followed,
-        actor: follower,
-        action: "unfollowed",
-        notifiable: nil 
-      )
+    def notify_unfollow
+      NotificationService.create_notification(follower, "unfollowed", followed, nil)
     end
 end
