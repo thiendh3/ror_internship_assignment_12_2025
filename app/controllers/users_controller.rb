@@ -9,6 +9,8 @@ class UsersController < ApplicationController
     @user = User.find(params[:id])
     @microposts = @user.microposts.paginate(page: params[:page])
     redirect_to root_url and return unless @user.activated?
+    
+    render layout: false if turbo_frame_request?
   end
 
   def new

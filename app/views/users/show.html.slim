@@ -13,9 +13,11 @@
     - if @user.microposts.any?
       h3
         | Microposts (#{@user.microposts.count})
-      ol.microposts
-        = render @microposts
-      .digg_pagination
-        = will_paginate @microposts
+      
+      = turbo_frame_tag "microposts", data: { turbo_action: "advance" }
+        ol.microposts
+          = render @microposts
+        .digg_pagination
+          = will_paginate @microposts
     - else
       h3 No post yet
