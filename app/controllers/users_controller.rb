@@ -160,6 +160,13 @@ class UsersController < ApplicationController
     render json: { queries: suggested_queries, users: user_suggestions }
   end
 
+  def preview
+    @user = User.find(params[:id])
+    @microposts = @user.microposts.order(created_at: :desc).limit(10)
+    
+    render layout: false
+  end
+
   private
     #Strong param
     def user_params

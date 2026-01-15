@@ -10,11 +10,19 @@ li
   div style="margin-left: 60px;"
     / 1. Name
     div style="font-size: 1.1em; font-weight: bold;"
+      
+      / --- DEFINE DATA ATTRIBUTES FOR STIMULUS ---
+      - preview_opts = { \
+          controller: "user-preview", \
+          user_preview_url_value: preview_user_path(user), \
+          action: "click->user-preview#load" \
+        }
+
       / Logic: Highlight if default OR explicitly searching name
       - if params[:query].present? && (params[:search_field].blank? || params[:search_field] == 'name')
-        = link_to highlight(user.name, params[:query]), user
+        = link_to highlight(user.name, params[:query]), user, data: preview_opts
       - else
-        = link_to user.name, user
+        = link_to user.name, user, data: preview_opts
     
     / 2. Stats
     div.small.text-muted style="margin-bottom: 2px;"
@@ -28,7 +36,6 @@ li
     - if current_user.admin?
       div.small.text-info
         span.glyphicon.glyphicon-envelope style="margin-right: 5px; color: #888;"
-        / Logic: Highlight ONLY if explicitly searching email
         - if params[:query].present? && params[:search_field] == 'email'
           = highlight(user.email, params[:query])
         - else
