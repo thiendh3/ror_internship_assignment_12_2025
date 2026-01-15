@@ -1,0 +1,23 @@
+.comments-section data-micropost-id=micropost.id
+  .comments-header
+    h4
+      | Comments 
+      span.comments-count (#{micropost.comments_count})
+  
+  .comment-form-container
+    - if logged_in?
+      = form_with url: micropost_comments_path(micropost), method: :post, local: false, class: 'comment-form', data: { micropost_id: micropost.id } do |f|
+        .comment-input-wrapper
+          = gravatar_for current_user, size: 32
+          = f.text_area :content, placeholder: 'Write a comment...', rows: 1, class: 'comment-input', required: true
+          = f.hidden_field :parent_id, value: nil, class: 'parent-id-field'
+        .comment-form-actions
+          button.btn.btn-primary.btn-sm type="submit" Post
+    - else
+      p.login-prompt
+        = link_to 'Log in', login_path
+        |  to comment
+
+  ul.comments-list
+    - micropost.comments.root_comments.includes(:user, :replies).recent.each do |comment|
+      = render partial: 'comments/comment', locals: { comment: comment }

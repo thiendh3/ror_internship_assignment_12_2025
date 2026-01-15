@@ -85,6 +85,7 @@ class CommentsController < ApplicationController
       time_ago: time_ago_in_words(comment.created_at),
       parent_id: comment.parent_id,
       reactions_count: comment.reactions_count,
+      top_reactions: comment.reactions.group(:reaction_type).count.sort_by { |_, v| -v }.first(3).map(&:first),
       user: {
         id: comment.user.id,
         name: comment.user.name,

@@ -126,11 +126,18 @@ const micropostsChannel = consumer.subscriptions.create(
       const currentUserId = document.body.dataset.currentUserId
       if (currentUserId && parseInt(currentUserId) === data.user_id) return
 
+      const reactionsData = data.reactions_data
+
+      // Handle comment reactions
+      if (data.reactable_type === 'comment') {
+        this.handleCommentReactionUpdate(data.reactable_id, reactionsData)
+        return
+      }
+
+      // Handle micropost reactions
       const micropostId = data.micropost_id
       const micropostEl = document.getElementById(`micropost-${micropostId}`)
       if (!micropostEl) return
-
-      const reactionsData = data.reactions_data
       
       // Update reactions summary icons
       let iconsContainer = micropostEl.querySelector('.reactions-icons')
@@ -167,6 +174,43 @@ const micropostsChannel = consumer.subscriptions.create(
         setTimeout(() => {
           summaryEl.style.transition = 'background-color 0.5s ease'
           summaryEl.style.backgroundColor = ''
+        }, 100)
+      }
+    },
+
+    // Handle comment reaction updates
+    handleCommentReactionUpdate(commentId, reactionsData) {
+      const commentEl = document.querySelector(`[data-comment-id="${commentId}"]`)
+      if (!commentEl) return
+
+      // Update display
+      let display = commentEl.querySelector('.comment-reactions-display')
+      if (reactionsData.total_count > 0) {
+        if (!display) {
+          display = document.createElement('div')
+          display.className = 'comment-reactions-display'
+          const wrapper = commentEl.querySelector('.comment-reaction-wrapper')
+          if (wrapper) wrapper.after(display)
+        }
+        let html = ''
+        if (reactionsData.top_reactions) {
+          reactionsData.top_reactions.forEach(rt => {
+            html += `<span class="reaction-icon-tiny">${this.getReactionEmoji(rt)}</span>`
+          })
+        }
+        html += `<span class="reaction-count">${reactionsData.total_count}</span>`
+        display.innerHTML = html
+      } else if (display) {
+        display.remove()
+      }
+
+      // Flash effect
+      const actions = commentEl.querySelector('.comment-actions')
+      if (actions) {
+        actions.style.backgroundColor = '#e8f4ff'
+        setTimeout(() => {
+          actions.style.transition = 'background-color 0.5s ease'
+          actions.style.backgroundColor = ''
         }, 100)
       }
     },

@@ -9,10 +9,21 @@ li.comment-item data-comment-id=comment.id data-parent-id=comment.parent_id clas
         span.comment-time = time_ago_in_words(comment.created_at) + " ago"
       .comment-text = comment.content
       .comment-actions
-        button.btn-reaction.btn-sm data-comment-id=comment.id data-action="react"
-          - user_reaction = logged_in? ? comment.reactions.find_by(user: current_user)&.reaction_type : nil
-          span.reaction-icon = user_reaction ? reaction_emoji(user_reaction) : '👍'
-          span.reaction-count = comment.reactions_count > 0 ? comment.reactions_count : ''
+        - user_reaction = logged_in? ? comment.reactions.find_by(user: current_user)&.reaction_type : nil
+        - top_reactions = comment.reactions.group(:reaction_type).count.sort_by { |_, v| -v }.first(3).map(&:first)
+        .comment-reaction-wrapper
+          button.btn-comment-reaction.btn-sm data-comment-id=comment.id class="#{user_reaction ? 'reacted' : ''}" data-current-reaction="#{user_reaction}"
+            span.reaction-icon = user_reaction ? reaction_emoji(user_reaction) : '👍'
+            span.reaction-text = user_reaction ? user_reaction.capitalize : 'Like'
+          .comment-reaction-picker data-comment-id=comment.id style="flex-direction: row !important;"
+            - reaction_types.each do |type, emoji|
+              button.comment-reaction-option data-reaction-type="#{type}" data-comment-id="#{comment.id}" title="#{type.capitalize}" style="display: inline-block;"
+                = emoji
+        - if comment.reactions_count > 0
+          .comment-reactions-display
+            - top_reactions.each do |rt|
+              span.reaction-icon-tiny = reaction_emoji(rt)
+            span.reaction-count = comment.reactions_count
         button.btn-reply.btn-sm data-comment-id=comment.id Reply
         - if logged_in? && current_user.id == comment.user_id
           button.btn-edit-comment.btn-sm data-comment-id=comment.id data-micropost-id=comment.micropost_id Edit

@@ -94,9 +94,33 @@ function initReactions() {
     btn.addEventListener('click', handleQuickReaction);
   });
 
-  // Comment reactions
-  document.querySelectorAll('.btn-reaction[data-comment-id]').forEach(btn => {
-    btn.addEventListener('click', handleCommentReaction);
+  // Comment reactions - picker hover
+  document.querySelectorAll('.comment-reaction-wrapper').forEach(wrapper => {
+    const picker = wrapper.querySelector('.comment-reaction-picker');
+    if (!picker) return;
+
+    let hideTimeout;
+    wrapper.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimeout);
+      picker.classList.add('show');
+    });
+    wrapper.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+    });
+    picker.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+    picker.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+    });
+  });
+
+  // Comment reaction option click
+  document.querySelectorAll('.comment-reaction-option').forEach(btn => {
+    btn.addEventListener('click', handleCommentReactionOption);
+  });
+
+  // Comment quick reaction (main button)
+  document.querySelectorAll('.btn-comment-reaction').forEach(btn => {
+    btn.addEventListener('click', handleCommentQuickReaction);
   });
 }
 
@@ -141,14 +165,107 @@ async function handleQuickReaction(e) {
   }
 }
 
-async function handleCommentReaction(e) {
+async function handleCommentReactionOption(e) {
   e.preventDefault();
   e.stopPropagation();
   
   const btn = e.currentTarget;
   const commentId = btn.dataset.commentId;
-  // Toggle like for comment
-  await sendReaction(commentId, 'like', 'comment');
+  const reactionType = btn.dataset.reactionType;
+  const picker = btn.closest('.comment-reaction-picker');
+  if (picker) picker.classList.remove('show');
+  
+  await sendCommentReaction(commentId, reactionType);
+}
+
+async function handleCommentQuickReaction(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  const btn = e.currentTarget;
+  const commentId = btn.dataset.commentId;
+  const currentReaction = btn.dataset.currentReaction;
+  
+  if (currentReaction) {
+    await removeCommentReaction(commentId);
+  } else {
+    await sendCommentReaction(commentId, 'like');
+  }
+}
+
+async function sendCommentReaction(commentId, reactionType) {
+  try {
+    const response = await fetch(`/comments/${commentId}/reactions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ reaction_type: reactionType })
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      updateCommentReactionUI(commentId, data.reactions_data);
+    }
+  } catch (error) {
+    console.error('Error sending comment reaction:', error);
+  }
+}
+
+async function removeCommentReaction(commentId) {
+  try {
+    const response = await fetch(`/comments/${commentId}/reactions`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+      }
+    });
+    
+    const data = await response.json();
+    if (data.success) {
+      updateCommentReactionUI(commentId, data.reactions_data);
+    }
+  } catch (error) {
+    console.error('Error removing comment reaction:', error);
+  }
+}
+
+function updateCommentReactionUI(commentId, reactionsData) {
+  const commentEl = document.querySelector(`[data-comment-id="${commentId}"]`);
+  if (!commentEl) return;
+  
+  const btn = commentEl.querySelector('.btn-comment-reaction');
+  if (btn) {
+    btn.dataset.currentReaction = reactionsData.user_reaction || '';
+    btn.classList.toggle('reacted', !!reactionsData.user_reaction);
+    
+    const icon = btn.querySelector('.reaction-icon');
+    const text = btn.querySelector('.reaction-text');
+    if (icon) icon.textContent = reactionsData.user_reaction ? getReactionEmoji(reactionsData.user_reaction) : '👍';
+    if (text) text.textContent = reactionsData.user_reaction ? reactionsData.user_reaction.charAt(0).toUpperCase() + reactionsData.user_reaction.slice(1) : 'Like';
+  }
+  
+  // Update display
+  let display = commentEl.querySelector('.comment-reactions-display');
+  if (reactionsData.total_count > 0) {
+    if (!display) {
+      display = document.createElement('div');
+      display.className = 'comment-reactions-display';
+      const wrapper = commentEl.querySelector('.comment-reaction-wrapper');
+      if (wrapper) wrapper.after(display);
+    }
+    let html = '';
+    if (reactionsData.top_reactions) {
+      reactionsData.top_reactions.forEach(rt => {
+        html += `<span class="reaction-icon-tiny">${getReactionEmoji(rt)}</span>`;
+      });
+    }
+    html += `<span class="reaction-count">${reactionsData.total_count}</span>`;
+    display.innerHTML = html;
+  } else if (display) {
+    display.remove();
+  }
 }
 
 async function sendReaction(id, reactionType, targetType) {
@@ -338,6 +455,37 @@ function renderComments(container, comments, micropostId) {
   container.querySelectorAll('.btn-delete-comment').forEach(btn => {
     btn.addEventListener('click', handleDeleteComment);
   });
+  
+  // Init comment reactions
+  initCommentReactions(container);
+}
+
+function initCommentReactions(container) {
+  container.querySelectorAll('.comment-reaction-wrapper').forEach(wrapper => {
+    const picker = wrapper.querySelector('.comment-reaction-picker');
+    if (!picker) return;
+
+    let hideTimeout;
+    wrapper.addEventListener('mouseenter', () => {
+      clearTimeout(hideTimeout);
+      picker.classList.add('show');
+    });
+    wrapper.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+    });
+    picker.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
+    picker.addEventListener('mouseleave', () => {
+      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+    });
+  });
+
+  container.querySelectorAll('.comment-reaction-option').forEach(btn => {
+    btn.addEventListener('click', handleCommentReactionOption);
+  });
+
+  container.querySelectorAll('.btn-comment-reaction').forEach(btn => {
+    btn.addEventListener('click', handleCommentQuickReaction);
+  });
 }
 
 function renderNestedComments(comments, micropostId) {
@@ -347,7 +495,8 @@ function renderNestedComments(comments, micropostId) {
 
   return comments.map(comment => {
     const isOwner = currentUserId && parseInt(currentUserId) === comment.user.id;
-    
+    const topReactions = comment.top_reactions || [];
+
     return `
     <li class="comment-item ${comment.parent_id ? 'nested-reply' : ''}" data-comment-id="${comment.id}" data-parent-id="${comment.parent_id || ''}">
       <div class="comment-content">
@@ -358,10 +507,26 @@ function renderNestedComments(comments, micropostId) {
           </div>
           <div class="comment-text">${comment.content}</div>
           <div class="comment-actions">
-            <button class="btn-reaction btn-sm" data-comment-id="${comment.id}">
-              <span class="reaction-icon">${comment.user_reaction ? getReactionEmoji(comment.user_reaction) : '👍'}</span>
-              <span class="reaction-count">${comment.reactions_count > 0 ? comment.reactions_count : ''}</span>
-            </button>
+            <div class="comment-reaction-wrapper">
+              <button class="btn-comment-reaction btn-sm ${comment.user_reaction ? 'reacted' : ''}" data-comment-id="${comment.id}" data-current-reaction="${comment.user_reaction || ''}">
+                <span class="reaction-icon">${comment.user_reaction ? getReactionEmoji(comment.user_reaction) : '👍'}</span>
+                <span class="reaction-text">${comment.user_reaction ? comment.user_reaction.charAt(0).toUpperCase() + comment.user_reaction.slice(1) : 'Like'}</span>
+              </button>
+              <div class="comment-reaction-picker" data-comment-id="${comment.id}" style="flex-direction: row !important;">
+                <button class="comment-reaction-option" data-reaction-type="like" data-comment-id="${comment.id}" title="Like" style="display: inline-block;">👍</button>
+                <button class="comment-reaction-option" data-reaction-type="love" data-comment-id="${comment.id}" title="Love" style="display: inline-block;">❤️</button>
+                <button class="comment-reaction-option" data-reaction-type="haha" data-comment-id="${comment.id}" title="Haha" style="display: inline-block;">😆</button>
+                <button class="comment-reaction-option" data-reaction-type="wow" data-comment-id="${comment.id}" title="Wow" style="display: inline-block;">😮</button>
+                <button class="comment-reaction-option" data-reaction-type="sad" data-comment-id="${comment.id}" title="Sad" style="display: inline-block;">😢</button>
+                <button class="comment-reaction-option" data-reaction-type="angry" data-comment-id="${comment.id}" title="Angry" style="display: inline-block;">😠</button>
+              </div>
+            </div>
+            ${comment.reactions_count > 0 ? `
+              <div class="comment-reactions-display">
+                ${topReactions.map(rt => `<span class="reaction-icon-tiny">${getReactionEmoji(rt)}</span>`).join('')}
+                <span class="reaction-count">${comment.reactions_count}</span>
+              </div>
+            ` : ''}
             <button class="btn-reply btn-sm" data-comment-id="${comment.id}" data-micropost-id="${micropostId}">Reply</button>
             ${isOwner ? `
               <button class="btn-edit-comment btn-sm" data-comment-id="${comment.id}" data-micropost-id="${micropostId}">Edit</button>
@@ -423,6 +588,7 @@ async function handleCommentSubmit(e) {
       
       // Reinit handlers
       initComments();
+      initReactions();
     }
   } catch (error) {
     console.error('Error posting comment:', error);
