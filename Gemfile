@@ -63,6 +63,9 @@ group :development, :test do
   #gem "debug", platforms: %i[ mri mswin mswin64 mingw x64_mingw ]
   gem "mysql2", "~> 0.5"
   gem 'byebug', platforms:[:mri, :mingw, :x64_mingw]
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
+  gem 'rubocop-rspec', require: false
 end
 
 group :development do
