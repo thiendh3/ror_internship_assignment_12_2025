@@ -13,6 +13,11 @@ header.navbar.navbar-fixed-top.navbar-inverse
         li = link_to "Help", help_path
         - if logged_in?
           li = link_to "Users", users_path
+          li = link_to "Search", search_users_path
+          li.notification-dropdown
+            = link_to notifications_path, class: 'notification-link' do
+              | Notifications
+              span#notification-badge.badge.bg-danger style="display: none;"
           li.dropdown
             a.dropdown-toggle href="#" data-toggle="dropdown"
               | Account 

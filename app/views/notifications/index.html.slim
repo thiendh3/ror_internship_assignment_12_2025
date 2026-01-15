@@ -1,0 +1,35 @@
+= content_for :title, 'Notifications'
+
+h1 Notifications
+
+ul.nav.nav-tabs.mb-3
+  li.nav-item
+    = link_to 'Unread', notifications_path(tab: 'unread'), class: "nav-link #{@current_tab == 'unread' ? 'active' : ''}"
+  li.nav-item
+    = link_to 'Read', notifications_path(tab: 'read'), class: "nav-link #{@current_tab == 'read' ? 'active' : ''}"
+
+- if @current_tab == 'unread' && @notifications.any?
+  .mb-3
+    = link_to 'Mark all as read', mark_all_as_read_notifications_path, method: :post, class: 'btn btn-sm btn-outline-secondary', remote: true
+
+- if @notifications.any?
+  ul.list-group#notifications-list
+    - @notifications.each do |notification|
+      li.list-group-item class=("list-group-item-light" if notification.read) data-notification-id=notification.id
+        .d-flex.justify-content-between.align-items-start
+          .ms-2.me-auto
+            - if notification.actor
+              = link_to mark_as_read_notification_path(notification), method: :post do
+                .fw-bold = notification.actor.name
+            - else
+              .fw-bold.text-muted Deleted user
+            - case notification.notification_type
+            - when 'follow'
+              span.text-muted started following you
+            - when 'unfollow'
+              span.text-muted unfollowed you
+            small.text-muted.d-block = time_ago_in_words(notification.created_at) + ' ago'
+          - unless notification.read
+            span.badge.bg-primary.rounded-pill New
+- else
+  p.text-muted No notifications yet.
