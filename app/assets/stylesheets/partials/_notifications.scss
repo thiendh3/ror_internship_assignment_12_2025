@@ -1,0 +1,71 @@
+.badge-danger {
+	background-color: #d9534f;
+	color: white;
+	border-radius: 10px;
+	padding: 2px 6px;
+	font-size: 10px;
+	position: relative;
+	top: -10px;
+	left: -5px;
+}
+
+.notification-header {
+	padding: 10px 15px !important;
+	background-color: #f8f9fa;
+	color: #333 !important;
+	font-weight: bold;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+
+	.unread-count-label {
+		font-size: 10px;
+		padding: 3px 8px;
+		border-radius: 12px;
+	}
+}
+
+.notification-item {
+	display: flex !important;
+	align-items: center;
+	padding: 10px 15px !important;
+	border-bottom: 1px solid #eee;
+	white-space: normal !important;
+
+	&:hover {
+		background-color: #f5f5f5 !important;
+	}
+
+	.gravatar {
+		margin-right: 12px;
+		border-radius: 50%;
+		float: none;
+		margin-top: 0;
+	}
+}
+
+.notification-content {
+	display: flex;
+	flex-direction: column;
+}
+
+.notification-text {
+	font-size: 13px;
+	line-height: 1.4;
+	color: #333;
+}
+
+.notification-time {
+	font-size: 11px;
+	color: #888;
+	margin-top: 2px;
+}
+
+.unread-notification {
+	background-color: #edf2fa; /* Light blue indicator for unread */
+	transition: background-color 0.5s ease;
+
+	.notification-text {
+		font-weight: bold; /* or 500 depending on preference */
+	}
+}
