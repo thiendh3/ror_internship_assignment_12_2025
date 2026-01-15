@@ -10,6 +10,7 @@ class Micropost < ApplicationRecord
 
   has_many :likes, dependent: :destroy
   has_many :liked_by_users, through: :likes, source: :user
+  has_many :comments, dependent: :destroy
 
   has_one_attached :image
   default_scope -> { order(created_at: :desc)}
