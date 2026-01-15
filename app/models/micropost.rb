@@ -1,5 +1,6 @@
 class Micropost < ApplicationRecord
   after_save :extract_and_save_hashtags
+  after_save :extract_and_notify_mentions
   after_commit :index_to_solr
   after_destroy :remove_from_solr
 
@@ -49,9 +50,14 @@ class Micropost < ApplicationRecord
   end
 
   HASHTAG_REGEX = /#\w+/
+  MENTION_REGEX = /@(\w+)/
 
   def extract_hashtags
     content.scan(HASHTAG_REGEX).map(&:downcase).uniq
+  end
+  
+  def extract_mentions
+    content.scan(MENTION_REGEX).map(&:first).uniq
   end
   
   def content_without_hashtags
@@ -83,6 +89,20 @@ class Micropost < ApplicationRecord
     def remove_from_solr
       SolrClient.connection.delete_by_id(id)
       SolrClient.connection.commit
+    end
+    
+    def extract_and_notify_mentions
+      mentioned_usernames = extract_mentions
+      
+      mentioned_usernames.each do |username|
+        # Try to find user by email prefix (before @) or by name without spaces
+        mentioned_user = User.find_by("LOWER(REPLACE(name, ' ', '')) = ?", username.downcase) ||
+                        User.find_by("LOWER(SUBSTRING_INDEX(email, '@', 1)) = ?", username.downcase)
+        
+        if mentioned_user && mentioned_user.id != user_id
+          NotificationService.create_mention_notification(user, mentioned_user, self)
+        end
+      end
     end
 end
 

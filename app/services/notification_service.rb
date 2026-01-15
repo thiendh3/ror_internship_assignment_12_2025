@@ -90,12 +90,27 @@ class NotificationService
   def self.create_mention_notification(mentioner, mentioned_user, micropost)
     return if mentioner.id == mentioned_user.id
     
-    Notification.create(
+    # Check if notification already exists (avoid duplicates)
+    existing = Notification.find_by(
+      recipient_id: mentioned_user.id,
+      actor_id: mentioner.id,
+      notifiable: micropost,
+      notification_type: 'mention'
+    )
+    
+    return existing if existing
+    
+    notification = Notification.create(
       recipient_id: mentioned_user.id,
       actor_id: mentioner.id,
       notifiable: micropost,
       notification_type: 'mention',
       content: "#{mentioner.name} mentioned you in a post: #{micropost.content.truncate(50)}"
     )
+    
+    # Broadcast to recipient via WebSocket
+    broadcast_notification(notification) if notification.persisted?
+    
+    notification
   end
 end

@@ -10,6 +10,31 @@ function initializeComments() {
         form.dataset.commentsBound = 'true';
 
         form.addEventListener('submit', handleCommentSubmit);
+
+        // Handle textarea auto-resize and submit button state
+        const textarea = form.querySelector('.comment-input');
+        const submitBtn = form.querySelector('.comment-submit-btn');
+
+        if (textarea && submitBtn) {
+            textarea.addEventListener('input', function () {
+                // Auto-resize textarea
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+
+                // Enable/disable submit button based on content
+                submitBtn.disabled = this.value.trim().length === 0;
+            });
+
+            // Handle Enter key to submit (Shift+Enter for new line)
+            textarea.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (this.value.trim()) {
+                        form.dispatchEvent(new Event('submit'));
+                    }
+                }
+            });
+        }
     });
 
     // Handle comment deletion
@@ -25,13 +50,17 @@ function handleCommentSubmit(e) {
     e.preventDefault();
 
     const form = e.target;
-    const input = form.querySelector('.comment-input');
-    const content = input.value.trim();
+    const textarea = form.querySelector('.comment-input');
+    const submitBtn = form.querySelector('.comment-submit-btn');
+    const content = textarea.value.trim();
 
     if (!content) {
-        alert('Comment cannot be blank');
         return;
     }
+
+    // Disable button to prevent double submit
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Posting...';
 
     const formData = new FormData(form);
     const micropostId = form.action.match(/\/microposts\/(\d+)/)[1];
@@ -47,8 +76,9 @@ function handleCommentSubmit(e) {
         .then(resp => resp.json())
         .then(data => {
             if (data.comment) {
-                // Clear input
-                input.value = '';
+                // Clear input and reset height
+                textarea.value = '';
+                textarea.style.height = 'auto';
 
                 // Add new comment to the list
                 addCommentToList(micropostId, data.comment);
@@ -62,6 +92,9 @@ function handleCommentSubmit(e) {
         .catch(err => {
             console.error('Error posting comment:', err);
             alert('Failed to post comment');
+        })
+        .finally(() => {
+            submitBtn.textContent = 'Post';
         });
 }
 
@@ -103,25 +136,31 @@ function addCommentToList(micropostId, comment) {
     const section = document.querySelector(`.micropost-comments-section[data-micropost-id="${micropostId}"]`);
     if (!section) return;
 
-    const commentsList = section.querySelector('.comments-list');
-    if (!commentsList) return;
+    let commentsList = section.querySelector('.comments-list');
+
+    // Create comments list if it doesn't exist
+    if (!commentsList) {
+        commentsList = document.createElement('div');
+        commentsList.className = 'comments-list';
+        section.insertBefore(commentsList, section.querySelector('.comment-form'));
+    }
 
     const commentHTML = `
         <div class="comment-item" data-comment-id="${comment.id}">
             <a href="/users/${comment.user.id}" class="comment-avatar">
-                <img src="${comment.user.gravatar_url}" alt="${comment.user.name}" width="32" height="32" style="border-radius: 50%;">
+                <img src="${comment.user.gravatar_url}" alt="${comment.user.name}" width="36" height="36">
             </a>
-            <div class="comment-content">
+            <div class="comment-bubble">
                 <div class="comment-header">
-                    <a href="/users/${comment.user.id}" class="comment-author">${comment.user.name}</a>
+                    <a href="/users/${comment.user.id}" class="comment-author">${escapeHtml(comment.user.name)}</a>
                     <span class="comment-time">just now</span>
                 </div>
                 <div class="comment-text">${escapeHtml(comment.content)}</div>
-                <div class="comment-actions">
-                    <a class="delete-comment" href="#" data-comment-id="${comment.id}" data-micropost-id="${micropostId}">
-                        <i class="glyphicon glyphicon-trash"></i>
-                    </a>
-                </div>
+            </div>
+            <div class="comment-actions">
+                <a class="delete-comment" href="#" data-comment-id="${comment.id}" data-micropost-id="${micropostId}" title="Delete">
+                    <i class="glyphicon glyphicon-trash"></i>
+                </a>
             </div>
         </div>
     `;

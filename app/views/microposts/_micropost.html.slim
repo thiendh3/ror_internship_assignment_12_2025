@@ -25,9 +25,9 @@
   .micropost-body
     .micropost-content
       - if defined?(highlights) && highlights && highlights[micropost.id.to_s] && highlights[micropost.id.to_s]['content']
-        == highlights[micropost.id.to_s]['content'].first.gsub(/#\w+/, '').strip
+        == highlights[micropost.id.to_s]['content'].first
       - else
-        = micropost.content_without_hashtags
+        == format_micropost_content(micropost.content)
     
     - if micropost.image.attached?
       .micropost-image
@@ -75,24 +75,36 @@
   
   / Comments section
   .micropost-comments-section data-micropost-id=micropost.id
-    .comments-list
-      - micropost.comments.limit(3).each do |comment|
-        .comment-item data-comment-id=comment.id
-          = link_to gravatar_for(comment.user, size: 32), comment.user, class: "comment-avatar"
-          .comment-content
-            .comment-header
-              = link_to comment.user.name, comment.user, class: "comment-author"
-              span.comment-time = time_ago_in_words(comment.created_at) + " ago"
-            .comment-text = comment.content
+    - if micropost.comments.any?
+      .comments-list
+        - micropost.comments.limit(3).each do |comment|
+          .comment-item data-comment-id=comment.id
+            = link_to gravatar_for(comment.user, size: 36), comment.user, class: "comment-avatar"
+            .comment-bubble
+              .comment-header
+                = link_to comment.user.name, comment.user, class: "comment-author"
+                span.comment-time = time_ago_in_words(comment.created_at) + " ago"
+              .comment-text = comment.content
             - if current_user?(comment.user)
               .comment-actions
-                a.delete-comment href="#" data-comment-id=comment.id data-micropost-id=micropost.id
+                a.delete-comment href="#" data-comment-id=comment.id data-micropost-id=micropost.id title="Delete"
                   i.glyphicon.glyphicon-trash
+      - if micropost.comments.count > 3
+        .view-more-comments
+          a href="#" data-micropost-id=micropost.id
+            = "View all #{micropost.comments.count} comments"
     
     - if logged_in?
       .comment-form
         = form_with(model: [micropost, Comment.new], local: false, class: "new-comment-form") do |f|
-          .comment-input-group
-            = link_to gravatar_for(current_user, size: 32), current_user, class: "comment-avatar"
-            = f.text_field :content, class: "comment-input", placeholder: "Write a comment...", autocomplete: "off"
-            = f.submit "Post", class: "btn btn-primary btn-sm comment-submit"
+          .comment-input-wrapper
+            = link_to gravatar_for(current_user, size: 36), current_user, class: "comment-form-avatar"
+            .comment-input-container
+              = f.text_area :content, class: "comment-input", placeholder: "Write a comment...", rows: "1", autocomplete: "off"
+              .comment-actions-bar
+                .comment-toolbar
+                  button.emoji-btn type="button" title="Add emoji"
+                    i.glyphicon.glyphicon-heart
+                  button.attachment-btn type="button" title="Attach file"
+                    i.glyphicon.glyphicon-paperclip
+                = f.submit "Post", class: "comment-submit-btn", disabled: true
