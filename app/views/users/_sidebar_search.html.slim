@@ -1,62 +1,67 @@
 .panel.panel-default.sidebar-search
   .panel-body
-    .row style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;"
+    / --- Header Stats ---
+    .row.search-header
       .col-xs-12
-        h4 style="margin: 0; color: #333;"
-          span.glyphicon.glyphicon-user style="margin-right: 8px;"
-          | Found 
+        h4
+          span.glyphicon.glyphicon-user
+          |  Found 
           strong = @total_found
           |  Users
 
+    / --- Search Form ---
     div data-controller="autocomplete" data-autocomplete-url-value=autocomplete_users_path
       = form_with(url: users_path, method: :get, html: { autocomplete: 'off' }, data: { turbo_frame: "users_list", turbo_action: "advance" }) do |f|
         
-        / --- Search Bar ---
+        / --- Keywords Section ---
         .form-group
-          label.text-uppercase.text-muted style="font-size: 11px; letter-spacing: 1px;" Keywords
+          label.text-uppercase.text-muted Keywords
           
           - if current_user.admin?
-             div style="display: flex; gap: 5px; margin-bottom: 5px;"
+            .admin-options
                = select_tag(:search_field, 
                    options_for_select([['Name', 'name'], ['Email', 'email']], params[:search_field]), 
                    class: "form-control input-sm", 
-                   style: "width: auto;", 
                    data: { action: "change->autocomplete#updateParams" })
 
-          div style="position: relative;"
+          .input-group-container
             = f.text_field :query, value: params[:query], class: "form-control", placeholder: (current_user.admin? ? "Name or email..." : "Name..."), data: { autocomplete_target: "input", action: "input->autocomplete#search blur->autocomplete#blur" }
             .autocomplete-results data-autocomplete-target="results" hidden=true
 
-        / --- Filter Checkboxes ---
-        .form-group style="margin-top: 20px;"
-          label.text-uppercase.text-muted style="font-size: 11px; letter-spacing: 1px; display: block; margin-bottom: 10px;" Show Users
-          
-          - current_scopes = params[:scope] || ['following', 'discover']
-          
-          - if current_user
-            .checkbox style="margin-bottom: 10px;"
-              label
-                = check_box_tag 'scope[]', 'following', current_scopes.include?('following'), onchange: "this.form.requestSubmit()"
-                | People I Follow
-            
-            .checkbox style="margin-bottom: 10px;"
-              label
-                = check_box_tag 'scope[]', 'discover', current_scopes.include?('discover'), onchange: "this.form.requestSubmit()"
-                | Discover (New People)
-          - else
-             p.text-muted.small Log in to filter by relationship.
+        hr
 
-          / Admin Deactivated Toggle
-          - if current_user.admin?
-            hr style="margin: 10px 0;"
-            .checkbox style="margin-bottom: 10px;"
-              label.text-danger
-                = check_box_tag :include_deactivated, '1', params[:include_deactivated] == '1', onchange: "this.form.requestSubmit()"
-                | Show Deactivated Users
+        / --- Filter Checkboxes ---
+        .form-group
+          label.text-uppercase.text-muted Show Users
+          
+          .checkbox-list
+            - current_scopes = params[:scope] || ['following', 'discover']
+            
+            - if current_user
+              .checkbox
+                label
+                  = check_box_tag 'scope[]', 'following', current_scopes.include?('following'), onchange: "this.form.requestSubmit()"
+                  | People I Follow
+              
+              .checkbox
+                label
+                  = check_box_tag 'scope[]', 'discover', current_scopes.include?('discover'), onchange: "this.form.requestSubmit()"
+                  | Discover (New People)
+            - else
+               p.text-muted.small Log in to filter by relationship.
+
+            / Admin Deactivated Toggle
+            - if current_user.admin?
+              .checkbox
+                label.text-danger
+                  = check_box_tag :include_deactivated, '1', params[:include_deactivated] == '1', onchange: "this.form.requestSubmit()"
+                  | Show Deactivated Users
+
+        hr
 
         / --- Sorting ---
-        .form-group style="margin-top: 20px;"
-          label.text-uppercase.text-muted style="font-size: 11px; letter-spacing: 1px;" Sort By
+        .form-group
+          label.text-uppercase.text-muted Sort By
           = select_tag :sort, 
               options_for_select([ \
                 ['Relevance', 'relevance'], \

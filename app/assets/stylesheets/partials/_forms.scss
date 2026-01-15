@@ -1,4 +1,9 @@
-input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
 textarea,
 select,
 .uneditable-input {
@@ -34,7 +39,6 @@ textarea {
 	margin-bottom: 10px;
 }
 
-/* Errors */
 #error_explanation {
 	color: red;
 	ul {
@@ -47,5 +51,49 @@ textarea {
 	@extend .has-error;
 	.form-control {
 		color: $state-danger-text;
+	}
+}
+
+.sidebar-search {
+	background-color: #f9f9f9;
+	padding: 15px;
+	border-radius: 4px;
+	border: 1px solid #ddd;
+	margin-bottom: 20px;
+
+	h4 {
+		margin-top: 0;
+		font-size: 14px;
+		font-weight: bold;
+		text-transform: uppercase;
+		color: #555;
+		margin-bottom: 10px;
+	}
+
+	hr {
+		margin: 15px 0;
+		border-color: #e0e0e0;
+	}
+}
+
+.checkbox-list {
+	.checkbox {
+		margin-top: 5px;
+		margin-bottom: 5px;
+
+		label {
+			font-size: 13px;
+			color: #333;
+			padding-left: 20px;
+			min-height: 20px;
+			display: block;
+
+			input[type="checkbox"] {
+				width: auto;
+				position: absolute;
+				margin-left: -20px;
+				margin-top: 2px;
+			}
+		}
 	}
 }
