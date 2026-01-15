@@ -21,15 +21,13 @@ Rails.application.routes.draw do
   end
   resources :account_activations, only: [ :edit ]
   resources :password_resets, only: [ :new, :create, :edit, :update ]
-  resources :microposts, only: [ :create, :destroy, :show, :update ]
-  resources :relationships, only: [ :create, :destroy ]
-  get "/search", to: "search#index"
-  get "/search/autocomplete", to: "search#autocomplete"
-
-  resources :microposts, only [ :create, :destroy, :show, :update ] do
+  resources :microposts, only: [ :create, :destroy, :show, :update ] do
     member do
       post "like", to: "likes#create"
       delete "like", to: "likes#destroy"
     end
   end
+  resources :relationships, only: [ :create, :destroy ]
+  get "/search", to: "search#index"
+  get "/search/autocomplete", to: "search#autocomplete"
 end

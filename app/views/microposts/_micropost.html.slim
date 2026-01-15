@@ -42,15 +42,26 @@
     .post-stats
       span.stat-item
         i.glyphicon.glyphicon-heart
-        span.stat-count.like-count 12
+        span.stat-count.like-count data-micropost-id=micropost.id
+          = micropost.likes_count
       span.stat-item
         i.glyphicon.glyphicon-comment
         span.stat-count.comment-count 5
     
     .post-interactions
-      button.btn-interaction.like-btn data-micropost-id=micropost.id
-        i.glyphicon.glyphicon-heart-empty
-        span Like
+      - if logged_in?
+        - if micropost.liked_by?(current_user)
+          button.btn-interaction.like-btn.liked data-micropost-id=micropost.id data-action="unlike"
+            i.glyphicon.glyphicon-heart
+            span Unlike
+        - else
+          button.btn-interaction.like-btn data-micropost-id=micropost.id data-action="like"
+            i.glyphicon.glyphicon-heart-empty
+            span Like
+      - else
+        button.btn-interaction.like-btn disabled=true
+          i.glyphicon.glyphicon-heart-empty
+          span Like
       button.btn-interaction.comment-btn data-micropost-id=micropost.id
         i.glyphicon.glyphicon-comment
         span Comment

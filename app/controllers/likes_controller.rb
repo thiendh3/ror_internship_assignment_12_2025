@@ -36,7 +36,7 @@ class LikesController < ApplicationController
 
     private
         def set_micropost
-            @micropost = Micropost.find(params[:micropost_id])
+            @micropost = Micropost.find(params[:id])
             rescue ActiveRecord::RecordNotFound
                 render json: { error: 'Micropost not found' }, status: :not_found
         end
