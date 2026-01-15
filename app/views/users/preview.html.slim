@@ -37,11 +37,11 @@
                     strong.text-primary style="display: block; font-size: 1.2em;" = @user.microposts.count
                     span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" POSTS
                   .col-xs-4 style="border-right: 1px solid #ddd;"
-                    strong.text-primary style="display: block; font-size: 1.2em;" = @user.following.count
+                    strong.text-primary style="display: block; font-size: 1.2em;" = @user.following_count
                     span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" FOLLOWING
                   .col-xs-4
                     / SCOPED ID: modal-followers-{id}
-                    strong.text-primary id="modal-followers-#{@user.id}" style="display: block; font-size: 1.2em;" = @user.followers.count
+                    strong.text-primary id="modal-followers-#{@user.id}" style="display: block; font-size: 1.2em;" = @user.followers_count
                     span.text-muted style="font-size: 0.75em; letter-spacing: 0.5px;" FOLLOWERS
               
           / --- RIGHT COLUMN: Recent Posts ---

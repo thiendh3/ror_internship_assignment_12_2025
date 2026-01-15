@@ -27,10 +27,10 @@ li
     / 2. Stats
     div.small.text-muted style="margin-bottom: 2px;"
       | Followers: 
-      strong = user.followers.count
+      strong = user.followers_count
       |  | 
       | Following: 
-      strong = user.following.count
+      strong = user.following_count
     
     / 3. Email (Admin Only)
     - if current_user.admin?
