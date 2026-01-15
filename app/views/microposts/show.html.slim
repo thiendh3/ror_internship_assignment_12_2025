@@ -1,0 +1,36 @@
+- content_for :title, "Post by #{@micropost.user.name}"
+
+.container
+  .row.justify-content-center
+    .col-md-8
+      h4.mb-4 Post Details
+      
+      ol.microposts
+        = render @micropost
+      
+      /! Comments Section
+      .comments-section-full data-micropost-id="#{@micropost.id}"
+        h5.mt-4
+          | Comments 
+          span.comments-count
+            = "(#{@micropost.comments_count})"
+        
+        - if logged_in?
+          = form_with url: micropost_comments_path(@micropost), method: :post, local: false, class: 'comment-form mb-3', data: { micropost_id: @micropost.id } do |f|
+            .comment-input-wrapper.d-flex.gap-2
+              = gravatar_for current_user, size: 40
+              = f.text_area :content, placeholder: 'Write a comment...', rows: 2, class: 'form-control comment-input', required: true
+              = f.hidden_field :parent_id, value: nil, class: 'parent-id-field'
+            .mt-2.text-end
+              button.btn.btn-primary.btn-sm type="submit" Post Comment
+        - else
+          p.text-muted
+            = link_to 'Log in', login_path
+            |  to comment
+
+        ul.comments-list.list-unstyled.mt-3
+          - @micropost.comments.root_comments.includes(:user, replies: :user).recent.each do |comment|
+            = render partial: 'comments/comment', locals: { comment: comment }
+
+      .mt-4
+        = link_to '← Back to Feed', root_path, class: 'btn btn-outline-secondary'

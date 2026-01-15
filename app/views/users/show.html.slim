@@ -1,3 +1,5 @@
+- shared_count = @microposts.count(&:shared_post?)
+- original_count = @microposts.count - shared_count
 = content_for :title, @user.name
 .row
   aside.col-md-4
@@ -13,11 +15,62 @@
   .col-md-8
     - if logged_in?
       = render 'follow_form'
-    - if @user.microposts.any?
-      h3
-        | Microposts (#{@user.microposts.count})
-      ol.microposts#user-microposts
-        = render @microposts
-      = render 'shared/ajax_pagination', collection: @microposts, user: @user
-    - else
-      h3 No post yet
+    
+    /! Filter buttons
+    .feed-filter.mb-3
+      button.btn.btn-sm.filter-btn.active data-filter="all" All (#{@microposts.count})
+      button.btn.btn-sm.filter-btn data-filter="posts" Posts (#{original_count})
+      button.btn.btn-sm.filter-btn data-filter="shares" Shared (#{shared_count})
+    
+    /! All microposts (including shared)
+    ol.microposts.combined-feed#user-feed
+      - @microposts.each do |micropost|
+        = render partial: 'microposts/micropost', locals: { micropost: micropost }
+    
+    - if @microposts.empty?
+      p.text-muted No posts yet
+
+javascript:
+  // Filter functionality
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      
+      const filter = this.dataset.filter;
+      document.querySelectorAll('#user-feed > li').forEach(item => {
+        const isShared = item.classList.contains('shared-micropost');
+        if (filter === 'all') {
+          item.style.display = '';
+        } else if (filter === 'posts') {
+          item.style.display = isShared ? 'none' : '';
+        } else if (filter === 'shares') {
+          item.style.display = isShared ? '' : 'none';
+        }
+      });
+    });
+  });
+
+  // Check URL params for filter
+  const urlParams = new URLSearchParams(window.location.search);
+  const filterParam = urlParams.get('filter') || urlParams.get('tab');
+  if (filterParam === 'shares') {
+    document.querySelector('[data-filter="shares"]')?.click();
+  } else if (filterParam === 'posts') {
+    document.querySelector('[data-filter="posts"]')?.click();
+  }
+
+  // Scroll to anchor if present and highlight
+  if (window.location.hash) {
+    setTimeout(() => {
+      const el = document.querySelector(window.location.hash);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.backgroundColor = '#ffffd0';
+        setTimeout(() => {
+          el.style.transition = 'background-color 1s ease';
+          el.style.backgroundColor = '';
+        }, 500);
+      }
+    }, 400);
+  }

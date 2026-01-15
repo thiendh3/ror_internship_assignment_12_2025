@@ -130,8 +130,10 @@ function initMicropostActions() {
     btn.dataset.ajaxInitialized = 'true'
     btn.addEventListener('click', (e) => {
       e.preventDefault()
+      e.stopPropagation()
       const micropostId = btn.dataset.micropostId
-      enableInlineEdit(micropostId)
+      const isShared = btn.dataset.isShared === 'true'
+      enableInlineEdit(micropostId, isShared)
     })
   })
   
@@ -155,46 +157,69 @@ function initMicropostActions() {
   })
 }
 
-function enableInlineEdit(micropostId) {
+function createShareCaptionElement(micropostEl) {
+  // Create caption div if it doesn't exist
+  const captionDiv = document.createElement('div')
+  captionDiv.className = 'share-caption'
+  
+  // Insert after micropost-header
+  const header = micropostEl.querySelector('.micropost-header')
+  if (header) {
+    header.after(captionDiv)
+  }
+  
+  return captionDiv
+}
+
+function enableInlineEdit(micropostId, isShared = false) {
   const micropostEl = document.getElementById(`micropost-${micropostId}`)
   if (!micropostEl) return
+
+  // For shared posts, edit the caption; for regular posts, edit the content
+  const contentEl = isShared 
+    ? micropostEl.querySelector('.share-caption') || createShareCaptionElement(micropostEl)
+    : micropostEl.querySelector('.content')
   
-  const contentEl = micropostEl.querySelector('.content')
   const currentContent = contentEl.textContent.trim()
-  
+
   // Store original HTML
   contentEl.dataset.originalHtml = contentEl.innerHTML
-  
+
   // Create edit form
   contentEl.innerHTML = `
     <form class="inline-edit-form" data-micropost-id="${micropostId}">
-      <textarea class="form-control mb-2" rows="2">${currentContent}</textarea>
+      <textarea class="form-control mb-2" rows="2" placeholder="${isShared ? 'Add a caption...' : 'Edit content...'}">${currentContent}</textarea>
       <div class="btn-group btn-group-sm">
         <button type="submit" class="btn btn-primary btn-sm">Save</button>
         <button type="button" class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
       </div>
     </form>
   `
-  
+
   const form = contentEl.querySelector('.inline-edit-form')
   const textarea = form.querySelector('textarea')
   textarea.focus()
-  
+
   // Cancel button
   form.querySelector('.cancel-edit').addEventListener('click', () => {
     contentEl.innerHTML = contentEl.dataset.originalHtml
+    // Remove caption element if it was empty
+    if (isShared && !currentContent) {
+      contentEl.remove()
+    }
   })
-  
+
   // Submit form
   form.addEventListener('submit', async (e) => {
     e.preventDefault()
     const newContent = textarea.value.trim()
-    
-    if (!newContent) {
+
+    // Allow empty content for shared posts (caption is optional)
+    if (!newContent && !isShared) {
       showFlash('danger', 'Content cannot be empty')
       return
     }
-    
+
     try {
       const response = await fetch(`/microposts/${micropostId}`, {
         method: 'PATCH',
@@ -205,9 +230,9 @@ function enableInlineEdit(micropostId) {
         },
         body: JSON.stringify({ micropost: { content: newContent } })
       })
-      
+
       const data = await response.json()
-      
+
       if (data.success) {
         // Replace with updated HTML
         if (data.html) {
@@ -216,6 +241,9 @@ function enableInlineEdit(micropostId) {
           const newItem = tempDiv.firstElementChild
           micropostEl.replaceWith(newItem)
           initMicropostActions()
+          if (window.SocialFeatures) {
+            window.SocialFeatures.initSocialFeatures()
+          }
           
           // Flash effect
           newItem.style.backgroundColor = '#d4edda'

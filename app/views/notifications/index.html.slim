@@ -10,26 +10,25 @@ ul.nav.nav-tabs.mb-3
 
 - if @current_tab == 'unread' && @notifications.any?
   .mb-3
-    = link_to 'Mark all as read', mark_all_as_read_notifications_path, method: :post, class: 'btn btn-sm btn-outline-secondary', remote: true
+    = link_to 'Mark all as read', mark_all_as_read_notifications_path, method: :post, class: 'btn btn-sm btn-outline-secondary', id: 'mark-all-read-btn'
 
 - if @notifications.any?
   ul.list-group#notifications-list
     - @notifications.each do |notification|
-      li.list-group-item class=("list-group-item-light" if notification.read) data-notification-id=notification.id
-        .d-flex.justify-content-between.align-items-start
-          .ms-2.me-auto
-            - if notification.actor
-              = link_to mark_as_read_notification_path(notification), method: :post do
-                .fw-bold = notification.actor.name
-            - else
-              .fw-bold.text-muted Deleted user
-            - case notification.notification_type
-            - when 'follow'
-              span.text-muted started following you
-            - when 'unfollow'
-              span.text-muted unfollowed you
-            small.text-muted.d-block = time_ago_in_words(notification.created_at) + ' ago'
-          - unless notification.read
-            span.badge.bg-primary.rounded-pill New
+      li.list-group-item.notification-item class=("list-group-item-light" if notification.read) class=("unread" unless notification.read) data-notification-id=notification.id style="cursor: pointer;"
+        = link_to mark_as_read_notification_path(notification), method: :post, class: 'text-decoration-none text-dark d-block' do
+          .d-flex.justify-content-between.align-items-start
+            .ms-2.me-auto
+              - if notification.actor
+                span.fw-bold = notification.actor.name
+                |  
+                span.text-muted = notification.message
+              - else
+                span.fw-bold.text-muted Deleted user
+                |  
+                span.text-muted = notification.message
+              small.text-muted.d-block = time_ago_in_words(notification.created_at) + ' ago'
+            - unless notification.read
+              span.badge.bg-primary.rounded-pill New
 - else
   p.text-muted No notifications yet.

@@ -1,0 +1,24 @@
+li.comment-item data-comment-id=comment.id data-parent-id=comment.parent_id class=("nested-#{[comment.nested_level, 3].min}" if comment.parent_id)
+  .comment-content
+    .comment-avatar
+      = link_to user_path(comment.user) do
+        = gravatar_for comment.user, size: 32
+    .comment-body
+      .comment-header
+        = link_to comment.user.name, user_path(comment.user), class: 'comment-author'
+        span.comment-time = time_ago_in_words(comment.created_at) + " ago"
+      .comment-text = comment.content
+      .comment-actions
+        button.btn-reaction.btn-sm data-comment-id=comment.id data-action="react"
+          - user_reaction = logged_in? ? comment.reactions.find_by(user: current_user)&.reaction_type : nil
+          span.reaction-icon = user_reaction ? reaction_emoji(user_reaction) : '👍'
+          span.reaction-count = comment.reactions_count > 0 ? comment.reactions_count : ''
+        button.btn-reply.btn-sm data-comment-id=comment.id Reply
+        - if logged_in? && current_user.id == comment.user_id
+          button.btn-edit-comment.btn-sm data-comment-id=comment.id data-micropost-id=comment.micropost_id Edit
+          button.btn-delete-comment.btn-sm.text-danger data-comment-id=comment.id data-micropost-id=comment.micropost_id Delete
+
+  - if comment.replies.any?
+    ul.comment-replies
+      - comment.replies.each do |reply|
+        = render partial: 'comments/comment', locals: { comment: reply }

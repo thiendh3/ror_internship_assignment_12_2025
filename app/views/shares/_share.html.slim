@@ -1,0 +1,79 @@
+- original = share.micropost
+li.share-item.micropost-item id="share-#{share.id}" data-share-id="#{share.id}" data-micropost-id="#{original&.id}"
+  .micropost-header
+    = link_to gravatar_for(share.user, size: 50), share.user, class: "user-profile-link", onclick: "event.stopPropagation();"
+    .micropost-user-info
+      span.user
+        = link_to share.user.name, share.user, class: "user-profile-link", onclick: "event.stopPropagation();"
+        span.share-label  shared a post
+      span.timestamp
+        | #{time_ago_in_words(share.created_at)} ago
+
+  - if share.content.present?
+    .share-caption
+      = share.content
+
+  - if original.present?
+    - user_reaction = logged_in? ? original.reactions.find_by(user: current_user) : nil
+    /! Original post embedded - clickable to go to original post
+    .shared-post-container onclick="window.location.href='/microposts/#{original.id}'; event.stopPropagation();" style="cursor: pointer;"
+      .shared-post
+        .shared-post-header
+          = link_to gravatar_for(original.user, size: 40), original.user, onclick: "event.stopPropagation();"
+          .shared-post-user-info
+            = link_to original.user.name, original.user, class: "shared-post-author", onclick: "event.stopPropagation();"
+            span.shared-post-time = time_ago_in_words(original.created_at) + " ago"
+        .shared-post-content
+          = original.content
+          - if original.image.attached?
+            .shared-post-image
+              = image_tag original.display_image, class: "img-fluid"
+
+    /! Reactions summary for original post
+    .reactions-summary data-micropost-id="#{original.id}" onclick="event.stopPropagation();"
+      .reactions-icons
+        - original.reactions.group(:reaction_type).count.each do |type, count|
+          span.reaction-icon title="#{type.capitalize}"
+            = reaction_emoji(type)
+      .engagement-stats
+        - if original.reactions_count > 0
+          span.reactions-count
+            = "#{original.reactions_count} reactions"
+        - if original.comments_count > 0
+          span.comments-count
+            = "#{original.comments_count} comments"
+        - if original.shares_count > 0
+          span.shares-count
+            = "#{original.shares_count} shares"
+
+    /! Actions - react/comment on original post, share original
+    .social-actions data-micropost-id="#{original.id}" onclick="event.stopPropagation();"
+      .reaction-btn-wrapper
+        button.btn-social.btn-reaction-trigger data-micropost-id="#{original.id}" data-current-reaction="#{user_reaction&.reaction_type}"
+          - if user_reaction
+            span.current-reaction = reaction_emoji(user_reaction.reaction_type)
+            = user_reaction.reaction_type.capitalize
+          - else
+            | 👍 Like
+        .reaction-picker
+          - reaction_types.each do |type, emoji|
+            button.reaction-option data-reaction-type="#{type}" data-micropost-id="#{original.id}" title="#{type.capitalize}"
+              = emoji
+      button.btn-social.btn-comment data-micropost-id="#{original.id}"
+        | 💬 Comment
+      button.btn-social.btn-share data-micropost-id="#{original.id}"
+        | ↗️ Share
+      - if current_user?(share.user)
+        button.btn-social.btn-delete-share.text-danger data-share-id="#{share.id}" data-original-micropost-id="#{original.id}"
+          | 🗑️ Delete
+  - else
+    /! Original post was deleted
+    .shared-post-container.deleted-post
+      .shared-post
+        .shared-post-content.text-muted.text-center.py-4
+          i.bi.bi-exclamation-circle
+          p.mb-0 This content is no longer available
+    - if current_user?(share.user)
+      .social-actions onclick="event.stopPropagation();"
+        button.btn-social.btn-delete-share.text-danger data-share-id="#{share.id}" data-original-micropost-id=""
+          | 🗑️ Delete

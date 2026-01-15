@@ -1,20 +1,89 @@
-li id="micropost-#{micropost.id}" class="micropost-item micropost-clickable" data-micropost-id="#{micropost.id}" style="cursor: pointer;"
+- user_reaction = logged_in? ? micropost.reactions.find_by(user: current_user)&.reaction_type : nil
+- top_reactions = micropost.reactions.group(:reaction_type).count.sort_by { |_, v| -v }.first(3).map(&:first)
+- is_shared = micropost.shared_post?
+- original = is_shared ? micropost.original_post : nil
+li id="micropost-#{micropost.id}" class="micropost-item micropost-clickable #{is_shared ? 'shared-micropost' : ''}" data-micropost-id="#{micropost.id}" style="cursor: pointer;"
   .micropost-header
     = link_to gravatar_for(micropost.user, size: 50), micropost.user, class: "user-profile-link", data: { user_id: micropost.user.id }, onclick: "event.stopPropagation();"
     .micropost-user-info
       span.user
         = link_to micropost.user.name, micropost.user, class: "user-profile-link", data: { user_id: micropost.user.id }, onclick: "event.stopPropagation();"
+        - if is_shared
+          span.share-label  shared a post
       span.timestamp
         | #{time_ago_in_words(micropost.created_at)} ago
-  .micropost-body
-    span.content
-      = micropost.content
-    - if micropost.image.attached?
-      .micropost-image.mt-2
-        = image_tag micropost.display_image, class: "img-fluid"
+
+  - if is_shared
+    /! Share caption
+    - if micropost.content.present?
+      .share-caption
+        = micropost.content
+    
+    /! Original post embedded
+    - if original.present?
+      .shared-post-container onclick="window.location.href='/microposts/#{original.id}'; event.stopPropagation();" style="cursor: pointer;"
+        .shared-post
+          .shared-post-header
+            = link_to gravatar_for(original.user, size: 40), original.user, onclick: "event.stopPropagation();"
+            .shared-post-user-info
+              = link_to original.user.name, original.user, class: "shared-post-author", onclick: "event.stopPropagation();"
+              span.shared-post-time = time_ago_in_words(original.created_at) + " ago"
+          .shared-post-content
+            = original.content
+            - if original.image.attached?
+              .shared-post-image
+                = image_tag original.display_image, class: "img-fluid"
+    - else
+      /! Original post was deleted
+      .shared-post-container.deleted-post
+        .shared-post
+          .shared-post-content.text-muted.text-center.py-4
+            p.mb-0 This content is no longer available
+  - else
+    /! Regular post content
+    .micropost-body
+      span.content
+        = micropost.content
+      - if micropost.image.attached?
+        .micropost-image.mt-2
+          = image_tag micropost.display_image, class: "img-fluid"
+  
+  /! Reactions summary
+  .reactions-summary onclick="event.stopPropagation();"
+    - if micropost.reactions_count > 0
+      .reactions-icons
+        - top_reactions.each do |rt|
+          span.reaction-icon-small = reaction_emoji(rt)
+        span.reactions-total = micropost.reactions_count
+    .engagement-stats
+      - if micropost.comments_count > 0
+        span.comments-stat = "#{micropost.comments_count} comments"
+      - if micropost.shares_count > 0
+        span.shares-stat = "#{micropost.shares_count} shares"
+
+  /! Action buttons
+  .social-actions onclick="event.stopPropagation();"
+    .reaction-btn-wrapper
+      button.btn-social.btn-reaction-trigger data-micropost-id="#{micropost.id}" class="#{user_reaction ? 'reacted' : ''}" data-current-reaction="#{user_reaction}"
+        span.reaction-display
+          = user_reaction ? reaction_emoji(user_reaction) : '👍'
+          = user_reaction ? user_reaction.capitalize : 'Like'
+      .reaction-picker data-micropost-id="#{micropost.id}"
+        - reaction_types.each do |type, emoji|
+          button.reaction-option data-reaction-type="#{type}" data-micropost-id="#{micropost.id}" title="#{type.capitalize}"
+            = emoji
+    button.btn-social.btn-comment data-micropost-id="#{micropost.id}"
+      | 💬 Comment
+    - share_target_id = is_shared && original ? original.id : micropost.id
+    button.btn-social.btn-share data-micropost-id="#{share_target_id}"
+      | ↗️ Share
+
+  /! Comments section (collapsed by default)
+  .comments-container data-micropost-id="#{micropost.id}" style="display: none;" onclick="event.stopPropagation();"
+
   - if current_user?(micropost.user)
     .micropost-actions.mt-2 onclick="event.stopPropagation();"
-      button.btn.btn-link.btn-sm.micropost-edit data-micropost-id="#{micropost.id}" title="Edit"
+      button.btn.btn-link.btn-sm.micropost-edit data-micropost-id="#{micropost.id}" data-is-shared="#{is_shared}" title="Edit"
         | ✏️ Edit
       button.btn.btn-link.btn-sm.text-danger.micropost-delete data-micropost-id="#{micropost.id}" title="Delete"
         | 🗑️ Delete
