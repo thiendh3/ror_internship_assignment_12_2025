@@ -44,10 +44,9 @@ document.addEventListener("turbo:load", () => {
 						).content,
 						"Content-Type": "application/json",
 					},
-				}).then((response) => {
-					if (!response.ok)
-						console.error("Failed to mark notifications as read");
-				});
+				}).catch((err) =>
+					console.error("Notification request failed:", err)
+				);
 			}
 		});
 	}
