@@ -1,16 +1,48 @@
 // Notifications functionality
+import consumer from "actioncable_consumer"
+
 let notificationsPollStarted = false;
 let notificationsDocBound = false;
+let notificationSubscription = null;
 
 function initializeNotifications() {
     const bell = document.querySelector('.notifications-bell');
     if (!bell) return;
 
+    // Initialize WebSocket subscription once
+    if (!notificationSubscription) {
+        notificationSubscription = consumer.subscriptions.create("NotificationChannel", {
+            connected() {
+                console.log("Connected to NotificationChannel");
+            },
+
+            disconnected() {
+                console.log("Disconnected from NotificationChannel");
+            },
+
+            received(data) {
+                console.log("Received notification:", data);
+                // Update badge count
+                updateBadgeCount(data.unread_count);
+
+                // Show toast notification (optional)
+                showToastNotification(data);
+
+                // Reload notifications if dropdown is open
+                const dropdown = document.querySelector('.notifications-dropdown');
+                if (dropdown && dropdown.classList.contains('show')) {
+                    loadNotifications();
+                }
+            }
+        });
+    }
+
+    // Keep polling as fallback (increase interval since we have WebSocket)
     if (!notificationsPollStarted) {
         notificationsPollStarted = true;
         updateNotificationCount();
-        // Poll for new notifications every 30 seconds
-        setInterval(updateNotificationCount, 30000);
+        // Poll less frequently as fallback
+        setInterval(updateNotificationCount, 60000);
     }
 
     if (!bell.dataset.notificationsBound) {
@@ -38,6 +70,52 @@ function initializeNotifications() {
     }
 }
 
+function updateBadgeCount(count) {
+    const badge = document.querySelector('.notification-badge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count > 99 ? '99+' : count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function showToastNotification(data) {
+    // Optional: Show a brief toast/notification at top of page
+    const toast = document.createElement('div');
+    toast.className = 'notification-toast';
+    toast.innerHTML = `
+        <img src="${data.actor.gravatar_url}" alt="${data.actor.name}">
+        <div>
+            <strong>${data.actor.name}</strong> liked your post
+        </div>
+    `;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
 function updateNotificationCount() {
     fetch('/notifications/unread_count', {
         headers: {
@@ -47,15 +125,7 @@ function updateNotificationCount() {
     })
         .then(resp => resp.json())
         .then(data => {
-            const badge = document.querySelector('.notification-badge');
-            if (badge) {
-                if (data.unread_count > 0) {
-                    badge.textContent = data.unread_count > 99 ? '99+' : data.unread_count;
-                    badge.style.display = 'inline-block';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
+            updateBadgeCount(data.unread_count);
         })
         .catch(err => console.error('Error fetching notification count:', err));
 }

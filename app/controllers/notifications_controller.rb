@@ -25,7 +25,10 @@ class NotificationsController < ApplicationController
   # GET /notifications/unread_count
   def unread_count
     count = current_user.notifications.unread.count
-    render json: { unread_count: count }
+    render json: { 
+      unread_count: count,
+      timestamp: Time.current.to_i
+    }
   end
   
   # PUT /notifications/:id/mark_as_read

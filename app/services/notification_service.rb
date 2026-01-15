@@ -15,13 +15,18 @@ class NotificationService
     return existing if existing
     
     # Create new notification
-    Notification.create(
+    notification = Notification.create(
       recipient_id: micropost.user_id,
       actor_id: liker.id,
       notifiable: micropost,
       notification_type: 'like',
       content: "#{liker.name} liked your post: #{micropost.content.truncate(50)}"
     )
+    
+    # Broadcast to recipient via WebSocket
+    broadcast_notification(notification) if notification.persisted?
+    
+    notification
   end
   
   # Delete notification when someone unlikes
@@ -32,6 +37,35 @@ class NotificationService
       notifiable: micropost,
       notification_type: 'like'
     ).destroy_all
+  end
+  
+  private
+  
+  def self.broadcast_notification(notification)
+    recipient = notification.recipient
+    unread_count = recipient.notifications.unread.count
+    
+    NotificationChannel.broadcast_to(
+      recipient,
+      {
+        id: notification.id,
+        type: notification.notification_type,
+        message: notification.message,
+        actor: {
+          id: notification.actor.id,
+          name: notification.actor.name,
+          gravatar_url: notification.actor.gravatar_url
+        },
+        notifiable: {
+          id: notification.notifiable_id,
+          type: notification.notifiable_type,
+          content: notification.notifiable.respond_to?(:content) ? notification.notifiable.content : nil
+        },
+        created_at: notification.created_at,
+        read: notification.read,
+        unread_count: unread_count
+      }
+    )
   end
   
   # Create notification when someone comments
