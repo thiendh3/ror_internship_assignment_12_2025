@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=3.0.6
+ARG RUBY_VERSION=3.2.0
 FROM registry.docker.com/library/ruby:$RUBY_VERSION-slim
 
 # Rails app lives here
@@ -34,7 +34,7 @@ ENV BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT=""
 
 # Install application gems (as root first)
-COPY Gemfile Gemfile.lock ./
+COPY Gemfile* ./
 RUN bundle install
 
 # Install Node.js dependencies

@@ -1,4 +1,7 @@
 class User < ApplicationRecord
+  # Searchkick for Elasticsearch full-text search
+  searchkick word_start: [:name, :email]
+  
   has_many :microposts, dependent: :destroy
   has_many :active_relationships, class_name: "Relationship",
                                   foreign_key: "follower_id",
@@ -94,6 +97,16 @@ class User < ApplicationRecord
   #Return true if the current user is following the other user
   def following?(other_user)
     following.include?(other_user)
+  end
+
+  # Define searchable data for Searchkick
+  def search_data
+    {
+      name: name,
+      email: email,
+      created_at: created_at,
+      activated: activated?
+    }
   end
 
   private

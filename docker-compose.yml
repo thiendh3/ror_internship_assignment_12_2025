@@ -41,29 +41,31 @@ services:
       DATABASE_NAME: ${DATABASE_NAME:-database}
       DATABASE_PORT: ${DATABASE_PORT:-3306}
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:-}
-      SOLR_URL: ${SOLR_URL:-http://solr:8983/solr}
+      ELASTICSEARCH_URL: ${ELASTICSEARCH_URL:-http://elasticsearch:9200}
     depends_on:
       db:
         condition: service_healthy
-      solr:
+      elasticsearch:
         condition: service_healthy
     networks:
       - rails_network
 
-  solr:
-    image: solr:9
-    container_name: rails_solr
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: rails_elasticsearch
     restart: unless-stopped
     ports:
-      - "8983:8983"
+      - "9200:9200"
     volumes:
-      - solr_data:/var/solr
+      - elasticsearch_data:/usr/share/elasticsearch/data
     environment:
-      SOLR_HEAP: "512m"
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     networks:
       - rails_network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/admin/ping || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -78,7 +80,7 @@ volumes:
     driver: local
   rails_tmp:
     driver: local
-  solr_data:
+  elasticsearch_data:
     driver: local
 
 networks:

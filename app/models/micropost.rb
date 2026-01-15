@@ -1,4 +1,7 @@
 class Micropost < ApplicationRecord
+  # Searchkick for Elasticsearch full-text search
+  searchkick word_start: [:content]
+  
   belongs_to :user
   has_one_attached :image
   default_scope -> { order(created_at: :desc)}
@@ -12,5 +15,15 @@ class Micropost < ApplicationRecord
   #Return a resized image for display
   def display_image
     image.variant(resize_to_limit: [500, 500])
+  end
+
+  # Define searchable data for Searchkick
+  def search_data
+    {
+      content: content,
+      user_id: user_id,
+      user_name: user.name,
+      created_at: created_at
+    }
   end
 end
