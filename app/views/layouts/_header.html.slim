@@ -13,6 +13,25 @@ header.navbar.navbar-fixed-top.navbar-inverse
         li = link_to "Help", help_path
         - if logged_in?
           li = link_to "Users", users_path
+          
+          / Notification Dropdown
+          li.dropdown
+            a.dropdown-toggle#notification-toggle href="#" data-toggle="dropdown" data-url=mark_as_read_notifications_path
+              | Notifications 
+              - unread_count = current_user.notifications.where(read_at: nil).count
+              span.badge.badge-danger#notification-count style=("display: none" if unread_count == 0)
+                = unread_count
+              b.caret
+            ul.dropdown-menu#notification-list style="min-width: 250px;"
+              li.dropdown-header Recent Activity
+              li.divider
+              #notifications-container
+                - if current_user.notifications.any?
+                  - current_user.notifications.includes(:actor).order(created_at: :desc).limit(10).each do |notification|
+                    li = link_to "#{notification.actor.name} #{notification.action} you", "#"
+                - else
+                  li.text-center.small#no-notifications No new notifications
+          
           li.dropdown
             a.dropdown-toggle href="#" data-toggle="dropdown"
               | Account 
@@ -21,6 +40,6 @@ header.navbar.navbar-fixed-top.navbar-inverse
               li = link_to "Profile", current_user
               li = link_to "Settings", edit_user_path(current_user)
               li.divider
-              li = link_to "Log out", logout_path, method: :delete
+              li = link_to "Log out", logout_path, data: { "turbo-method": :delete }
         - else
           li = link_to "Log in", login_path

@@ -473,3 +473,14 @@ mark {
 	border-radius: 3px;
 	border: 1px solid #e6db55;
 }
+
+.badge-danger {
+	background-color: #d9534f;
+	color: white;
+	border-radius: 10px;
+	padding: 2px 6px;
+	font-size: 10px;
+	position: relative;
+	top: -10px;
+	left: -5px;
+}
