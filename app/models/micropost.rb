@@ -51,6 +51,7 @@ class Micropost < ApplicationRecord
       SolrClient.add(
         id: id,
         content: content,
+        content_txt: content,
         content_suggest: content,
         user_id: user_id,
         created_at: created_at.iso8601,
