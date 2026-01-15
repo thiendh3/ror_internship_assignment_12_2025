@@ -1,14 +1,5 @@
 .panel.panel-default.sidebar-search
   .panel-body
-    / --- Header Stats ---
-    .row.search-header
-      .col-xs-12
-        h4
-          span.glyphicon.glyphicon-user
-          |  Found 
-          strong = @total_found
-          |  Users
-
     / --- Search Form ---
     div data-controller="autocomplete" data-autocomplete-url-value=autocomplete_users_path
       = form_with(url: users_path, method: :get, html: { autocomplete: 'off' }, data: { turbo_frame: "users_list", turbo_action: "advance" }) do |f|

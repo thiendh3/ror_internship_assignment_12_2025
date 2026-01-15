@@ -2,13 +2,28 @@ class UsersController < ApplicationController
   require 'will_paginate/array'
 
   before_action :logged_in_user, only: [:index, :edit, :update, :destroy]
-  before_action :correct_user, only: [:edit, :update]
-  before_action :admin_user, only: :destroy
+  before_action :set_user,       only: [:show, :edit, :edit_modal, :update, :destroy, :following, :followers, :preview]
+  before_action :correct_user,   only: [:edit, :update]
+  before_action :admin_user,     only: :destroy
+
+  def index
+    @search = UserSearch.new(params, current_user)
+    result = @search.results
+
+    @users = WillPaginate::Collection.create(result.page, result.per_page, result.total_count) do |pager|
+      pager.replace(result.records)
+    end
+    
+    @total_found = result.total_count
+    @filter_type = params[:filter]
+  end
 
   def show
-    @user = User.find(params[:id])
     @microposts = @user.microposts.paginate(page: params[:page])
-    redirect_to root_url and return unless @user.activated?
+    
+    unless @user.activated?
+      redirect_to root_url and return 
+    end
     
     render layout: false if turbo_frame_request?
   end
@@ -29,17 +44,13 @@ class UsersController < ApplicationController
   end
 
   def edit
-    @user = User.find(params[:id])
   end
 
   def edit_modal
-    @user = User.find(params[:id])
     render layout: false
   end
 
-  # NEED UPDATE
   def update
-    @user = User.find(params[:id])
     if @user.update(user_params)
       flash[:success] = "Profile is updated"
       
@@ -62,34 +73,20 @@ class UsersController < ApplicationController
     end
   end
 
-  def index
-    @search = UserSearch.new(params, current_user)
-    result = @search.results
-
-    @users = WillPaginate::Collection.create(result.page, result.per_page, result.total_count) do |pager|
-      pager.replace(result.records)
-    end
-    
-    @total_found = result.total_count
-    @filter_type = params[:filter]
-  end
-
   def destroy
-    User.find(params[:id]).destroy
+    @user.destroy
     flash[:success] = "User is deleted!"
     redirect_to users_url
   end
 
   def following
     @title = "Following"
-    @user = User.find(params[:id])
     @users = @user.following.paginate(page: params[:page])
     render 'show_follow'
   end
 
   def followers
     @title = "Followers"
-    @user = User.find(params[:id])
     @users = @user.followers.paginate(page: params[:page])
     render 'show_follow'
   end
@@ -105,50 +102,48 @@ class UsersController < ApplicationController
       per_page: 30, 
       user: current_user
     )
-    result = search.results
-    result = search.results
     
-    suggestions = result.records.flat_map do |user|
-      # if searching email, suggest email parts
-      if current_user&.admin? && params[:search_field] == 'email'
-        [user.email]
-      else
-        # otherwise suggest name parts
-        user.name.split(/\s+/)
-      end
-    end
-    
-    final_suggestions = suggestions
-      .select { |w| w.downcase.start_with?(query.downcase) }
-      .map(&:downcase)
-      .uniq
-      .first(8)
+    final_suggestions = filter_autocomplete_suggestions(search.results.records, query)
 
     render json: { queries: final_suggestions }
   end
 
   def preview
-    @user = User.find(params[:id])
     @microposts = @user.microposts.order(created_at: :desc).limit(10)
-    
     render layout: false
   end
 
   private
-    #Strong param
+
     def user_params
       params.require(:user).permit(:name, :email, :password, :password_confirmation, :bio)
     end
 
-    #Confirm the correct user
-    def correct_user
+    def set_user
       @user = User.find(params[:id])
+    end
+
+    def correct_user
       redirect_to(root_url) unless current_user?(@user)
     end
 
-    #Confirm admin user
     def admin_user
       redirect_to(root_url) unless current_user.admin?
     end
 
+    def filter_autocomplete_suggestions(records, query)
+      suggestions = records.flat_map do |user|
+        if current_user&.admin? && params[:search_field] == 'email'
+          [user.email]
+        else
+          user.name.split(/\s+/)
+        end
+      end
+
+      suggestions
+        .select { |w| w.downcase.start_with?(query.downcase) }
+        .map(&:downcase)
+        .uniq
+        .first(8)
+    end
 end

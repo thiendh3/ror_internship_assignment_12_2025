@@ -1,17 +1,5 @@
 class UserSearch < ApplicationSearch
-  attr_accessor :query, :scope, :sort, :include_deactivated, :search_field
-
-  def initialize(params = {}, user = nil)
-    @current_user = user
-    safe_params = if params.respond_to?(:permit)
-                    params.permit(:query, :sort, :page, :include_deactivated, :search_field, scope: [])
-                  else
-                    params
-                  end
-                  
-    super(safe_params)
-  end
-
+  
   def results
     raw_response = SolrService.search(
       q: build_query,
@@ -30,23 +18,22 @@ class UserSearch < ApplicationSearch
     query_str = RSolr.solr_escape(params[:query].to_s.strip)
     return "*:*" if query_str.blank?
 
-    if current_user&.admin? && search_field == 'email'
+    if current_user&.admin? && params[:search_field] == 'email'
       return "(email_text:#{query_str}) OR (email_ac:#{query_str}^2)"
     end
 
     fuzzy = query_str.length > 2 ? " OR #{query_str}~1" : ""
-    
     "(name_text:(#{query_str}#{fuzzy})^5) OR (name_ac:#{query_str}^10)"
   end
 
   def build_filters
     fqs = []
 
-    unless current_user&.admin? && include_deactivated == '1'
+    unless current_user&.admin? && params[:include_deactivated] == '1'
       fqs << 'active_boolean:true'
     end
 
-    current_scopes = Array(scope).map(&:to_s)
+    current_scopes = Array(params[:scope]).map(&:to_s)
     has_following = current_scopes.include?('following')
     has_discover  = current_scopes.include?('discover')
 
@@ -63,13 +50,15 @@ class UserSearch < ApplicationSearch
         fqs << "-id:(#{current_user.following.ids.join(' OR ')})"
       end
       fqs << "-id:#{current_user.id}" if current_user
+    else
+      fqs << "id:0"
     end
 
     fqs
   end
 
   def build_sort
-    case sort
+    case params[:sort]
     when 'newest'
       'created_at_dt desc'
     when 'popular'
@@ -84,7 +73,7 @@ class UserSearch < ApplicationSearch
   def build_boost
     return nil unless current_user&.following&.any?
     
-    scopes = Array(scope).map(&:to_s)
+    scopes = Array(params[:scope]).map(&:to_s)
     return nil if scopes.include?('discover') && !scopes.include?('following')
 
     "id:(#{current_user.following.ids.join(' ')})^5"
