@@ -5,34 +5,11 @@ class NotificationService
     return if liker.id == micropost.user_id
 
     reaction_type = reaction_type.to_s
+    existing = find_existing_reaction_notification(liker, micropost)
 
-    existing = Notification.find_by(
-      recipient_id: micropost.user_id,
-      actor_id: liker.id,
-      notifiable: micropost,
-      notification_type: %w[like love haha]
-    )
+    return update_existing_notification(existing, liker, micropost, reaction_type) if existing
 
-    if existing
-      existing.update(
-        notification_type: reaction_type,
-        content: reaction_message(liker, micropost, reaction_type)
-      )
-      broadcast_notification(existing)
-      return existing
-    end
-
-    notification = Notification.create(
-      recipient_id: micropost.user_id,
-      actor_id: liker.id,
-      notifiable: micropost,
-      notification_type: reaction_type,
-      content: reaction_message(liker, micropost, reaction_type)
-    )
-
-    broadcast_notification(notification) if notification.persisted?
-
-    notification
+    create_new_reaction_notification(liker, micropost, reaction_type)
   end
 
   # Delete notification when someone removes reaction
@@ -74,6 +51,37 @@ class NotificationService
       name: actor.name,
       gravatar_url: actor.gravatar_url
     }
+  end
+
+  def self.find_existing_reaction_notification(liker, micropost)
+    Notification.find_by(
+      recipient_id: micropost.user_id,
+      actor_id: liker.id,
+      notifiable: micropost,
+      notification_type: %w[like love haha]
+    )
+  end
+
+  def self.update_existing_notification(existing, liker, micropost, reaction_type)
+    existing.update(
+      notification_type: reaction_type,
+      content: reaction_message(liker, micropost, reaction_type)
+    )
+    broadcast_notification(existing)
+    existing
+  end
+
+  def self.create_new_reaction_notification(liker, micropost, reaction_type)
+    notification = Notification.create(
+      recipient_id: micropost.user_id,
+      actor_id: liker.id,
+      notifiable: micropost,
+      notification_type: reaction_type,
+      content: reaction_message(liker, micropost, reaction_type)
+    )
+
+    broadcast_notification(notification) if notification.persisted?
+    notification
   end
 
   def self.build_notifiable_data(notifiable, notifiable_type)

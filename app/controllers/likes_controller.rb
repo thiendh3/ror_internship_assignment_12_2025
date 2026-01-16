@@ -15,28 +15,14 @@ class LikesController < ApplicationController
   def create
     reaction_type = params[:reaction_type].presence || 'like'
 
-    existing_like = @micropost.likes.find_by(user_id: current_user.id)
-    if existing_like
-      if existing_like.reaction_type == reaction_type
-        render json: { error: 'Already reacted' }, status: :unprocessable_entity
-        return
-      end
-      existing_like.update(reaction_type: reaction_type)
-    else
-      @micropost.like!(current_user, reaction_type)
-    end
+    @micropost.like!(current_user, reaction_type) unless handle_existing_like(reaction_type)
 
     # Create notification
     NotificationService.create_like_notification(current_user, @micropost, reaction_type)
 
     broadcast_reaction_update
 
-    render json: {
-      liked: true,
-      reaction_type: reaction_type,
-      likes_count: @micropost.likes_count,
-      reaction_counts: @micropost.reaction_counts
-    }, status: :created
+    render json: reaction_response(reaction_type), status: :created
   rescue StandardError => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
@@ -69,6 +55,28 @@ class LikesController < ApplicationController
     @micropost = Micropost.find(params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: 'Micropost not found' }, status: :not_found
+  end
+
+  def handle_existing_like(reaction_type)
+    existing_like = @micropost.likes.find_by(user_id: current_user.id)
+    return false unless existing_like
+
+    if existing_like.reaction_type == reaction_type
+      render json: { error: 'Already reacted' }, status: :unprocessable_entity
+      return true
+    end
+
+    existing_like.update(reaction_type: reaction_type)
+    true
+  end
+
+  def reaction_response(reaction_type)
+    {
+      liked: true,
+      reaction_type: reaction_type,
+      likes_count: @micropost.likes_count,
+      reaction_counts: @micropost.reaction_counts
+    }
   end
 
   def broadcast_reaction_update
