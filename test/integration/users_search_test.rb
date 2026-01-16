@@ -23,7 +23,7 @@ class UsersSearchTest < ActionDispatch::IntegrationTest
       assert_response :success
 
       json_response = JSON.parse(response.body)
-      assert json_response['users'].any? { |u| u['id'] == @other_user.id }
+      assert(json_response['users'].any? { |u| u['id'] == @other_user.id })
     rescue StandardError => e
       skip "Elasticsearch not available in test environment: #{e.message}"
     end
@@ -37,7 +37,7 @@ class UsersSearchTest < ActionDispatch::IntegrationTest
       get search_users_path, params: { q: @other_user.name, following: 'true' }, as: :json
       assert_response :success
 
-      json_response = JSON.parse(response.body)
+      JSON.parse(response.body)
       # Michael doesn't follow lana by default, so results should be empty or not include lana
     rescue StandardError => e
       skip "Elasticsearch not available in test environment: #{e.message}"

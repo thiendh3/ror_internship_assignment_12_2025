@@ -23,7 +23,7 @@ class UsersController < ApplicationController
             following_count: @user.following.count,
             following: logged_in? ? current_user.following?(@user) : false
           },
-          microposts: @microposts.map { |m|
+          microposts: @microposts.map do |m|
             {
               id: m.id,
               content: m.content,
@@ -31,7 +31,7 @@ class UsersController < ApplicationController
               likes_count: m.likes.count,
               comments_count: m.comments.count
             }
-          },
+          end,
           pagination: {
             current_page: @microposts.current_page,
             total_pages: @microposts.total_pages,
@@ -115,7 +115,7 @@ class UsersController < ApplicationController
       format.json do
         total = @users.respond_to?(:total_count) ? @users.total_count : @users.count
         render json: {
-          users: @users.map { |u|
+          users: @users.map do |u|
             {
               id: u.id,
               name: u.name,
@@ -123,7 +123,7 @@ class UsersController < ApplicationController
               followers_count: u.followers.count,
               following_count: u.following.count
             }
-          },
+          end,
           total: total,
           page: params[:page] || 1
         }
@@ -165,7 +165,7 @@ class UsersController < ApplicationController
     respond_to do |format|
       format.json do
         render json: {
-          users: results.map { |u|
+          users: results.map do |u|
             {
               id: u.id,
               name: u.name,
@@ -174,7 +174,7 @@ class UsersController < ApplicationController
               following_count: u.following.count,
               following: logged_in? ? current_user.following?(u) : false
             }
-          },
+          end,
           total: results.total_count,
           page: params[:page] || 1,
           per_page: params[:per_page] || 20
@@ -203,7 +203,7 @@ class UsersController < ApplicationController
       format.json do
         render json: {
           title: @title,
-          users: @users.map { |u|
+          users: @users.map do |u|
             {
               id: u.id,
               name: u.name,
@@ -212,7 +212,7 @@ class UsersController < ApplicationController
               following_count: u.following.count,
               following: logged_in? ? current_user.following?(u) : false
             }
-          },
+          end,
           pagination: {
             current_page: @users.current_page,
             total_pages: @users.total_pages,
@@ -233,7 +233,7 @@ class UsersController < ApplicationController
       format.json do
         render json: {
           title: @title,
-          users: @users.map { |u|
+          users: @users.map do |u|
             {
               id: u.id,
               name: u.name,
@@ -242,7 +242,7 @@ class UsersController < ApplicationController
               following_count: u.following.count,
               following: logged_in? ? current_user.following?(u) : false
             }
-          },
+          end,
           pagination: {
             current_page: @users.current_page,
             total_pages: @users.total_pages,

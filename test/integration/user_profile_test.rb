@@ -19,7 +19,7 @@ class UserProfileTest < ActionDispatch::IntegrationTest
     log_in_as(@user)
     get user_path(@user)
     assert_response :success
-    assert_match /Microposts/, response.body
+    assert_match(/Microposts/, response.body)
   end
 
   test 'user profile shows follow button for other users' do
@@ -49,7 +49,7 @@ class UserProfileTest < ActionDispatch::IntegrationTest
     @other_user.follow(@user)
     get followers_user_path(@user)
     assert_response :success
-    assert_match /Followers/, response.body
+    assert_match(/Followers/, response.body)
   end
 
   test 'following page displays following users' do
@@ -57,7 +57,7 @@ class UserProfileTest < ActionDispatch::IntegrationTest
     @user.follow(@other_user)
     get following_user_path(@user)
     assert_response :success
-    assert_match /Following/, response.body
+    assert_match(/Following/, response.body)
   end
 
   test 'following user via AJAX' do
@@ -82,7 +82,7 @@ class UserProfileTest < ActionDispatch::IntegrationTest
   test 'stats update after follow' do
     log_in_as(@user)
     initial_followers = @other_user.followers.count
-    initial_following = @user.following.count
+    @user.following.count
 
     post relationships_path, params: { followed_id: @other_user.id }, as: :json
     assert_response :success

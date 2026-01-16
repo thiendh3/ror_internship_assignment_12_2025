@@ -16,8 +16,8 @@ class RelationshipsControllerTest < ActionDispatch::IntegrationTest
   test 'should require logged-in user for destroy' do
     log_in_as(@user)
     relationship = @user.active_relationships.create!(followed_id: @other_user.id)
-    delete "/logout"
-    
+    delete '/logout'
+
     assert_no_difference 'Relationship.count' do
       delete relationship_path(relationship)
     end
@@ -104,7 +104,7 @@ class RelationshipsControllerTest < ActionDispatch::IntegrationTest
   test 'should update follower counts' do
     log_in_as(@user)
     initial_followers_count = @other_user.followers.count
-    initial_following_count = @user.following.count
+    @user.following.count
 
     post relationships_path, params: { followed_id: @other_user.id }, as: :json
     assert_response :success

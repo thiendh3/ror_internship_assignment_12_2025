@@ -1,7 +1,7 @@
 class Admin::UsersController < ApplicationController
   before_action :logged_in_user
   before_action :admin_user
-  before_action :set_user, only: [:edit, :update, :destroy]
+  before_action :set_user, only: %i[edit update destroy]
 
   def index
     @users = User.where(activated: true).paginate(page: params[:page], per_page: 30)
@@ -13,7 +13,7 @@ class Admin::UsersController < ApplicationController
 
   def update
     if @user.update(user_params)
-      flash[:success] = "User updated successfully"
+      flash[:success] = 'User updated successfully'
       redirect_to admin_users_path
     else
       render :edit
@@ -22,7 +22,7 @@ class Admin::UsersController < ApplicationController
 
   def destroy
     @user.destroy
-    flash[:success] = "User deleted"
+    flash[:success] = 'User deleted'
     redirect_to admin_users_path
   end
 

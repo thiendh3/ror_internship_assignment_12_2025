@@ -8,7 +8,7 @@ class FollowNotificationsTest < ActionDispatch::IntegrationTest
 
   test 'following a user creates a notification' do
     log_in_as(@user)
-    
+
     assert_difference 'Notification.count', 1 do
       post relationships_path, params: { followed_id: @other_user.id }
     end
@@ -80,7 +80,7 @@ class FollowNotificationsTest < ActionDispatch::IntegrationTest
 
   test 'user can see their follow notifications' do
     log_in_as(@other_user)
-    
+
     # Another user follows this user
     @user.follow(@other_user)
     NotificationService.create_follow_notification(@user, @other_user)
@@ -89,6 +89,6 @@ class FollowNotificationsTest < ActionDispatch::IntegrationTest
     assert_response :success
 
     json_response = JSON.parse(response.body)
-    assert json_response['notifications'].any? { |n| n['action'] == 'followed' }
+    assert(json_response['notifications'].any? { |n| n['action'] == 'followed' })
   end
 end
