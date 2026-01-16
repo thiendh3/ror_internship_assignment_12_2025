@@ -1,7 +1,9 @@
+require 'digest'
+
 class UsersController < ApplicationController
   include ActionView::Helpers::DateHelper
 
-  before_action :logged_in_user, only: %i[index edit update destroy]
+  before_action :logged_in_user, only: %i[index edit update destroy autocomplete]
   before_action :correct_user, only: %i[edit update]
   before_action :admin_user, only: :destroy
 
@@ -12,6 +14,21 @@ class UsersController < ApplicationController
     # All microposts including shared ones, filtered by visibility
     @microposts = @user.microposts.includes(:user, :original_post)
                        .visible_to(current_user).to_a
+    
+    # Get all photos from user's posts (for Photos tab)
+    @user_photos = @user.microposts.select { |post| post.image.attached? }.map do |post|
+      post.display_image
+    end.compact
+    
+    # Get mutual friends (users who follow each other)
+    follower_ids = @user.followers.pluck(:id)
+    following_ids = @user.following.pluck(:id)
+    mutual_ids = follower_ids & following_ids
+    @mutual_friends = User.where(id: mutual_ids)
+    
+    # Get all followers and following for Friends tab
+    @all_followers = @user.followers
+    @all_following = @user.following
 
     respond_to do |format|
       format.html
@@ -44,10 +61,28 @@ class UsersController < ApplicationController
   def update
     @user = User.find(params[:id])
     if @user.update(user_params)
-      flash[:success] = 'Profile is updated'
-      redirect_to @user
+      respond_to do |format|
+        format.html do
+          flash[:success] = 'Profile is updated'
+          redirect_to @user
+        end
+        format.json do
+          render json: {
+            name: @user.name,
+            email: @user.email,
+            bio: @user.bio
+          }, status: :ok
+        end
+      end
     else
-      render 'edit'
+      respond_to do |format|
+        format.html { render 'edit' }
+        format.json do
+          render json: {
+            errors: @user.errors.full_messages
+          }, status: :unprocessable_entity
+        end
+      end
     end
   end
 
@@ -74,7 +109,8 @@ class UsersController < ApplicationController
       format.json do
         render json: {
           html: render_to_string(partial: 'microposts/micropost', collection: @microposts, formats: [:html]),
-          pagination: render_to_string(partial: 'shared/ajax_pagination', locals: { collection: @microposts, user: @user }, formats: [:html]),
+          pagination: render_to_string(partial: 'shared/ajax_pagination',
+                                       locals: { collection: @microposts, user: @user }, formats: [:html]),
           total: @user.microposts.count,
           page: params[:page] || 1
         }
@@ -102,23 +138,55 @@ class UsersController < ApplicationController
 
   def autocomplete
     query = params[:q].to_s.strip
-    return render json: [] if query.blank?
+    return render json: { users: [] } if query.blank?
 
-    search = User.search do
-      fulltext query do
-        fields(:name, :bio)
-      end
-      with(:activated, true)
-      paginate page: 1, per_page: 5
+    # Use UserSearchService for consistent search logic
+    @search_service = UserSearchService.new(params, current_user)
+    @search = @search_service.search
+    @users = @search.results
+    @highlights = build_highlights(@search)
+    
+    users = @users.map do |user|
+      highlights = @highlights[user.id] || {}
+      {
+        id: user.id,
+        name: user.name,
+        avatar_url: gravatar_url_for(user, size: 40),
+        relationship: relationship_status(user),
+        new_posts_count: new_posts_count(user),
+        highlights: {
+          name: highlights[:name]&.format { |word| "<mark>#{word}</mark>" },
+          bio: highlights[:bio]&.format { |word| "<mark>#{word}</mark>" }
+        }
+      }
     end
-    users = search.results.map { |u| { id: u.id, name: u.name, email: u.email } }
-    render json: users
+    
+    render json: { users: users }
   end
 
   def destroy
     User.find(params[:id]).destroy
     flash[:success] = 'User is deleted!'
     redirect_to users_url
+  end
+
+  private
+
+  def relationship_status(user)
+    return nil unless logged_in?
+    return 'Friend' if current_user.following?(user) && user.following?(current_user)
+    return 'Following' if current_user.following?(user)
+    return 'Follower' if user.following?(current_user)
+    nil
+  end
+
+  def new_posts_count(user)
+    return 0 unless logged_in?
+  end
+
+  def gravatar_url_for(user, size: 80)
+    gravatar_id = Digest::MD5.hexdigest(user.email.downcase)
+    "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}&d=identicon"
   end
 
   def following

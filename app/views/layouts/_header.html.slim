@@ -1,31 +1,116 @@
-header.navbar.navbar-fixed-top.navbar-inverse
-  .container
-    = link_to "sample app", root_path, id: "logo"
-    nav
-      .navbar-header
-        button.navbar-toggle.collapsed type="button" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"
-          span.sr-only Toggle navigation
-          span.icon-bar
-          span.icon-bar
-          span.icon-bar
-      ul.nav.navbar-nav.navbar-right.collapse.navbar-collapse#bs-example-navbar-collapse-1
-        li = link_to "Home", root_path
-        li = link_to "Help", help_path
-        - if logged_in?
-          li = link_to "Users", users_path
-          li = link_to "Search", search_users_path
-          li.notification-dropdown
-            = link_to notifications_path, class: 'notification-link' do
-              | Notifications
-              span#notification-badge.badge.bg-danger style="display: none;"
-          li.dropdown
-            a.dropdown-toggle href="#" data-toggle="dropdown"
-              | Account 
-              b.caret
-            ul.dropdown-menu
-              li = link_to "Profile", current_user
-              li = link_to "Settings", edit_user_path(current_user)
-              li.divider
-              li = link_to "Log out", logout_path, method: :delete
-        - else
-          li = link_to "Log in", login_path
+- if logged_in?
+  / Facebook-style header
+  header.fixed.top-0.left-0.right-0.bg-white.border-b.border-gray-200.z-50.h-16
+    .max-w-7xl.mx-auto.px-4.h-full
+      .flex.items-center.justify-between.h-full
+        / Left: Logo and Search
+        .flex.items-center.gap-3.h-full style="flex: 1.5;"
+          / Logo
+          = link_to root_path, class: "flex-shrink-0 flex items-center justify-center w-11 h-11 rounded-full hover:bg-gray-100 transition-colors" do
+            .w-11.h-11.bg-blue-600.rounded-full.flex.items-center.justify-center.text-white.font-bold.text-2xl
+              | f
+          
+          / Search bar with dropdown
+          .flex-1.relative.flex.items-center#search-container style="max-width: 600px; padding-top: 15px;"
+            .relative.w-full
+              input#header-search-input.w-full.px-4.pl-11.bg-gray-100.rounded-full.border-0.outline-none.placeholder-gray-500.focus:bg-white.focus:ring-2.focus:ring-blue-500.transition-all type="text" placeholder="Search User" autocomplete="off" style="height: 40px;"
+              .absolute.left-3.top-1/2.-translate-y-1/2.text-gray-500.pointer-events-none
+                svg.w-5.h-5 fill="currentColor" viewBox="0 0 20 20"
+                  path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"
+            
+            / Search dropdown
+            #search-dropdown.hidden.absolute.top-full.left-0.mt-2.bg-white.rounded-lg.shadow-xl.border.border-gray-200.overflow-hidden.z-50 style="width: 420px; max-height: 500px; overflow-y: auto;"
+              / Recent searches section (when no query)
+              #search-recent.hidden.p-3
+                .flex.items-center.justify-between.mb-3
+                  h3.text-sm.font-semibold.text-gray-900 Recent
+                  button#clear-recent.text-sm.text-blue-600.hover:underline Clear all
+                #recent-searches-list.space-y-1
+                  / Recent searches will be populated here
+              
+              / Search results section
+              #search-results.hidden
+                #search-results-list.space-y-1
+                  / Search results will be populated here
+              
+              / Loading state
+              #search-loading.hidden.p-4.text-center.text-gray-500
+                .animate-spin.inline-block.w-5.h-5.border-2.border-gray-300.border-t-blue-600.rounded-full.mx-auto.mb-2
+                .text-sm Searching...
+              
+              / Empty state
+              #search-empty.hidden.p-4.text-center.text-gray-500
+                .text-sm No results found
+              
+              / Filter section (admin only)
+              - if current_user&.admin?
+                #search-filters.border-t.border-gray-200.p-3.bg-gray-50
+                  button#toggle-filters.w-full.flex.items-center.justify-between.px-3.py-2.text-sm.font-semibold.text-gray-700.hover:bg-gray-100.rounded-lg.transition-colors type="button" onclick="console.log('Button clicked!'); document.getElementById('filter-options').classList.toggle('hidden'); document.getElementById('filter-arrow').classList.toggle('rotate-180'); event.stopPropagation();"
+                    .flex.items-center.gap-2
+                      svg.w-4.h-4.text-gray-600 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      span Advanced Filters
+                    svg#filter-arrow.w-4.h-4.text-gray-600.transition-transform fill="currentColor" viewBox="0 0 20 20"
+                      path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"
+                  
+                  #filter-options.hidden.mt-3.space-y-3
+                    .flex.items-center.gap-2
+                      label.text-xs.text-gray-700.w-28 Min Followers:
+                      input#filter-min-followers.flex-1.px-2.py-1.5.text-xs.border.border-gray-300.rounded-lg.focus:outline-none.focus:ring-2.focus:ring-blue-500 type="number" min="0" placeholder="0"
+                    .flex.items-center.gap-2
+                      label.text-xs.text-gray-700.w-28 Min Following:
+                      input#filter-min-following.flex-1.px-2.py-1.5.text-xs.border.border-gray-300.rounded-lg.focus:outline-none.focus:ring-2.focus:ring-blue-500 type="number" min="0" placeholder="0"
+                    .flex.items-center.gap-2
+                      label.text-xs.text-gray-700.w-28 Filter:
+                      select#filter-type.flex-1.px-2.py-1.5.text-xs.border.border-gray-300.rounded-lg.bg-white.focus:outline-none.focus:ring-2.focus:ring-blue-500
+                        option value="" All Users
+                        option value="following" Following
+                        option value="followers" Followers
+                    .flex.items-center.gap-2.mt-2.pt-2.border-t.border-gray-200
+                      button#apply-filters.flex-1.px-3.py-1.5.bg-blue-600.text-white.text-xs.rounded-lg.font-semibold.hover:bg-blue-700.transition-colors type="button" Apply
+                      button#clear-filters.flex-1.px-3.py-1.5.bg-gray-200.text-gray-700.text-xs.rounded-lg.font-semibold.hover:bg-gray-300.transition-colors type="button" Clear
+        
+        / Center: Navigation Icons (Home, Profile, Notification)
+        .flex.items-center.justify-center.flex-1.gap-1
+          = link_to root_path, class: "flex items-center justify-center w-20 h-16 hover:bg-gray-100 rounded-lg transition-colors #{'border-b-4 border-blue-600' if request.path == root_path}" do
+            svg.w-8.h-8.text-blue-600 fill="currentColor" viewBox="0 0 24 24"
+              path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
+          
+          = link_to current_user, class: "flex items-center justify-center w-20 h-16 hover:bg-gray-100 rounded-lg transition-colors #{'border-b-4 border-blue-600' if request.path == user_path(current_user)}" do
+            svg.w-8.h-8.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+              path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+          
+          = link_to notifications_path, class: "flex items-center justify-center w-20 h-16 hover:bg-gray-100 rounded-lg transition-colors relative #{'border-b-4 border-blue-600' if request.path == notifications_path}" do
+            svg.w-8.h-8.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+              path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"
+            - unread_count = current_user.notifications.unread.count
+            - if unread_count > 0
+              #notification-badge.absolute.top-2.right-2.w-5.h-5.bg-red-500.rounded-full.flex.items-center.justify-center.text-white.text-xs.font-bold style="line-height: 1.25rem; text-align: center;"
+                = unread_count > 9 ? '9+' : unread_count
+            - else
+              #notification-badge.absolute.top-2.right-2.w-5.h-5.bg-red-500.rounded-full.flex.items-center.justify-center.text-white.text-xs.font-bold.hidden style="line-height: 1.25rem; text-align: center;"
+        
+        / Right: Profile Avatar and Account Menu
+        .flex.items-center.flex-1.justify-end.gap-2
+          = link_to current_user, class: "flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors overflow-hidden" do
+            = gravatar_for(current_user, size: 40, class_name: "w-full h-full object-cover rounded-full")
+          
+          .relative
+            button.flex.items-center.justify-center.w-10.h-10.rounded-full.hover:bg-gray-100.transition-colors type="button" onclick="document.getElementById('account-menu').classList.toggle('hidden')"
+              svg.w-5.h-5.text-gray-700 fill="currentColor" viewBox="0 0 24 24"
+                path d="M7 10l5 5 5-5z"
+            #account-menu.hidden.absolute.right-0.mt-2.w-48.bg-white.rounded-lg.shadow-lg.border.border-gray-200.py-1.z-50
+              = link_to "Profile", current_user, class: "block px-4 py-2 text-gray-700 hover:bg-gray-100"
+              = link_to "Settings", edit_user_path(current_user), class: "block px-4 py-2 text-gray-700 hover:bg-gray-100"
+              .border-t.border-gray-200.my-1
+              = link_to "Log out", logout_path, method: :delete, class: "block px-4 py-2 text-gray-700 hover:bg-gray-100"
+- else
+  / Simple header for non-logged in users
+  header.bg-white.border-b.border-gray-200
+    .max-w-7xl.mx-auto.px-4
+      .flex.items-center.justify-between.h-14
+        = link_to "Sample App", root_path, class: "text-xl font-bold text-blue-600"
+        nav.flex.items-center.gap-4
+          = link_to "Home", root_path, class: "text-gray-700 hover:text-blue-600"
+          = link_to "Help", help_path, class: "text-gray-700 hover:text-blue-600"
+          = link_to "Log in", login_path, class: "text-gray-700 hover:text-blue-600"

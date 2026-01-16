@@ -20,7 +20,7 @@ class UserSearchService
   private
 
   def build_search_params
-    q = query
+    q = prepare_query(query)
     f = filter
     min_fol = min_followers
     min_fow = min_following
@@ -36,6 +36,12 @@ class UserSearchService
       apply_count_filters(min_fol, min_fow)
       paginate page: pg, per_page: 10
     end
+  end
+
+  def prepare_query(q)
+    return nil if q.blank?
+    # Add wildcard for partial matching
+    q.split.map { |term| "#{term}*" }.join(' ')
   end
 
   def following_filter_ids
