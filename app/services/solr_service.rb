@@ -23,7 +23,7 @@ class SolrService
     # return { ids: [...], total: N }
     def search(q: '*:*', fq: [], bq: nil, sort: nil, page: 1, per_page: 30)
       start_row = (page.to_i - 1) * per_page.to_i
-      
+
       solr_params = {
         q: q,
         fq: fq,
