@@ -2,15 +2,43 @@
   = render 'shared/error_messages', object: f.object
   .field
     = f.text_area :content, placeholder: "Compose new micropost..."
-  = f.submit "Post", class: "btn btn-primary"
+  .form-group style="margin-top: 10px;"
+    = f.label :privacy, "Privacy:", class: "privacy-label"
+    = f.select :privacy, options_for_select([['🌐 Public', 'public_post'], ['👥 Following', 'friends_only'], ['🔒 Only Me', 'only_me']], @micropost.privacy || 'public_post'), {}, class: "form-control privacy-select", style: "width: auto; display: inline-block;"
   span.image
-    = f.file_field :image, accept: "image/jpeg,image/gif,image/png"
+    = f.file_field :image, accept: "image/jpeg,image/gif,image/png", id: "micropost_image"
+  #image-preview-container.image-preview-container style="display:none;"
+    img#image-preview.image-preview
+    button#remove-image.btn.btn-danger.btn-xs type="button" Remove
+  = f.submit "Post", class: "btn btn-primary mt-2"
 
 javascript:
-  $("#micropost_image").bind("change", function(){
-    const size_in_megabytes = this.files[0].size/1024/1024;
-    if (size_in_megabytes > 5){
-      alert("Maximum file size is 5MB. Please choose a smaller file.");
+  $(document).ready(function(){
+    $("#micropost_image").bind("change", function(){
+      const file = this.files[0];
+      if (file) {
+        const size_in_megabytes = file.size/1024/1024;
+        if (size_in_megabytes > 5){
+          alert("Maximum file size is 5MB. Please choose a smaller file.");
+          $("#micropost_image").val("");
+          $("#image-preview-container").hide();
+          return;
+        }
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          $("#image-preview").attr("src", e.target.result);
+          $("#image-preview-container").show();
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+    
+    // Remove image handler
+    $("#remove-image").click(function(){
       $("#micropost_image").val("");
-    }
-  })
+      $("#image-preview-container").hide();
+      $("#image-preview").attr("src", "");
+    });
+  });

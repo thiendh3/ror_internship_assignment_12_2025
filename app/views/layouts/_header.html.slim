@@ -13,6 +13,16 @@ header.navbar.navbar-fixed-top.navbar-inverse
         li = link_to "Help", help_path
         - if logged_in?
           li = link_to "Users", users_path
+          li.notifications-container
+            a.notifications-bell href="#"
+              i.glyphicon.glyphicon-bell
+              span.notification-badge style="display: none;" 0
+            .notifications-dropdown
+              .notifications-header
+                h4 Notifications
+                a.mark-all-read href="#" Mark all as read
+              .notifications-list
+                .notification-item.empty Loading...
           li.dropdown
             a.dropdown-toggle href="#" data-toggle="dropdown"
               | Account 

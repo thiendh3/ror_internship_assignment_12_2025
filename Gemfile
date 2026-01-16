@@ -15,7 +15,6 @@ gem 'will_paginate', '~> 4.0'
 gem 'active_storage_validations'
 gem 'image_processing'
 gem 'mini_magick'
-gem 'searchkick'
 gem 'rsolr'
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
@@ -70,6 +69,9 @@ group :development do
   gem "listen"
   gem "spring"
   gem "spring-watcher-listen"
+  
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
 
   # Add speed badges [https://github.com/MiniProfiler/rack-mini-profiler]
   # gem "rack-mini-profiler"

@@ -1,12 +1,127 @@
-li id="micropost-#{micropost.id}"
-  = link_to gravatar_for(micropost.user, size: 50), micropost.user
-  span.user
-    = link_to micropost.user.name, micropost.user
-  span.content
-    = micropost.content
-    - if micropost.image.attached?
-      = image_tag micropost.display_image
-  span.timestamp
-    | Posted #{time_ago_in_words(micropost.created_at)} ago.
+.micropost-card id="micropost-#{micropost.id}"
+  .micropost-header
+    .user-info
+      = link_to gravatar_for(micropost.user, size: 48), micropost.user, class: "user-avatar"
+      .user-details
+        = link_to micropost.user.name, micropost.user, class: "user-name"
+        .post-time
+          i.glyphicon.glyphicon-time
+          |  #{time_ago_in_words(micropost.created_at)} ago
+          span.privacy-badge data-privacy=micropost.privacy title=micropost.privacy_label
+            = micropost.privacy_icon
     - if current_user?(micropost.user)
-      = link_to "delete", micropost, method: :delete, data: {confirm: "Are you sure?"}
+      .post-actions-menu
+        .dropdown
+          button.btn.btn-link.dropdown-toggle data-toggle="dropdown"
+            i.glyphicon.glyphicon-option-vertical
+          ul.dropdown-menu.dropdown-menu-right
+            li
+              a.edit-micropost href="#" data-micropost-id=micropost.id
+                i.glyphicon.glyphicon-pencil
+                |  Edit
+            li
+              a.delete-micropost href="#" data-micropost-id=micropost.id
+                i.glyphicon.glyphicon-trash
+                |  Delete
+  
+  .micropost-body
+    .micropost-content
+      - if defined?(highlights) && highlights && highlights[micropost.id.to_s] && highlights[micropost.id.to_s]['content']
+        == highlights[micropost.id.to_s]['content'].first
+      - else
+        == format_micropost_content(micropost.content)
+    
+    - if micropost.image.attached?
+      .micropost-image
+        = image_tag micropost.display_image, class: "img-responsive"
+    
+    - if micropost.hashtags.any?
+      .micropost-hashtags
+        - micropost.hashtags.each do |hashtag|
+          = link_to "##{hashtag.name}", root_path(hashtag: hashtag.name), class: "hashtag-badge"
+  
+  .micropost-footer
+    - reaction_counts = micropost.reaction_counts
+    - total_reactions = micropost.likes_count
+    .post-stats
+      span.stat-item.reaction-summary data-micropost-id=micropost.id role="button" tabindex="0" title="View reactions"
+        span.reaction-icon.badge-like title="Like" data-reaction-type="like" style=(reaction_counts['like'].to_i.zero? ? 'display: none;' : nil)
+          | 👍
+        span.reaction-icon.badge-love title="Love" data-reaction-type="love" style=(reaction_counts['love'].to_i.zero? ? 'display: none;' : nil)
+          | ❤️
+        span.reaction-icon.badge-haha title="Haha" data-reaction-type="haha" style=(reaction_counts['haha'].to_i.zero? ? 'display: none;' : nil)
+          | 😂
+        span.reaction-total data-reaction-total=true
+          = total_reactions
+      span.stat-item
+        i.glyphicon.glyphicon-comment
+        span.stat-count.comment-count data-micropost-id=micropost.id
+          = micropost.comments.count
+    
+    .post-interactions
+      - current_reaction = logged_in? ? micropost.reaction_for(current_user) : nil
+      - reaction_label = current_reaction.present? ? current_reaction.titleize : 'Like'
+      - reaction_emoji = { 'love' => '❤️', 'haha' => '😂', 'like' => '👍' }[current_reaction] || '👍'
+      - reaction_active = current_reaction.present?
+      - if logged_in?
+        .reaction-dropdown data-micropost-id=micropost.id data-current-reaction=current_reaction
+          button.btn-interaction.reaction-toggle class=(reaction_active ? 'active' : 'muted')
+            span.reaction-emoji = reaction_emoji
+            span.reaction-label = reaction_label
+          .reaction-menu
+            button.btn-interaction.reaction-option data-reaction-type="like" title="Like"
+              span.reaction-emoji 👍
+            button.btn-interaction.reaction-option data-reaction-type="love" title="Love"
+              span.reaction-emoji ❤️
+            button.btn-interaction.reaction-option data-reaction-type="haha" title="Haha"
+              span.reaction-emoji 😂
+      - else
+        .reaction-dropdown
+          button.btn-interaction.reaction-toggle.muted disabled=true
+            span.reaction-emoji 👍
+            span.reaction-label Like
+      button.btn-interaction.comment-btn data-micropost-id=micropost.id
+        i.glyphicon.glyphicon-comment
+        span Comment
+      button.btn-interaction.share-btn data-micropost-id=micropost.id
+        i.glyphicon.glyphicon-share
+        span Share
+      button.btn-interaction.view-micropost data-micropost-id=micropost.id
+        i.glyphicon.glyphicon-eye-open
+        span View
+  
+  / Comments section
+  .micropost-comments-section data-micropost-id=micropost.id
+    - if micropost.comments.any?
+      .comments-list
+        - micropost.comments.limit(3).each do |comment|
+          .comment-item data-comment-id=comment.id
+            = link_to gravatar_for(comment.user, size: 36), comment.user, class: "comment-avatar"
+            .comment-bubble
+              .comment-header
+                = link_to comment.user.name, comment.user, class: "comment-author"
+                span.comment-time = time_ago_in_words(comment.created_at) + " ago"
+              .comment-text = comment.content
+            - if current_user?(comment.user)
+              .comment-actions
+                a.delete-comment href="#" data-comment-id=comment.id data-micropost-id=micropost.id title="Delete"
+                  i.glyphicon.glyphicon-trash
+      - if micropost.comments.count > 3
+        .view-more-comments
+          a href="#" data-micropost-id=micropost.id
+            = "View all #{micropost.comments.count} comments"
+    
+    - if logged_in?
+      .comment-form
+        = form_with(model: [micropost, Comment.new], local: false, class: "new-comment-form") do |f|
+          .comment-input-wrapper
+            = link_to gravatar_for(current_user, size: 36), current_user, class: "comment-form-avatar"
+            .comment-input-container
+              = f.text_area :content, class: "comment-input", placeholder: "Write a comment...", rows: "1", autocomplete: "off"
+              .comment-actions-bar
+                .comment-toolbar
+                  button.emoji-btn type="button" title="Add emoji"
+                    i.glyphicon.glyphicon-heart
+                  button.attachment-btn type="button" title="Attach file"
+                    i.glyphicon.glyphicon-paperclip
+                = f.submit "Post", class: "comment-submit-btn", disabled: true

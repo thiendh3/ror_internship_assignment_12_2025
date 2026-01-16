@@ -1,4 +1,3 @@
-# rubocop:disable Style/FrozenStringLiteralComment
 namespace :searchkick do # rubocop:disable Metrics/BlockLength
   desc 'Reindex all models'
   task reindex_all: :environment do
@@ -16,7 +15,7 @@ namespace :searchkick do # rubocop:disable Metrics/BlockLength
   end
 
   desc 'Reindex a specific model (usage: rake searchkick:reindex[User])'
-  task :reindex, [:model] => :environment do |t, args|
+  task :reindex, [:model] => :environment do |_, args|
     if args[:model].blank?
       puts 'Usage: rake searchkick:reindex[ModelName]'
       puts 'Example: rake searchkick:reindex[User]'
@@ -52,7 +51,7 @@ namespace :searchkick do # rubocop:disable Metrics/BlockLength
   end
 
   desc 'Clear a specific model index (usage: rake searchkick:clear[User])'
-  task :clear, [:model] => :environment do |t, args|
+  task :clear, [:model] => :environment do |_, args|
     if args[:model].blank?
       puts 'Usage: rake searchkick:clear[ModelName]'
       puts 'Example: rake searchkick:clear[User]'
