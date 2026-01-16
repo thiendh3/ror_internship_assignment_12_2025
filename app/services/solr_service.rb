@@ -20,22 +20,27 @@ class SolrService
       Rails.logger.error "Solr Delete Error: #{e.message}"
     end
 
-    # return { ids: [...], total: N }
-    def search(q: '*:*', fq: [], bq: nil, sort: nil, page: 1, per_page: 30)
+    def search(query: '*:*', page: 1, per_page: 30, **options)
       start_row = (page.to_i - 1) * per_page.to_i
 
       solr_params = {
-        q: q,
-        fq: fq,
+        q: query,
+        fq: options[:filter_query] || [],
         rows: per_page,
         start: start_row,
         defType: 'lucene'
       }
-      solr_params[:bq] = bq if bq.present?
-      solr_params[:sort] = sort if sort.present?
 
-      response = connection.get 'select', params: solr_params
+      solr_params[:bq]   = options[:boost_query] if options[:boost_query].present?
+      solr_params[:sort] = options[:sort]        if options[:sort].present?
 
+      perform_request(solr_params)
+    end
+
+    private
+
+    def perform_request(params)
+      response = connection.get 'select', params: params
       {
         ids: response.dig('response', 'docs')&.map { |d| d['id'] } || [],
         total: response.dig('response', 'numFound') || 0

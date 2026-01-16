@@ -1,9 +1,9 @@
-require 'ostruct'
-
 class ApplicationSearch
   include ActiveModel::Model
 
   attr_reader :params, :current_user
+
+  SearchResult = Struct.new(:records, :total_count, :page, :per_page, keyword_init: true)
 
   def initialize(params = {}, user = nil)
     @params = params
@@ -28,7 +28,7 @@ class ApplicationSearch
     records_by_id = model_class.where(id: ids).index_by(&:id)
     ordered_records = ids.map { |id| records_by_id[id.to_i] }.compact
 
-    OpenStruct.new(
+    SearchResult.new(
       records: ordered_records,
       total_count: solr_response[:total],
       page: page,
