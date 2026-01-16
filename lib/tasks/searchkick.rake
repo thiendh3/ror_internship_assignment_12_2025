@@ -1,4 +1,4 @@
-namespace :searchkick do # rubocop:disable Metrics/BlockLength
+namespace :searchkick do
   desc 'Reindex all models'
   task reindex_all: :environment do
     puts 'Reindexing all models...'

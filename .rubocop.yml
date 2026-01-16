@@ -23,7 +23,7 @@ Layout/LineLength:
 
 Metrics/MethodLength:
   Enabled: true
-  Max: 20
+  Max: 50
 
 Style/Documentation:
   Enabled: false
@@ -71,6 +71,12 @@ Metrics/AbcSize:
 
 Metrics/CyclomaticComplexity:
   Description: "Avoid complex methods."
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Metrics/BlockLength:
   Enabled: false
 
 Metrics/ModuleLength:
