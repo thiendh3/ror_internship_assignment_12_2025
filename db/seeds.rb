@@ -55,3 +55,29 @@ following = users[2..50]
 followers = users[3..40]
 following.each {|followed| user.follow(followed)}
 followers.each {|follower| follower.follow(user)}
+
+#Create reactions for microposts
+microposts = Micropost.all
+reaction_types = [:like, :love, :haha]
+
+microposts.each do |micropost|
+  # Random number of reactions (0-15) for each micropost
+  rand(0..15).times do
+    random_user = users.sample
+    random_reaction = reaction_types.sample
+    
+    # Only create if user hasn't already reacted to this post
+    unless Like.exists?(user: random_user, micropost: micropost)
+      Like.create!(
+        user: random_user,
+        micropost: micropost,
+        reaction_type: random_reaction
+      )
+    end
+  end
+end
+
+puts "Created #{User.count} users"
+puts "Created #{Micropost.count} microposts"
+puts "Created #{Relationship.count} relationships"
+puts "Created #{Like.count} reactions"
