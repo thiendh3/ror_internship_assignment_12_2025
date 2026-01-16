@@ -25,33 +25,31 @@ class NotificationService
     private
 
     def broadcast_notification(notification)
+      actor = notification.actor
       NotificationsChannel.broadcast_to(
         notification.user,
         {
           id: notification.id,
           type: notification.notification_type,
-          actor: {
-            id: notification.actor&.id,
-            name: notification.actor&.name,
-            email: notification.actor&.email
-          },
-          message: notification_message(notification),
+          actor: actor ? {
+            id: actor.id,
+            name: actor.name,
+            email: actor.email,
+            avatar_url: gravatar_url(actor)
+          } : nil,
+          message: notification.message,
+          target_url: notification.target_url,
           created_at: notification.created_at,
           read: notification.read
         }
       )
     end
 
-    def notification_message(notification)
-      actor_name = notification.actor&.name || 'Someone'
-      case notification.notification_type
-      when 'follow'
-        "#{actor_name} started following you"
-      when 'unfollow'
-        "#{actor_name} unfollowed you"
-      else
-        'You have a new notification'
-      end
+    def gravatar_url(user, size = 40)
+      require 'digest/md5'
+      gravatar_id = Digest::MD5.hexdigest(user.email.downcase)
+      "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}&d=identicon"
     end
+
   end
 end

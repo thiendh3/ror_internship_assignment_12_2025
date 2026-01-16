@@ -20,9 +20,17 @@ const notificationsChannel = consumer.subscriptions.create("NotificationsChannel
       return
     }
     
+    console.log("Processing notification...")
     this.showNotification(data)
-    this.updateBadge()
+    console.log("Incrementing badge count...")
+    this.incrementBadge()
+    console.log("Calling updateTabBadge...")
+    this.updateTabBadge()
+    console.log("Calling addToNotificationsList...")
     this.addToNotificationsList(data)
+    console.log("Calling updateMarkAllButton...")
+    this.updateMarkAllButton()
+    console.log("All updates complete!")
   },
 
   showNotification(data) {
@@ -50,57 +58,167 @@ const notificationsChannel = consumer.subscriptions.create("NotificationsChannel
   },
 
   addToNotificationsList(data) {
-    const list = document.getElementById('notifications-list')
-    if (!list) return
+    // Check if we're on the notifications page
+    const notificationsContainer = document.querySelector('.divide-y.divide-gray-200')
+    if (!notificationsContainer) return
 
-    // Only add to unread tab
     const url = new URL(window.location.href)
-    if (url.searchParams.get('tab') === 'read') return
+    const currentTab = url.searchParams.get('tab') || 'all'
+    if (currentTab === 'read') return
 
-    const li = document.createElement('li')
-    li.className = 'list-group-item notification-item unread'
-    li.dataset.notificationId = data.id
-    li.style.cursor = 'pointer'
+    const actorName = data.actor?.name || 'Deleted user'
+    const actorAvatar = data.actor?.avatar_url || '/assets/default-avatar.png'
+    const targetUrl = data.target_url || '#'
 
-    const actorName = data.actor?.name || 'Someone'
-    const targetUrl = data.target_url || '/notifications'
-
-    li.innerHTML = `
-      <div class="d-flex justify-content-between align-items-start">
-        <div class="ms-2 me-auto">
-          <div class="fw-bold">${actorName}</div>
-          <span class="text-muted">${data.message}</span>
-          <small class="text-muted d-block">just now</small>
+    // Create new notification element with new styling
+    const notificationItem = document.createElement('a')
+    notificationItem.href = `/notifications/${data.id}/mark_as_read`
+    notificationItem.className = 'block notification-item hover:bg-gray-50 transition-colors bg-blue-50'
+    notificationItem.dataset.notificationId = data.id
+    notificationItem.dataset.method = 'post'
+    
+    notificationItem.innerHTML = `
+      <div class="flex items-start gap-3 p-4">
+        <img src="${actorAvatar}" class="w-14 h-14 rounded-full object-cover flex-shrink-0" alt="${actorName}">
+        <div class="flex-1 min-w-0">
+          <div class="text-sm">
+            <span class="font-semibold text-gray-900">${actorName}</span>
+            <span class="text-gray-700"> ${data.message}</span>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="text-xs text-blue-600">just now</span>
+            <span class="w-2 h-2 bg-blue-600 rounded-full"></span>
+          </div>
         </div>
-        <span class="badge bg-primary rounded-pill">New</span>
       </div>
     `
     
-    li.addEventListener('click', async () => {
+    // Add click handler
+    notificationItem.addEventListener('click', async (e) => {
+      e.preventDefault()
       // Mark as read first
       await fetch(`/notifications/${data.id}/mark_as_read`, { 
         method: 'POST',
-        headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content }
+        headers: { 
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+          'Accept': 'application/json'
+        }
       })
       // Then navigate to target
-      window.location.href = targetUrl
+      if (targetUrl && targetUrl !== '#') {
+        window.location.href = targetUrl
+      }
     })
     
-    list.insertBefore(li, list.firstChild)
+    // Insert at the beginning
+    notificationsContainer.insertBefore(notificationItem, notificationsContainer.firstChild)
+    
+    // Update unread count in tab badge
+    this.updateTabBadge()
   },
 
+  updateTabBadge() {
+    fetch('/notifications/unread_count')
+      .then(response => response.json())
+      .then(data => {
+        console.log('Updating tab badge with count:', data.count)
+        // Update badge in header
+        const headerBadge = document.getElementById('notification-badge')
+        if (headerBadge) {
+          if (data.count > 0) {
+            headerBadge.textContent = data.count > 9 ? '9+' : data.count
+            headerBadge.classList.remove('hidden')
+          } else {
+            headerBadge.classList.add('hidden')
+          }
+        }
+        
+        // Update badge in "Unread" tab
+        const tabBadgeContainer = document.querySelector('a[href*="tab=unread"] .bg-red-500.rounded-full')
+        if (tabBadgeContainer) {
+          if (data.count > 0) {
+            tabBadgeContainer.textContent = data.count
+            tabBadgeContainer.classList.remove('hidden')
+          } else {
+            tabBadgeContainer.classList.add('hidden')
+          }
+        }
+      })
+      .catch(err => console.error('Error updating tab badge:', err))
+  },
+
+  updateMarkAllButton() {
+    fetch('/notifications/unread_count')
+      .then(response => response.json())
+      .then(data => {
+        const markAllSection = document.querySelector('.flex.items-center.justify-between.px-4.py-3.bg-gray-50')
+        
+        if (data.count > 0) {
+          // If section doesn't exist, we might need to reload or show it
+          if (markAllSection) {
+            // Update the count text
+            const countText = markAllSection.querySelector('.text-sm.text-gray-600')
+            if (countText) {
+              const plural = data.count === 1 ? 'unread notification' : 'unread notifications'
+              countText.textContent = `${data.count} ${plural}`
+            }
+          } else {
+            // Section doesn't exist, might need to show it
+            // For now, we can live with it showing after refresh
+          }
+        } else {
+          // Hide the mark all section if no unread
+          if (markAllSection) {
+            markAllSection.style.display = 'none'
+          }
+        }
+      })
+      .catch(err => console.error('Error updating mark all button:', err))
+  },
+
+  // Increment badge count by 1 (for real-time updates)
+  incrementBadge() {
+    const badge = document.getElementById('notification-badge')
+    if (badge) {
+      // Get current count
+      let currentCount = parseInt(badge.textContent) || 0
+      if (badge.textContent === '9+') {
+        currentCount = 10 // If it's already 9+, keep it at 9+
+      }
+      
+      // Increment
+      const newCount = currentCount + 1
+      const displayCount = newCount > 9 ? '9+' : String(newCount)
+      
+      badge.textContent = displayCount
+      badge.classList.remove('hidden')
+      
+      console.log('Badge incremented to:', displayCount)
+    }
+  },
+
+  // Fetch and update badge count from server (for page load)
   updateBadge() {
     fetch('/notifications/unread_count')
       .then(response => response.json())
       .then(data => {
+        console.log('Updating badge with count:', data.count)
+        // Update badge in header
         const badge = document.getElementById('notification-badge')
         if (badge) {
+          // Set content first - ensure it's a string
+          const displayCount = data.count > 9 ? '9+' : String(data.count)
+          badge.textContent = displayCount
+          
+          // Then show/hide using only class (don't set inline style)
           if (data.count > 0) {
-            badge.textContent = data.count
-            badge.style.display = 'inline'
+            badge.classList.remove('hidden')
           } else {
-            badge.style.display = 'none'
+            badge.classList.add('hidden')
           }
+          console.log('Badge updated successfully to:', displayCount)
+        } else {
+          console.error('Badge element not found!')
         }
       })
       .catch(err => console.error('Error updating badge:', err))

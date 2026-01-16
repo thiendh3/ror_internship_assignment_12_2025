@@ -6,5 +6,6 @@ import "channels/microposts_channel"
 import "microposts"
 import "users"
 import "social"
+import "follow"
 import Rails from "@rails/ujs"
 Rails.start()
