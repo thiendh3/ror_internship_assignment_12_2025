@@ -15,7 +15,7 @@ gem 'will_paginate', '~> 4.0'
 gem 'active_storage_validations'
 gem 'image_processing'
 gem 'mini_magick'
-gem 'searchkick'
+# gem 'searchkick'
 gem 'rsolr'
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
@@ -62,6 +62,8 @@ group :development, :test do
   #gem "debug", platforms: %i[ mri mswin mswin64 mingw x64_mingw ]
   gem "mysql2", "~> 0.5"
   gem 'byebug', platforms:[:mri, :mingw, :x64_mingw]
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
 end
 
 group :development do

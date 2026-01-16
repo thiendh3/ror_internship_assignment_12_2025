@@ -63,7 +63,7 @@ services:
     networks:
       - rails_network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8983/solr/admin/ping || exit 1"]
+      test: ["CMD-SHELL", "curl -f 'http://localhost:8983/solr/admin/info/system' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

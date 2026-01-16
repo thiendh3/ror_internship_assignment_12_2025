@@ -1,10 +1,18 @@
-= content_for :title, "All users"
-h1 All users
+- provide(:title, 'All users')
 
-.digg_pagination
-  = will_paginate
-ul.users
-  = render @users
+.row
+  aside.col-md-4
+    .sidebar-sticky style="position: sticky; top: 80px;"
+      = render 'sidebar_search', filter_type: @filter_type, total_found: @total_found
 
-.digg_pagination
-  = will_paginate
+  .col-md-8
+    = turbo_frame_tag "users_list", data: { turbo_action: "advance" }
+			- if @users.any?
+				ul.users
+					= render @users
+				
+				.digg_pagination
+					= will_paginate @users
+			- else
+				.alert.alert-warning style="margin-top: 20px;"
+					| No users found matching your criteria.

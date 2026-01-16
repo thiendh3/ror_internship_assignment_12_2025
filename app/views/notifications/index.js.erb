@@ -1,0 +1,9 @@
+(function() {
+  const container = document.querySelector("#notifications-container");
+  const newContent = "<%= j render partial: 'notifications/notification', collection: @notifications %>";
+  
+  container.insertAdjacentHTML("beforeend", newContent);
+  
+  // Update pagination state
+  container.dataset.nextPage = "<%= @notifications.next_page %>";
+})();

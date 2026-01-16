@@ -15,12 +15,22 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "static_pages#home"
   resources :users do
+    collection do
+      get :autocomplete
+    end
     member do
       get :following, :followers
+      get :preview
+      get :edit_modal
     end
   end
   resources :account_activations, only: [:edit]
   resources :password_resets, only: [:new, :create, :edit, :update]
   resources :microposts, only: [:create, :destroy]
   resources :relationships, only: [:create, :destroy]
+  resources :notifications, only: [:index] do
+    collection do
+      post :mark_as_read
+    end
+  end
 end

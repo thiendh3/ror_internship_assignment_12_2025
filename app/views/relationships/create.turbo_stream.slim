@@ -1,0 +1,15 @@
+/ follow button => unfollow button
+= turbo_stream.replace "follow_form_#{@user.id}" do
+  = render partial: "users/follow_form", locals: { user: @user }
+
+/ update followed's followers count on MAIN page
+= turbo_stream.update "followers-#{@user.id}" do
+  = @user.followers.count
+
+/ update followed's followers count on MODAL
+= turbo_stream.update "modal-followers-#{@user.id}" do
+  = @user.followers.count
+
+/ update current user's following count
+= turbo_stream.update "following-#{current_user.id}" do
+  = current_user.following.count
