@@ -6,6 +6,7 @@ ruby "3.0.6"
 gem "rails", "~> 7.1.3", ">= 7.1.3.3"
 gem 'bootstrap-sass'
 gem "bcrypt"
+gem "tailwindcss-rails"
 gem "slim-rails"
 gem 'sass-rails'
 gem 'webpacker'
@@ -15,7 +16,8 @@ gem 'will_paginate', '~> 4.0'
 gem 'active_storage_validations'
 gem 'image_processing'
 gem 'mini_magick'
-gem 'searchkick'
+gem 'sunspot_rails'
+gem 'sunspot_solr'
 gem 'rsolr'
 
 # The original asset pipeline for Rails [https://github.com/rails/sprockets-rails]
@@ -62,6 +64,9 @@ group :development, :test do
   #gem "debug", platforms: %i[ mri mswin mswin64 mingw x64_mingw ]
   gem "mysql2", "~> 0.5"
   gem 'byebug', platforms:[:mri, :mingw, :x64_mingw]
+  gem 'rubocop', require: false
+  gem 'rubocop-rails', require: false
+  gem 'rubocop-rspec', require: false
 end
 
 group :development do

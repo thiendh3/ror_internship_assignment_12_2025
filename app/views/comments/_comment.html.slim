@@ -1,0 +1,38 @@
+li.comment-item data-comment-id=comment.id data-parent-id=comment.parent_id class=("nested-#{[comment.nested_level, 3].min}" if comment.parent_id)
+  .comment-content
+    .comment-avatar
+      = link_to user_path(comment.user) do
+        = gravatar_for comment.user, size: 32
+    .comment-body
+      .comment-header
+        = link_to comment.user.name, user_path(comment.user), class: 'comment-author'
+        span.comment-time = time_ago_in_words(comment.created_at) + " ago"
+      .comment-text = comment.content
+      .comment-actions
+        - user_reaction = logged_in? ? comment.reactions.find_by(user: current_user)&.reaction_type : nil
+        - top_reactions = comment.reactions.group(:reaction_type).count.sort_by { |_, v| -v }.first(3).map(&:first)
+        .comment-reaction-wrapper
+          button.btn-comment-reaction.btn-sm data-comment-id=comment.id class="#{user_reaction ? 'reacted' : ''}" data-current-reaction="#{user_reaction}"
+            - if user_reaction
+              span.reaction-icon = reaction_emoji(user_reaction)
+              span.reaction-text = user_reaction.capitalize
+            - else
+              span.reaction-text Like
+          .comment-reaction-picker.hidden data-comment-id=comment.id style="flex-direction: row !important;"
+            - reaction_types.each do |type, emoji|
+              button.comment-reaction-option data-reaction-type="#{type}" data-comment-id="#{comment.id}" title="#{type.capitalize}" style="display: inline-block;"
+                = emoji
+        - if comment.reactions_count > 0
+          .comment-reactions-display
+            - top_reactions.each do |rt|
+              span.reaction-icon-tiny = reaction_emoji(rt)
+            span.reaction-count = comment.reactions_count
+        button.btn-reply.btn-sm data-comment-id=comment.id Reply
+        - if logged_in? && current_user.id == comment.user_id
+          button.btn-edit-comment.btn-sm data-comment-id=comment.id data-micropost-id=comment.micropost_id Edit
+          button.btn-delete-comment.btn-sm.text-danger data-comment-id=comment.id data-micropost-id=comment.micropost_id Delete
+
+  - if comment.replies.any?
+    ul.comment-replies
+      - comment.replies.each do |reply|
+        = render partial: 'comments/comment', locals: { comment: reply }

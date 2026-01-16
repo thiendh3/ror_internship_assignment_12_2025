@@ -15,12 +15,34 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "static_pages#home"
   resources :users do
+    collection do
+      get :search
+      get :autocomplete
+    end
     member do
-      get :following, :followers
+      get :following, :followers, :microposts
     end
   end
   resources :account_activations, only: [:edit]
   resources :password_resets, only: [:new, :create, :edit, :update]
-  resources :microposts, only: [:create, :destroy]
+  resources :microposts, only: [:show, :create, :update, :destroy] do
+    member do
+      post :share
+    end
+    resources :comments, only: [:index, :create, :update, :destroy]
+    resources :reactions, only: [:index, :create, :destroy]
+  end
+  resources :comments, only: [] do
+    resources :reactions, only: [:index, :create, :destroy]
+  end
   resources :relationships, only: [:create, :destroy]
+  resources :notifications, only: [:index] do
+    member do
+      post :mark_as_read
+    end
+    collection do
+      post :mark_all_as_read
+      get :unread_count
+    end
+  end
 end

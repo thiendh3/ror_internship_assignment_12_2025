@@ -1,0 +1,55 @@
+/ Right Sidebar - Friend Requests and Contacts
+
+/ Friend Requests Section
+- if @suggested_users&.any?
+  .mb-6
+    .flex.items-center.justify-between.mb-3
+      h3.text-base.font-semibold.text-gray-600 Friend requests
+      = link_to "#", class: "text-sm text-blue-600 hover:underline" do
+        | See all
+    
+    .space-y-2
+      - @suggested_users.first(3).each do |user|
+        .flex.items-start.gap-3.mb-3
+          = link_to user, class: "flex-shrink-0 user-profile-link", data: { user_id: user.id } do
+            = gravatar_for(user, size: 60, class_name: "w-15 h-15 rounded-full")
+          .flex-1.min-w-0
+            = link_to user, class: "block font-semibold text-sm text-gray-900 hover:underline truncate user-profile-link", data: { user_id: user.id } do
+              = user.name
+            - mutual_count = (current_user.following & user.followers).count
+            - if mutual_count > 0
+              .text-xs.text-gray-500.mt-0.5 
+                = "#{mutual_count} mutual #{'friend'.pluralize(mutual_count)}"
+            .flex.gap-2.mt-2
+              = form_with url: relationships_path, method: :post, local: false, class: "inline flex-1" do |f|
+                = f.hidden_field :followed_id, value: user.id
+                = f.submit "Confirm", class: "w-full bg-blue-600 text-white text-xs px-3 py-1.5 rounded-md font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+              = link_to "Delete", "#", class: "flex-1 text-center bg-gray-200 text-gray-700 text-xs px-3 py-1.5 rounded-md font-semibold hover:bg-gray-300 transition-colors inline-block"
+
+/ Divider
+.border-t.border-gray-300.my-4
+
+/ Contacts Section
+.mb-4
+  .flex.items-center.justify-between.mb-3
+    h3.text-base.font-semibold.text-gray-600 Contacts
+    .flex.items-center.gap-2
+      = link_to "#", class: "w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors" do
+        svg.w-4.h-4.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+          path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+      = link_to "#", class: "w-8 h-8 rounded-full hover:bg-gray-200 flex items-center justify-center transition-colors" do
+        svg.w-4.h-4.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+          path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+  
+  / Contacts List
+  - if @following_users&.any?
+    .space-y-1
+      - @following_users.each do |user|
+        = link_to user, class: "flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors user-profile-link", data: { user_id: user.id } do
+          .relative.flex-shrink-0
+            = gravatar_for(user, size: 36, class_name: "w-9 h-9 rounded-full")
+            .absolute.bottom-0.right-0.w-2.5.h-2.5.bg-green-500.border-2.border-white.rounded-full
+          span.text-sm.font-medium.text-gray-900 = user.name
+  - else
+    .text-sm.text-gray-500.text-center.py-4
+      | No contacts yet

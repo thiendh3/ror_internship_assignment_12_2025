@@ -1,10 +1,17 @@
 = content_for :title, "All users"
 h1 All users
 
-.digg_pagination
-  = will_paginate
-ul.users
-  = render @users
+- if logged_in?
+  .btn-group.mb-3 role="group"
+    button.btn.btn-outline-primary.user-filter-btn.active type="button" data-filter="all" data-user-id="#{current_user.id}" All Users
+    button.btn.btn-outline-primary.user-filter-btn type="button" data-filter="following" data-user-id="#{current_user.id}" Following
+    button.btn.btn-outline-primary.user-filter-btn type="button" data-filter="followers" data-user-id="#{current_user.id}" Followers
 
-.digg_pagination
-  = will_paginate
+#users-pagination
+  = render 'shared/pagination', collection: @users
+
+ul.users#users-list style="list-style: none; padding: 0;"
+  = render 'user_list', users: @users
+
+#users-pagination
+  = render 'shared/pagination', collection: @users

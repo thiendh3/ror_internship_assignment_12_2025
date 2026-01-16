@@ -1,0 +1,292 @@
+/ Create Post Modal
+#create-post-modal.fixed.inset-0.hidden.z-50 style="backdrop-filter: blur(8px); background-color: rgba(0, 0, 0, 0.3);" onclick="if(event.target === this) closeCreatePostModal()"
+  .flex.items-center.justify-center.min-h-screen.p-4
+    .bg-white.rounded-lg.shadow-2xl.max-h-screen.overflow-hidden onclick="event.stopPropagation()" style="width: 50%; max-width: 700px; min-width: 500px;"
+      / Modal Header
+      .relative.border-b.border-gray-200.p-4
+        h2.text-xl.font-bold.text-center.text-gray-900 Create post
+        button.absolute.right-4.top-4.w-9.h-9.flex.items-center.justify-center.rounded-full.bg-gray-200.hover:bg-gray-300.transition-colors onclick="closeCreatePostModal()"
+          svg.w-6.h-6.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+            path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+      
+      / Modal Body - Scrollable
+      .overflow-y-auto style="max-height: calc(100vh - 200px);"
+        .p-4
+          / User Info
+          .flex.items-center.gap-3.mb-4
+            = link_to current_user, class: "flex-shrink-0" do
+              = gravatar_for(current_user, size: 40, class_name: "w-10 h-10 rounded-full")
+            .flex-1
+              .font-semibold.text-gray-900 = current_user.name
+              .flex.items-center.gap-1.mt-1.relative
+                button#modal-visibility-button.flex.items-center.gap-1.px-2.py-1.text-xs.bg-gray-200.rounded.hover:bg-gray-300.transition-colors type="button" onclick="toggleVisibilityDropdown()"
+                  svg#modal-visibility-icon.w-3.h-3 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+                  span#modal-visibility-text Public
+                  svg.w-3.h-3 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M7 10l5 5 5-5z"
+                / Visibility Dropdown
+                #modal-visibility-dropdown.hidden.absolute.top-full.left-0.mt-1.bg-white.rounded-lg.shadow-lg.border.border-gray-200.p-1.z-10.min-w-48
+                  button.w-full.flex.items-center.gap-2.px-3.py-2.text-sm.rounded.hover:bg-gray-100.transition-colors type="button" onclick="setVisibility('public')"
+                    svg.w-4.h-4.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+                      path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+                    span Public
+                  button.w-full.flex.items-center.gap-2.px-3.py-2.text-sm.rounded.hover:bg-gray-100.transition-colors type="button" onclick="setVisibility('private')"
+                    svg.w-4.h-4.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+                      path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"
+                    span Only me
+          
+          / Form
+          form#modal-micropost-form action="/microposts" method="post" enctype="multipart/form-data" data-turbo="false"
+            = hidden_field_tag :authenticity_token, form_authenticity_token
+            
+            / Content Textarea
+            textarea#modal-micropost-content.w-full.p-3.border-0.outline-none.resize-none.text-gray-900.text-lg placeholder="What's on your mind, #{current_user.name.split.first}?" name="micropost[content]" rows="5" style="min-height: 120px; max-height: 300px;" oninput="autoExpandTextarea(this); checkPostButton()"
+            
+            / Image Preview Container
+            #modal-image-preview-container.hidden.relative.mt-3
+              .relative.border.border-gray-300.rounded-lg.overflow-hidden
+                img#modal-image-preview.w-full.max-h-96.object-contain
+                button.absolute.top-2.right-2.w-8.h-8.bg-white.rounded-full.flex.items-center.justify-center.shadow-lg.hover:bg-gray-100.transition-colors onclick="removeModalImage()" type="button"
+                  svg.w-5.h-5.text-gray-700 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                button.absolute.top-2.left-2.px-3.py-1.bg-white.rounded-md.text-sm.font-medium.hover:bg-gray-100.transition-colors type="button"
+                  | Edit
+            
+            input#modal-micropost-image.hidden type="file" name="micropost[image]" accept="image/jpeg,image/gif,image/png" onchange="handleModalImageUpload(this)"
+            input#modal-micropost-visibility type="hidden" name="micropost[visibility]" value="public"
+          
+          / Add to post
+          .border.border-gray-300.rounded-lg.p-3.mt-4
+            .flex.items-center.justify-between
+              span.text-sm.font-semibold.text-gray-900 Add to your post
+              .flex.items-center.gap-1
+                / Photo button
+                button.w-9.h-9.flex.items-center.justify-center.rounded-full.hover:bg-gray-100.transition-colors onclick="document.getElementById('modal-micropost-image').click()" type="button"
+                  svg.w-6.h-6.text-green-500 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"
+                / Tag people button
+                button.w-9.h-9.flex.items-center.justify-center.rounded-full.hover:bg-gray-100.transition-colors type="button"
+                  svg.w-6.h-6.text-blue-500 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3z"
+                / Feeling button
+                button.w-9.h-9.flex.items-center.justify-center.rounded-full.hover:bg-gray-100.transition-colors type="button"
+                  svg.w-6.h-6.text-yellow-500 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"
+                / Location button
+                button.w-9.h-9.flex.items-center.justify-center.rounded-full.hover:bg-gray-100.transition-colors type="button"
+                  svg.w-6.h-6.text-red-500 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                / More button
+                button.w-9.h-9.flex.items-center.justify-center.rounded-full.hover:bg-gray-100.transition-colors type="button"
+                  svg.w-6.h-6.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+      
+      / Modal Footer
+      .border-t.border-gray-200.p-4
+        button#modal-post-button.w-full.bg-gray-300.text-white.py-2.rounded-lg.font-semibold.cursor-not-allowed disabled="disabled" type="button" onclick="submitModalPost()"
+          | Post
+
+javascript:
+  function openCreatePostModal() {
+    document.getElementById('create-post-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+      document.getElementById('modal-micropost-content').focus();
+    }, 100);
+  }
+
+  function closeCreatePostModal() {
+    document.getElementById('create-post-modal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    // Reset form
+    document.getElementById('modal-micropost-form').reset();
+    document.getElementById('modal-micropost-content').value = '';
+    removeModalImage();
+    checkPostButton();
+  }
+
+  function autoExpandTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px';
+  }
+
+  function checkPostButton() {
+    const content = document.getElementById('modal-micropost-content').value.trim();
+    const hasImage = document.getElementById('modal-image-preview-container').classList.contains('hidden') === false;
+    const button = document.getElementById('modal-post-button');
+    
+    if (content.length > 0 || hasImage) {
+      button.classList.remove('bg-gray-300', 'cursor-not-allowed');
+      button.classList.add('bg-blue-600', 'hover:bg-blue-700', 'cursor-pointer');
+      button.disabled = false;
+    } else {
+      button.classList.add('bg-gray-300', 'cursor-not-allowed');
+      button.classList.remove('bg-blue-600', 'hover:bg-blue-700', 'cursor-pointer');
+      button.disabled = true;
+    }
+  }
+
+  function handleModalImageUpload(input) {
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Check file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image file size should not exceed 5MB");
+        input.value = "";
+        return;
+      }
+      
+      // Preview image
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('modal-image-preview').src = e.target.result;
+        document.getElementById('modal-image-preview-container').classList.remove('hidden');
+        checkPostButton();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function removeModalImage() {
+    document.getElementById('modal-micropost-image').value = '';
+    document.getElementById('modal-image-preview').src = '';
+    document.getElementById('modal-image-preview-container').classList.add('hidden');
+    checkPostButton();
+  }
+
+  function submitModalPost() {
+    const button = document.getElementById('modal-post-button');
+    if (button.disabled) return;
+    
+    const form = document.getElementById('modal-micropost-form');
+    const formData = new FormData(form);
+    
+    // Disable button
+    button.disabled = true;
+    button.textContent = 'Posting...';
+    
+    fetch('/microposts', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRF-Token': document.querySelector('[name="authenticity_token"]').value,
+        'Accept': 'application/json'
+      }
+    })
+    .then(async response => {
+      const contentType = response.headers.get('content-type');
+      
+      if (!response.ok) {
+        // Handle error response
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          throw new Error(data.errors ? data.errors.join(', ') : 'Error creating post');
+        } else {
+          throw new Error('Error creating post');
+        }
+      }
+      
+      // Check if response is JSON
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      } else {
+        // If HTML response (redirect), consider it success
+        return { success: true, redirect: true };
+      }
+    })
+    .then(data => {
+      if (data.success || data.redirect) {
+        // Close modal first
+        closeCreatePostModal();
+        // Then reload or redirect
+        if (data.redirect) {
+          window.location.reload();
+        } else {
+          // Prepend new post to feed if we have HTML
+          if (data.html) {
+            // Try both feed container IDs (homepage and profile page)
+            const feedItems = document.getElementById('feed-items') || document.getElementById('user-feed');
+            if (feedItems) {
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = data.html;
+              const newPost = tempDiv.firstElementChild;
+              if (newPost) {
+                feedItems.insertBefore(newPost, feedItems.firstChild);
+                // Initialize handlers for new post
+                if (window.MicropostActions) {
+                  window.MicropostActions.initMicropostActions();
+                }
+                if (window.SocialFeatures) {
+                  window.SocialFeatures.initSocialFeatures();
+                }
+              }
+            } else {
+              // If no feed container found, reload page
+              window.location.reload();
+            }
+          } else {
+            window.location.reload();
+          }
+        }
+      } else {
+        throw new Error(data.errors ? data.errors.join(', ') : 'Error creating post');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert(error.message || 'Error creating post');
+      button.disabled = false;
+      button.textContent = 'Post';
+    });
+  }
+
+  function toggleVisibilityDropdown() {
+    const dropdown = document.getElementById('modal-visibility-dropdown');
+    dropdown.classList.toggle('hidden');
+    
+    // Close dropdown when clicking outside
+    if (!dropdown.classList.contains('hidden')) {
+      setTimeout(() => {
+        document.addEventListener('click', function closeDropdown(e) {
+          if (!dropdown.contains(e.target) && !document.getElementById('modal-visibility-button').contains(e.target)) {
+            dropdown.classList.add('hidden');
+            document.removeEventListener('click', closeDropdown);
+          }
+        });
+      }, 0);
+    }
+  }
+
+  function setVisibility(visibility) {
+    const dropdown = document.getElementById('modal-visibility-dropdown');
+    const textEl = document.getElementById('modal-visibility-text');
+    const iconEl = document.getElementById('modal-visibility-icon');
+    const inputEl = document.getElementById('modal-micropost-visibility');
+    
+    // Hide dropdown
+    dropdown.classList.add('hidden');
+    
+    // Update hidden input
+    inputEl.value = visibility;
+    
+    if (visibility === 'public') {
+      textEl.textContent = 'Public';
+      iconEl.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>';
+    } else {
+      textEl.textContent = 'Only me';
+      iconEl.innerHTML = '<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>';
+    }
+  }
+
+  // Make functions global
+  window.openCreatePostModal = openCreatePostModal;
+  window.closeCreatePostModal = closeCreatePostModal;
+  window.autoExpandTextarea = autoExpandTextarea;
+  window.checkPostButton = checkPostButton;
+  window.handleModalImageUpload = handleModalImageUpload;
+  window.removeModalImage = removeModalImage;
+  window.submitModalPost = submitModalPost;
+  window.toggleVisibilityDropdown = toggleVisibilityDropdown;
+  window.setVisibility = setVisibility;

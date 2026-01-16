@@ -1,21 +1,359 @@
 = content_for :title, @user.name
-.row
-  aside.col-md-4
-    section.user_info
-      h1
-        = gravatar_for @user
-        = @user.name
-    section.stats
-      = render 'shared/stats'
-  .col-md-8
-    - if logged_in?
-      = render 'follow_form'
-    - if @user.microposts.any?
-      h3
-        | Microposts (#{@user.microposts.count})
-      ol.microposts
-        = render @microposts
-      .digg_pagination
-        = will_paginate @microposts
-    - else
-      h3 No post yet
+
+/ Facebook-style Profile
+.bg-white.pb-16
+  / Cover Photo
+  .relative.h-96.bg-gradient-to-b.from-gray-300.to-gray-400
+
+  / Profile Info Container
+  .mx-auto.px-4 style="max-width: 80%; width: 100%;"
+    / Profile Header
+    .flex.flex-col.md:flex-row.gap-4.relative.-mt-24.md:-mt-16
+      / Avatar
+      .flex-shrink-0.mx-auto.md:mx-0
+        .relative
+          = gravatar_for @user, size: 168, class_name: "rounded-full border-4 border-white shadow-lg"
+          - if logged_in? && current_user?(@user)
+            button.absolute.bottom-2.right-2.w-10.h-10.bg-gray-200.rounded-full.flex.items-center.justify-center.hover:bg-gray-300.transition-colors
+              svg.w-5.h-5.text-gray-700 fill="currentColor" viewBox="0 0 20 20"
+                path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+      
+      / Name and Stats
+      .text-left.mt-4.md:mt-auto.md:pb-4
+        h1.text-4xl.font-bold.text-gray-900.user-name = @user.name
+        .flex.items-center.gap-1.text-gray-600
+          span
+            span.font-semibold = @user.followers.count
+            span.font-normal.text-gray-500 &nbsp;followers
+          span ·
+          span
+            span.font-semibold = @user.following.count
+            span.font-normal.text-gray-500 &nbsp;following
+      
+      / Action Buttons
+      .flex-1.flex.items-end.justify-end.gap-2.md:pb-4
+        - if logged_in?
+          - if current_user?(@user)
+            = link_to edit_user_path(@user), class: "px-4 py-2 bg-gray-200 text-gray-900 rounded-lg font-semibold hover:bg-gray-300 transition-colors flex items-center gap-2" do
+              svg.w-5.h-5 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              span Edit profile
+          - else
+            = render 'follow_form'
+    
+    / Divider
+    hr.my-4.border-gray-200
+    
+    / Tabs Navigation
+    .flex.items-center.gap-1.border-b.border-gray-200.mb-4
+      button.tab-btn.active.px-6.py-3.font-semibold.text-gray-600.hover:bg-gray-100.rounded-t-lg.transition-colors data-tab="posts"
+        | Posts
+      button.tab-btn.px-6.py-3.font-semibold.text-gray-600.hover:bg-gray-100.rounded-t-lg.transition-colors data-tab="about"
+        | About
+      button.tab-btn.px-6.py-3.font-semibold.text-gray-600.hover:bg-gray-100.rounded-t-lg.transition-colors data-tab="photos"
+        | Photos
+      button.tab-btn.px-6.py-3.font-semibold.text-gray-600.hover:bg-gray-100.rounded-t-lg.transition-colors data-tab="friends"
+        | Friends
+    
+    / Tab Content
+    / Posts Tab
+    #posts-tab.tab-content
+      .grid.grid-cols-1.lg:grid-cols-3.gap-6
+        / Left Column - Intro & Photos Preview
+        .space-y-4
+          / Intro Card
+          .bg-white.border.border-gray-200.rounded-lg.p-4
+            h2.text-xl.font-bold.text-gray-900.mb-4 Intro
+            .space-y-3
+              - if @user.bio.present?
+                p.text-gray-700.text-center.user-bio = @user.bio
+              - else
+                p.text-gray-700.text-center.user-bio style="display: none;"
+              - if @user.email.present?
+                .flex.items-center.gap-3.text-gray-600
+                  svg.w-5.h-5 fill="currentColor" viewBox="0 0 20 20"
+                    path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"
+                    path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"
+                  span.text-sm = @user.email
+              .flex.items-center.gap-3.text-gray-600
+                svg.w-5.h-5 fill="currentColor" viewBox="0 0 20 20"
+                  path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"
+                span.text-sm
+                  strong = @user.followers.count
+                  |  followers · 
+                  strong = @user.following.count
+                  |  following
+              - if logged_in? && current_user?(@user)
+                button#edit-details-btn.w-full.mt-4.px-4.py-2.bg-gray-200.text-gray-900.rounded-lg.font-semibold.hover:bg-gray-300.transition-colors Edit details
+          
+          / Photos Preview Card
+          .bg-white.border.border-gray-200.rounded-lg.p-4
+            .flex.items-center.justify-between.mb-4
+              h2.text-xl.font-bold.text-gray-900 Photos
+              button.text-blue-600.hover:underline.font-semibold.text-sm data-tab-link="photos" See all photos
+            .grid.grid-cols-3.gap-2
+              - @user_photos.first(9).each do |photo|
+                .aspect-square.bg-gray-200.rounded-lg.overflow-hidden.cursor-pointer
+                  = image_tag photo, class: "w-full h-full object-cover hover:opacity-90 transition-opacity"
+          
+          / Friends Preview Card
+          .bg-white.border.border-gray-200.rounded-lg.p-4
+            .flex.items-center.justify-between.mb-4
+              h2.text-xl.font-bold.text-gray-900
+                | Friends
+                span.text-gray-500.font-normal.text-sm &nbsp;(#{@mutual_friends.count})
+              button.text-blue-600.hover:underline.font-semibold.text-sm data-tab-link="friends" See all friends
+            .grid.grid-cols-3.gap-2
+              - @mutual_friends.first(9).each do |friend|
+                = link_to friend, class: "text-center" do
+                  .aspect-square.bg-gray-200.rounded-lg.overflow-hidden.mb-1
+                    = gravatar_for friend, size: 100, class_name: "w-full h-full object-cover"
+                  .text-xs.font-semibold.text-gray-900.truncate = friend.name
+        
+        / Right Column - Posts Feed (2 columns)
+        .lg:col-span-2
+          / Create Post Box (only for current user)
+          - if logged_in? && current_user?(@user)
+            .bg-white.border.border-gray-200.rounded-lg.shadow-sm.mb-4
+              .p-4
+                .flex.items-center.gap-3.mb-3
+                  = gravatar_for current_user, size: 40, class_name: "rounded-full"
+                  button.flex-1.px-4.py-3.bg-gray-100.text-left.text-gray-500.rounded-full.hover:bg-gray-200.transition-colors.font-medium onclick="document.getElementById('create-post-modal').classList.remove('hidden')"
+                    | What's on your mind, #{current_user.name.split.first}?
+                
+                .border-t.border-gray-200.pt-3.flex.items-center.justify-around
+                  button.flex.items-center.gap-2.px-4.py-2.hover:bg-gray-100.rounded-lg.transition-colors onclick="document.getElementById('create-post-modal').classList.remove('hidden')"
+                    svg.w-6.h-6.text-green-500 fill="currentColor" viewBox="0 0 20 20"
+                      path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"
+                    span.text-gray-600.font-semibold Photo/video
+                  button.flex.items-center.gap-2.px-4.py-2.hover:bg-gray-100.rounded-lg.transition-colors onclick="document.getElementById('create-post-modal').classList.remove('hidden')"
+                    svg.w-6.h-6.text-yellow-500 fill="currentColor" viewBox="0 0 20 20"
+                      path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm7-1a1 1 0 11-2 0 1 1 0 012 0zm-.464 5.535a1 1 0 10-1.415-1.414 3 3 0 01-4.242 0 1 1 0 00-1.415 1.414 5 5 0 007.072 0z" clip-rule="evenodd"
+                    span.text-gray-600.font-semibold Feeling/activity
+          
+          / Posts List
+          ol.microposts.space-y-4#user-feed
+            - @microposts.each do |micropost|
+              = render partial: 'microposts/micropost', locals: { micropost: micropost }
+          
+          - if @microposts.empty?
+            .text-center.py-12.text-gray-500
+              p No posts yet
+    
+    / About Tab
+    #about-tab.tab-content.hidden
+      = render 'users/about_tab'
+    
+    / Photos Tab
+    #photos-tab.tab-content.hidden
+      = render 'users/photos_tab'
+    
+    / Friends Tab
+    #friends-tab.tab-content.hidden
+      = render 'users/friends_tab'
+
+javascript:
+  document.addEventListener('turbo:load', function() {
+    // Tab switching
+    document.querySelectorAll('.tab-btn, [data-tab-link]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tabName = this.dataset.tab || this.dataset.tabLink;
+      
+      // Update active tab button
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active', 'text-blue-600', 'border-b-4', 'border-blue-600');
+        b.classList.add('text-gray-600');
+      });
+      
+      const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+      if (activeBtn) {
+        activeBtn.classList.add('active', 'text-blue-600', 'border-b-4', 'border-blue-600');
+        activeBtn.classList.remove('text-gray-600');
+      }
+      
+      // Show corresponding tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+    });
+  });
+  
+  // Check URL hash for tab
+  if (window.location.hash) {
+    const hash = window.location.hash.substring(1);
+    const tabBtn = document.querySelector(`.tab-btn[data-tab="${hash}"]`);
+    if (tabBtn) {
+      tabBtn.click();
+    }
+  }
+  
+  // Scroll to anchor if present
+  setTimeout(() => {
+    if (window.location.hash && window.location.hash.startsWith('#micropost-')) {
+      const el = document.querySelector(window.location.hash);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.backgroundColor = '#ffffd0';
+        setTimeout(() => {
+          el.style.transition = 'background-color 1s ease';
+          el.style.backgroundColor = '';
+        }, 500);
+      }
+    }
+  }, 400);
+  
+  // Edit Profile Modal functionality
+  const editDetailsBtn = document.getElementById('edit-details-btn');
+  const editProfileModal = document.getElementById('edit-profile-modal');
+  const closeEditModal = document.getElementById('close-edit-modal');
+  const cancelEditBtn = document.getElementById('cancel-edit-btn');
+  const editProfileForm = document.getElementById('edit-profile-form');
+  const editProfileErrors = document.getElementById('edit-profile-errors');
+  
+  if (editDetailsBtn && editProfileModal) {
+    // Open modal
+    editDetailsBtn.addEventListener('click', () => {
+      editProfileModal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    });
+    
+    // Close modal functions
+    const closeModal = () => {
+      editProfileModal.classList.add('hidden');
+      document.body.style.overflow = 'auto';
+      editProfileErrors.classList.add('hidden');
+      editProfileErrors.innerHTML = '';
+    };
+    
+    closeEditModal.addEventListener('click', closeModal);
+    cancelEditBtn.addEventListener('click', closeModal);
+    
+    // Close on outside click
+    editProfileModal.addEventListener('click', (e) => {
+      if (e.target === editProfileModal) {
+        closeModal();
+      }
+    });
+    
+    // Handle form submit via AJAX
+    editProfileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(editProfileForm);
+      const submitBtn = editProfileForm.querySelector('input[type="submit"]');
+      const originalText = submitBtn.value;
+      submitBtn.value = 'Saving...';
+      submitBtn.disabled = true;
+      
+      try {
+        const response = await fetch(editProfileForm.action, {
+          method: 'PATCH',
+          body: formData,
+          headers: {
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Success - update UI and close modal
+          if (data.name) {
+            const nameElements = document.querySelectorAll('.user-name');
+            nameElements.forEach(el => el.textContent = data.name);
+          }
+          if (data.bio !== undefined) {
+            const bioElements = document.querySelectorAll('.user-bio');
+            bioElements.forEach(el => {
+              if (data.bio) {
+                el.textContent = data.bio;
+                el.style.display = 'block';
+              } else {
+                el.style.display = 'none';
+              }
+            });
+          }
+          
+          closeModal();
+          
+          // Show success message
+          const successMsg = document.createElement('div');
+          successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+          successMsg.textContent = 'Profile updated successfully!';
+          document.body.appendChild(successMsg);
+          setTimeout(() => successMsg.remove(), 3000);
+          
+        } else {
+          // Show errors
+          editProfileErrors.classList.remove('hidden');
+          editProfileErrors.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">';
+          if (data.errors && Array.isArray(data.errors)) {
+            editProfileErrors.innerHTML += '<ul class="list-disc list-inside">';
+            data.errors.forEach(error => {
+              editProfileErrors.innerHTML += `<li>${error}</li>`;
+            });
+            editProfileErrors.innerHTML += '</ul>';
+          } else {
+            editProfileErrors.innerHTML += '<p>Failed to update profile. Please try again.</p>';
+          }
+          editProfileErrors.innerHTML += '</div>';
+        }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        editProfileErrors.classList.remove('hidden');
+        editProfileErrors.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">An error occurred. Please try again.</div>';
+      } finally {
+        submitBtn.value = originalText;
+        submitBtn.disabled = false;
+      }
+    });
+  }
+  });
+
+/ Edit Profile Modal
+- if logged_in? && current_user?(@user)
+  #edit-profile-modal.fixed.inset-0.hidden.z-50.flex.items-center.justify-center style="backdrop-filter: blur(8px); background-color: rgba(0, 0, 0, 0.3);"
+    .bg-white.rounded-lg.shadow-xl style="width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()"
+      / Modal Header
+      .flex.items-center.justify-between.p-4.border-b.border-gray-200
+        h2.text-xl.font-bold.text-gray-900 Edit Profile
+        button#close-edit-modal.text-gray-400.hover:text-gray-600.transition-colors
+          svg.w-6.h-6 fill="currentColor" viewBox="0 0 20 20"
+            path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"
+      
+      / Modal Body
+      .p-6
+        = form_with(model: @user, id: 'edit-profile-form', data: { turbo: false }) do |f|
+          #edit-profile-errors.mb-4.hidden
+          
+          .mb-4
+            = f.label :name, class: "block text-sm font-semibold text-gray-700 mb-2"
+            = f.text_field :name, class: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', placeholder: 'Your name'
+          
+          .mb-4
+            = f.label :email, class: "block text-sm font-semibold text-gray-700 mb-2"
+            = f.email_field :email, class: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', placeholder: 'your@email.com'
+          
+          .mb-4
+            = f.label :bio, class: "block text-sm font-semibold text-gray-700 mb-2"
+            = f.text_area :bio, class: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', rows: 3, placeholder: 'Tell us about yourself...'
+          
+          .mb-4
+            = f.label :password, "Password (leave blank if you don't want to change)", class: "block text-sm font-semibold text-gray-700 mb-2"
+            = f.password_field :password, class: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', placeholder: 'New password'
+          
+          .mb-4
+            = f.label :password_confirmation, "Password Confirmation", class: "block text-sm font-semibold text-gray-700 mb-2"
+            = f.password_field :password_confirmation, class: 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500', placeholder: 'Confirm new password'
+          
+          / Modal Footer
+          .flex.justify-end.gap-3.mt-6
+            button#cancel-edit-btn.px-4.py-2.bg-gray-200.text-gray-900.rounded-lg.font-semibold.hover:bg-gray-300.transition-colors type="button" Cancel
+            = f.submit "Save Changes", class: "px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+
+/ Create Post Modal
+- if logged_in?
+  = render 'shared/create_post_modal'
+  = render 'shared/edit_post_modal'

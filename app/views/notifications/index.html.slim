@@ -1,0 +1,67 @@
+= content_for :title, 'Notifications'
+
+/ Notifications Page - Facebook Style
+.max-w-4xl.mx-auto.px-4.py-6
+  / Header with white background card
+  .bg-white.rounded-lg.shadow.border.border-gray-200.mb-4
+    .p-4.border-b.border-gray-200
+      h1.text-2xl.font-bold.text-gray-900 Notifications
+    
+    / Tabs
+    .flex.border-b.border-gray-200
+      = link_to notifications_path(tab: 'all'), class: "flex-1 px-6 py-4 text-center text-sm font-semibold transition-colors border-b-2 #{@current_tab == 'all' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:bg-gray-50'}" do
+        | All
+      = link_to notifications_path(tab: 'unread'), class: "flex-1 px-6 py-4 text-center text-sm font-semibold transition-colors border-b-2 #{@current_tab == 'unread' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:bg-gray-50'}" do
+        | Unread
+        - unread_count = current_user.notifications.unread.count
+        - if unread_count > 0
+          span.ml-2.inline-flex.items-center.justify-center.px-2.py-1.text-xs.font-bold.text-white.bg-red-500.rounded-full
+            = unread_count
+    
+    / Mark all as read button
+    - unread_count = current_user.notifications.unread.count
+    - if unread_count > 0
+      .flex.items-center.justify-between.px-4.py-3.bg-gray-50.border-b.border-gray-200
+        .text-sm.text-gray-600
+          = pluralize(unread_count, 'unread notification')
+        = link_to mark_all_as_read_notifications_path, method: :post, class: 'text-sm text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1', id: 'mark-all-read-btn', data: { confirm: 'Mark all notifications as read?' } do
+          svg.w-4.h-4 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"
+          | Mark all as read
+    
+    / Notifications List
+    - if @notifications.any?
+      .divide-y.divide-gray-200
+        - @notifications.each do |notification|
+          = link_to mark_as_read_notification_path(notification), method: :post, class: "block notification-item hover:bg-gray-50 transition-colors #{notification.read ? '' : 'bg-blue-50'}", data: { notification_id: notification.id } do
+            .flex.items-start.gap-3.p-4
+              / Avatar
+              - if notification.actor
+                = gravatar_for(notification.actor, size: 56, class_name: 'w-14 h-14 rounded-full object-cover flex-shrink-0')
+              - else
+                .w-14.h-14.rounded-full.bg-gray-300.flex.items-center.justify-center.flex-shrink-0
+                  svg.w-8.h-8.text-gray-500 fill="currentColor" viewBox="0 0 24 24"
+                    path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+              
+              / Content
+              .flex-1.min-w-0
+                .text-sm
+                  - if notification.actor
+                    span.font-semibold.text-gray-900 = notification.actor.name
+                    |  
+                    span.text-gray-700 = notification.message
+                  - else
+                    span.font-semibold.text-gray-500 Deleted user
+                    |  
+                    span.text-gray-700 = notification.message
+                
+                .flex.items-center.gap-2.mt-1
+                  span.text-xs.text-blue-600 = time_ago_in_words(notification.created_at) + ' ago'
+                  - unless notification.read
+                    span.w-2.h-2.bg-blue-600.rounded-full
+    - else
+      .p-12.text-center
+        svg.w-16.h-16.mx-auto.mb-4.text-gray-400 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+        .text-lg.font-semibold.text-gray-900.mb-2 No notifications yet
+        .text-sm.text-gray-600 When you get notifications, they'll show up here
