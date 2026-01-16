@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # Mount letter_opener_web for viewing emails in development
+  mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
+  
   get '/login', to:'sessions#new'
   post '/login', to:'sessions#create'
   delete '/logout', to: 'sessions#destroy'
@@ -14,13 +17,41 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "static_pages#home"
+  
+  # Admin namespace
+  namespace :admin do
+    resources :users, only: [:index, :edit, :update, :destroy]
+  end
+  
   resources :users do
+    collection do
+      get :autocomplete
+      get :search
+    end
     member do
       get :following, :followers
     end
   end
   resources :account_activations, only: [:edit]
   resources :password_resets, only: [:new, :create, :edit, :update]
-  resources :microposts, only: [:create, :destroy]
+  
+  resources :microposts, only: [:create, :destroy, :show, :update] do
+    collection do
+      get :search
+      get :autocomplete
+    end
+    resources :likes, only: [:create, :destroy, :index]
+    resources :comments, only: [:index, :create, :destroy]
+  end
+  
+  resources :notifications, only: [:index] do
+    member do
+      patch :mark_as_read
+    end
+    collection do
+      patch :mark_all_as_read
+    end
+  end
+  
   resources :relationships, only: [:create, :destroy]
 end

@@ -1,5 +1,4 @@
-# rubocop:disable Style/FrozenStringLiteralComment
-namespace :searchkick do # rubocop:disable Metrics/BlockLength
+namespace :searchkick do
   desc 'Reindex all models'
   task reindex_all: :environment do
     puts 'Reindexing all models...'
@@ -16,7 +15,7 @@ namespace :searchkick do # rubocop:disable Metrics/BlockLength
   end
 
   desc 'Reindex a specific model (usage: rake searchkick:reindex[User])'
-  task :reindex, [:model] => :environment do |t, args|
+  task :reindex, [:model] => :environment do |_t, args|
     if args[:model].blank?
       puts 'Usage: rake searchkick:reindex[ModelName]'
       puts 'Example: rake searchkick:reindex[User]'
@@ -52,7 +51,7 @@ namespace :searchkick do # rubocop:disable Metrics/BlockLength
   end
 
   desc 'Clear a specific model index (usage: rake searchkick:clear[User])'
-  task :clear, [:model] => :environment do |t, args|
+  task :clear, [:model] => :environment do |_t, args|
     if args[:model].blank?
       puts 'Usage: rake searchkick:clear[ModelName]'
       puts 'Example: rake searchkick:clear[User]'
@@ -72,28 +71,28 @@ namespace :searchkick do # rubocop:disable Metrics/BlockLength
     puts "✓ #{model_name} index cleared successfully"
   end
 
-  desc 'Check Solr connection'
+  desc 'Check Elasticsearch connection'
   task check: :environment do
-    puts 'Checking Solr connection...'
+    puts 'Checking Elasticsearch connection...'
 
-    solr_url = ENV.fetch('SOLR_URL', 'http://localhost:8983/solr')
-    puts "Solr URL: #{solr_url}"
+    es_url = ENV.fetch('ELASTICSEARCH_URL', 'http://localhost:9200')
+    puts "Elasticsearch URL: #{es_url}"
 
     begin
-      require 'rsolr'
-      solr = RSolr.connect(url: solr_url)
-      response = solr.get 'admin/ping'
+      client = Searchkick.client
+      health = client.cluster.health
 
-      if response['status'] == 'OK'
-        puts '✓ Solr connection successful!'
-        puts "  Status: #{response['status']}"
+      if health
+        puts '✓ Elasticsearch connection successful!'
+        puts "  Cluster: #{health['cluster_name']}"
+        puts "  Status: #{health['status']}"
+        puts "  Number of nodes: #{health['number_of_nodes']}"
       else
-        puts '✗ Solr connection failed'
-        puts "  Response: #{response.inspect}"
+        puts '✗ Elasticsearch connection failed'
       end
     rescue StandardError => e
-      puts "✗ Error connecting to Solr: #{e.message}"
-      puts '  Make sure Solr is running: docker-compose up solr'
+      puts "✗ Error connecting to Elasticsearch: #{e.message}"
+      puts '  Make sure Elasticsearch is running: docker-compose up elasticsearch'
     end
   end
 end

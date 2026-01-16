@@ -1,10 +1,36 @@
 = content_for :title, "All users"
-h1 All users
 
-.digg_pagination
-  = will_paginate
-ul.users
-  = render @users
+.container
+  .row
+    .col-md-12
+      h1 All users
 
-.digg_pagination
-  = will_paginate
+      / Search form
+      .user-search-container data-controller="user-search"
+        .search-form
+          = form_tag search_users_path, method: :get, class: "form-inline", data: { action: "submit->user-search#search" } do
+            .form-group.mr-2
+              = text_field_tag :q, params[:q], class: "form-control", placeholder: "Search users by name or email", data: { user_search_target: "query", action: "keyup->user-search#search" }
+            
+            - if logged_in?
+              .form-group.mr-2
+                = select_tag :filter, options_for_select([["All Users", "all"], ["Following", "following"], ["Followers", "followers"]], params[:filter]), class: "form-control", data: { user_search_target: "filter", action: "change->user-search#filterChanged" }
+            
+            = submit_tag "Search", class: "btn btn-primary"
+            - if params[:q].present?
+              = link_to "Clear", users_path, class: "btn btn-secondary ml-2"
+        
+        / Search results container
+        .search-results data-user-search-target="results"
+
+      hr
+
+      / User list
+      - unless params[:q].present?
+        .digg_pagination
+          = will_paginate
+        ul.users
+          = render @users
+        .digg_pagination
+          = will_paginate
+
