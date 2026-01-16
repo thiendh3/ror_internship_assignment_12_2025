@@ -1,0 +1,41 @@
+/ User Profile Modal (hidden by default, shown on hover)
+#user-profile-modal.hidden.fixed.z-50.w-80.bg-white.rounded-lg.shadow-xl.border.border-gray-200
+  / Modal Header
+  .flex.items-center.justify-between.p-4.border-b.border-gray-200
+    h3.text-lg.font-bold.text-gray-900 User Profile
+    button#modal-close-btn.w-8.h-8.rounded-full.hover:bg-gray-100.flex.items-center.justify-center.transition-colors type="button"
+      svg.w-5.h-5.text-gray-600 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"
+  
+  / Modal Body
+  .p-4
+    / User Info
+    .flex.items-center.gap-3.mb-4
+      #modal-user-avatar.w-16.h-16.rounded-full.bg-gray-200.flex.items-center.justify-center.overflow-hidden
+        / Avatar will be loaded here
+      .flex-1.min-w-0
+        #modal-user-name.text-lg.font-bold.text-gray-900.truncate
+          / Name will be loaded here
+        #modal-user-email.text-sm.text-gray-600.truncate
+          / Email will be loaded here
+    
+    / Statistics
+    .bg-gray-50.rounded-lg.p-4.mb-4
+      .flex.items-center.justify-around
+        .text-center
+          #modal-microposts-count.text-2xl.font-bold.text-gray-900
+            / Count will be loaded here
+          .text-xs.text-gray-600.mt-1 Microposts
+        .text-center
+          #modal-following-count.text-2xl.font-bold.text-gray-900
+            / Count will be loaded here
+          .text-xs.text-gray-600.mt-1 Following
+        .text-center
+          #modal-followers-count.text-2xl.font-bold.text-gray-900
+            / Count will be loaded here
+          .text-xs.text-gray-600.mt-1 Followers
+  
+  / Modal Footer
+  .flex.gap-2.p-4.border-t.border-gray-200
+    a#modal-view-profile-btn.w-full.bg-blue-600.text-white.text-center.px-4.py-2.rounded-lg.font-semibold.hover:bg-blue-700.transition-colors View Full Profile
+    button#modal-close-btn-2.w-full.bg-gray-100.text-gray-800.text-center.px-4.py-2.rounded-lg.font-semibold.hover:bg-gray-200.transition-colors type="button" Close

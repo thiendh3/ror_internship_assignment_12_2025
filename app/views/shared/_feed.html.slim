@@ -1,5 +1,21 @@
+/ Feed Section
+
 - if @feed_items.any?
-  ol.microposts#feed-items
+  .space-y-4#feed-items
     = render @feed_items
-  .digg_pagination
-    = will_paginate @feed_items, params: {controller: :static_pages, action: :home}
+  
+  / Pagination
+  - if @feed_items.total_pages > 1
+    .mt-6.flex.justify-center
+      .digg_pagination
+        = will_paginate @feed_items, params: {controller: :static_pages, action: :home}, class: "flex items-center gap-2"
+
+- else
+  / Empty state
+  .bg-white.rounded-lg.shadow.p-12.text-center
+    .mb-4
+      svg.w-20.h-20.mx-auto.text-gray-300 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+    h3.text-xl.font-semibold.text-gray-900.mb-2 No posts yet
+    p.text-gray-500.mb-4 Start following users to see their posts in your feed
+    = link_to "Find people to follow", "#", class: "inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"

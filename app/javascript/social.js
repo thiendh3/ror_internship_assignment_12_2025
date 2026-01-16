@@ -66,31 +66,36 @@ function initReactions() {
   document.querySelectorAll('.reaction-btn-wrapper').forEach(wrapper => {
     const picker = wrapper.querySelector('.reaction-picker');
     if (!picker) return;
+    
+    if (wrapper.dataset.reactionInitialized) return;
+    wrapper.dataset.reactionInitialized = 'true';
 
     let hideTimeout;
 
     wrapper.addEventListener('mouseenter', () => {
       clearTimeout(hideTimeout);
-      picker.classList.add('show');
+      picker.classList.remove('hidden');
     });
 
     wrapper.addEventListener('mouseleave', () => {
-      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+      hideTimeout = setTimeout(() => picker.classList.add('hidden'), 300);
     });
 
     picker.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
     picker.addEventListener('mouseleave', () => {
-      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+      hideTimeout = setTimeout(() => picker.classList.add('hidden'), 300);
     });
   });
 
   // Handle reaction selection
-  document.querySelectorAll('.reaction-option').forEach(btn => {
+  document.querySelectorAll('.reaction-option:not([data-reaction-initialized])').forEach(btn => {
+    btn.dataset.reactionInitialized = 'true';
     btn.addEventListener('click', handleReaction);
   });
 
   // Handle quick like (click on main button)
-  document.querySelectorAll('.btn-reaction-trigger').forEach(btn => {
+  document.querySelectorAll('.btn-reaction-trigger:not([data-quick-reaction-initialized])').forEach(btn => {
+    btn.dataset.quickReactionInitialized = 'true';
     btn.addEventListener('click', handleQuickReaction);
   });
 
@@ -98,28 +103,33 @@ function initReactions() {
   document.querySelectorAll('.comment-reaction-wrapper').forEach(wrapper => {
     const picker = wrapper.querySelector('.comment-reaction-picker');
     if (!picker) return;
+    
+    if (wrapper.dataset.commentReactionInitialized) return;
+    wrapper.dataset.commentReactionInitialized = 'true';
 
     let hideTimeout;
     wrapper.addEventListener('mouseenter', () => {
       clearTimeout(hideTimeout);
-      picker.classList.add('show');
+      picker.classList.remove('hidden');
     });
     wrapper.addEventListener('mouseleave', () => {
-      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+      hideTimeout = setTimeout(() => picker.classList.add('hidden'), 300);
     });
     picker.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
     picker.addEventListener('mouseleave', () => {
-      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+      hideTimeout = setTimeout(() => picker.classList.add('hidden'), 300);
     });
   });
 
   // Comment reaction option click
-  document.querySelectorAll('.comment-reaction-option').forEach(btn => {
+  document.querySelectorAll('.comment-reaction-option:not([data-comment-reaction-option-initialized])').forEach(btn => {
+    btn.dataset.commentReactionOptionInitialized = 'true';
     btn.addEventListener('click', handleCommentReactionOption);
   });
 
   // Comment quick reaction (main button)
-  document.querySelectorAll('.btn-comment-reaction').forEach(btn => {
+  document.querySelectorAll('.btn-comment-reaction:not([data-comment-quick-reaction-initialized])').forEach(btn => {
+    btn.dataset.commentQuickReactionInitialized = 'true';
     btn.addEventListener('click', handleCommentQuickReaction);
   });
 }
@@ -133,7 +143,7 @@ async function handleReaction(e) {
   const micropostId = btn.dataset.micropostId;
   const picker = btn.closest('.reaction-picker');
   
-  if (picker) picker.classList.remove('show');
+  if (picker) picker.classList.add('hidden');
   
   if (!micropostId) {
     console.error('Missing micropostId for reaction');
@@ -173,7 +183,7 @@ async function handleCommentReactionOption(e) {
   const commentId = btn.dataset.commentId;
   const reactionType = btn.dataset.reactionType;
   const picker = btn.closest('.comment-reaction-picker');
-  if (picker) picker.classList.remove('show');
+  if (picker) picker.classList.add('hidden');
   
   await sendCommentReaction(commentId, reactionType);
 }
@@ -240,10 +250,14 @@ function updateCommentReactionUI(commentId, reactionsData) {
     btn.dataset.currentReaction = reactionsData.user_reaction || '';
     btn.classList.toggle('reacted', !!reactionsData.user_reaction);
     
+    // Update emoji and text
+    const emoji = reactionsData.user_reaction ? getReactionEmoji(reactionsData.user_reaction) : '👍';
+    const text = reactionsData.user_reaction ? reactionsData.user_reaction.charAt(0).toUpperCase() + reactionsData.user_reaction.slice(1) : 'Like';
+    
     const icon = btn.querySelector('.reaction-icon');
-    const text = btn.querySelector('.reaction-text');
-    if (icon) icon.textContent = reactionsData.user_reaction ? getReactionEmoji(reactionsData.user_reaction) : '👍';
-    if (text) text.textContent = reactionsData.user_reaction ? reactionsData.user_reaction.charAt(0).toUpperCase() + reactionsData.user_reaction.slice(1) : 'Like';
+    const textEl = btn.querySelector('.reaction-text');
+    if (icon) icon.textContent = emoji;
+    if (textEl) textEl.textContent = text;
   }
   
   // Update display
@@ -323,29 +337,51 @@ function updateReactionUI(id, targetType, reactionsData) {
     const summary = micropost.querySelector('.reactions-summary .reactions-icons');
     
     if (btn) {
-      btn.dataset.reaction = reactionsData.user_reaction || '';
+      btn.dataset.currentReaction = reactionsData.user_reaction || '';
       btn.classList.toggle('reacted', !!reactionsData.user_reaction);
       
-      const display = btn.querySelector('.reaction-display');
-      if (display) {
-        const emoji = reactionsData.user_reaction ? getReactionEmoji(reactionsData.user_reaction) : '👍';
-        const text = reactionsData.user_reaction ? reactionsData.user_reaction.charAt(0).toUpperCase() + reactionsData.user_reaction.slice(1) : 'Like';
-        display.innerHTML = `${emoji} ${text}`;
+      // Update button content with emoji and text
+      const emoji = reactionsData.user_reaction ? getReactionEmoji(reactionsData.user_reaction) : '👍';
+      const text = reactionsData.user_reaction ? reactionsData.user_reaction.charAt(0).toUpperCase() + reactionsData.user_reaction.slice(1) : 'Like';
+      
+      // Update emoji span
+      const emojiSpan = btn.querySelector('span:first-child');
+      if (emojiSpan) {
+        emojiSpan.textContent = emoji;
+      }
+      
+      // Update text span
+      const textSpan = btn.querySelector('span.font-medium');
+      if (textSpan) {
+        textSpan.textContent = text;
+      }
+      
+      // Update button color
+      if (reactionsData.user_reaction) {
+        btn.classList.remove('text-gray-600');
+        btn.classList.add('text-blue-600');
+      } else {
+        btn.classList.remove('text-blue-600');
+        btn.classList.add('text-gray-600');
       }
     }
     
     // Update summary
     if (summary) {
       let html = '';
-      if (reactionsData.top_reactions) {
+      if (reactionsData.top_reactions && reactionsData.top_reactions.length > 0) {
         reactionsData.top_reactions.forEach(rt => {
-          html += `<span class="reaction-icon-small">${getReactionEmoji(rt)}</span>`;
+          html += `<span class="reaction-icon-small text-lg">${getReactionEmoji(rt)}</span>`;
         });
-      }
-      if (reactionsData.total_count > 0) {
-        html += `<span class="reactions-total">${reactionsData.total_count}</span>`;
+        html += `<span class="reactions-total ml-1">${reactionsData.total_count}</span>`;
       }
       summary.innerHTML = html;
+    }
+    
+    // Update comments count if present
+    const commentsCountEl = micropost.querySelector('.comments-count');
+    if (commentsCountEl && reactionsData.comments_count !== undefined) {
+      commentsCountEl.textContent = `${reactionsData.comments_count} ${reactionsData.comments_count === 1 ? 'comment' : 'comments'}`;
     }
   }
 }
@@ -464,26 +500,31 @@ function initCommentReactions(container) {
   container.querySelectorAll('.comment-reaction-wrapper').forEach(wrapper => {
     const picker = wrapper.querySelector('.comment-reaction-picker');
     if (!picker) return;
+    
+    if (wrapper.dataset.commentReactionInitialized) return;
+    wrapper.dataset.commentReactionInitialized = 'true';
 
     let hideTimeout;
     wrapper.addEventListener('mouseenter', () => {
       clearTimeout(hideTimeout);
-      picker.classList.add('show');
+      picker.classList.remove('hidden');
     });
     wrapper.addEventListener('mouseleave', () => {
-      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+      hideTimeout = setTimeout(() => picker.classList.add('hidden'), 300);
     });
     picker.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
     picker.addEventListener('mouseleave', () => {
-      hideTimeout = setTimeout(() => picker.classList.remove('show'), 300);
+      hideTimeout = setTimeout(() => picker.classList.add('hidden'), 300);
     });
   });
 
-  container.querySelectorAll('.comment-reaction-option').forEach(btn => {
+  container.querySelectorAll('.comment-reaction-option:not([data-comment-reaction-option-initialized])').forEach(btn => {
+    btn.dataset.commentReactionOptionInitialized = 'true';
     btn.addEventListener('click', handleCommentReactionOption);
   });
 
-  container.querySelectorAll('.btn-comment-reaction').forEach(btn => {
+  container.querySelectorAll('.btn-comment-reaction:not([data-comment-quick-reaction-initialized])').forEach(btn => {
+    btn.dataset.commentQuickReactionInitialized = 'true';
     btn.addEventListener('click', handleCommentQuickReaction);
   });
 }
@@ -512,7 +553,7 @@ function renderNestedComments(comments, micropostId) {
                 <span class="reaction-icon">${comment.user_reaction ? getReactionEmoji(comment.user_reaction) : '👍'}</span>
                 <span class="reaction-text">${comment.user_reaction ? comment.user_reaction.charAt(0).toUpperCase() + comment.user_reaction.slice(1) : 'Like'}</span>
               </button>
-              <div class="comment-reaction-picker" data-comment-id="${comment.id}" style="flex-direction: row !important;">
+              <div class="comment-reaction-picker hidden" data-comment-id="${comment.id}" style="flex-direction: row !important;">
                 <button class="comment-reaction-option" data-reaction-type="like" data-comment-id="${comment.id}" title="Like" style="display: inline-block;">👍</button>
                 <button class="comment-reaction-option" data-reaction-type="love" data-comment-id="${comment.id}" title="Love" style="display: inline-block;">❤️</button>
                 <button class="comment-reaction-option" data-reaction-type="haha" data-comment-id="${comment.id}" title="Haha" style="display: inline-block;">😆</button>

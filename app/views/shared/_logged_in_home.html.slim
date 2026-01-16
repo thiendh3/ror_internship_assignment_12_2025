@@ -1,11 +1,48 @@
-.row
-  aside.col-md-4
-    section.user_info
-      = render 'shared/user_info'
-    section.stats
-      = render 'shared/stats'
-    section.micropost_form
-      = render 'shared/micropost_form'
-  .col-md-8
-    h3 Micropost Feed
-    = render 'shared/feed'
+/ Facebook-style layout with 3 columns (5:2.5:2.5 ratio)
+.flex.justify-start.pt-16.min-h-screen.bg-gray-100
+  / Left Sidebar - 25% width (2.5 parts)
+  aside.fixed.left-0.top-16.bottom-0.w-64.overflow-y-auto.hidden.lg:block.bg-gray-100 style="scrollbar-width: thin; z-index: 10; width: 25%;"
+    .px-2.py-2.h-full
+      = render 'shared/left_sidebar'
+  
+  / Center Feed - 50% width (5 parts)
+  main.w-full.lg:ml-0.xl:mr-0 style="margin-left: 25%; margin-right: 25%;"
+    .w-full.max-w-full.px-6.py-4
+      / Create Post Section
+      .bg-white.rounded-lg.shadow.p-4.mb-4
+        .flex.items-center.gap-3
+          = link_to current_user, class: "flex-shrink-0" do
+            = gravatar_for(current_user, size: 40, class_name: "w-10 h-10 rounded-full")
+          .flex-1
+            = render 'shared/micropost_form'
+        
+        / Add to post options
+        .flex.items-center.justify-between.mt-3.pt-3.border-t.border-gray-200
+          .text-sm.text-gray-600.font-medium Add to your post
+          .flex.items-center.gap-1
+            / Photo/Video button
+            button.w-9.h-9.flex.items-center.justify-center.rounded-full.hover:bg-gray-100.transition-colors onclick="openCreatePostModal()" type="button"
+              svg.w-6.h-6.text-green-500 fill="currentColor" viewBox="0 0 24 24"
+                path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"
+            / Feeling/Activity button
+            button.w-9.h-9.flex.items-center.justify-center.rounded-full.hover:bg-gray-100.transition-colors onclick="openCreatePostModal()" type="button"
+              svg.w-6.h-6.text-yellow-500 fill="currentColor" viewBox="0 0 24 24"
+                path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"
+            / More options button
+            button.w-9.h-9.flex.items-center.justify-center.rounded-full.hover:bg-gray-100.transition-colors onclick="openCreatePostModal()" type="button"
+              svg.w-6.h-6.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+                path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+      
+      / Feed
+      = render 'shared/feed'
+  
+  / Right Sidebar - 25% width (2.5 parts)
+  aside.fixed.right-0.top-16.bottom-0.overflow-y-auto.hidden.xl:block.bg-gray-100 style="scrollbar-width: thin; z-index: 10; width: 25%;"
+    .px-4.py-4.h-full
+      = render 'shared/right_sidebar'
+
+/ Create Post Modal
+= render 'shared/create_post_modal'
+
+/ Edit Post Modal
+= render 'shared/edit_post_modal'

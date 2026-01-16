@@ -1,0 +1,110 @@
+.max-w-6xl
+  .bg-white.border.border-gray-200.rounded-lg.p-6
+    / Header with Filter
+    .flex.items-center.justify-between.mb-6
+      .flex.items-center.gap-2
+        h2.text-2xl.font-bold.text-gray-900 Friends
+        span.text-gray-500.font-normal#friends-count = "(#{@mutual_friends.count})"
+      
+      / Filter Tabs
+      .flex.gap-2
+        button.friends-filter-btn.active.px-4.py-2.text-sm.font-semibold.text-blue-600.bg-blue-50.rounded-lg.transition-colors data-filter="all"
+          | All Friends
+        button.friends-filter-btn.px-4.py-2.text-sm.font-semibold.text-gray-600.hover:bg-gray-100.rounded-lg.transition-colors data-filter="followers"
+          | Followers (#{@all_followers.count})
+        button.friends-filter-btn.px-4.py-2.text-sm.font-semibold.text-gray-600.hover:bg-gray-100.rounded-lg.transition-colors data-filter="following"
+          | Following (#{@all_following.count})
+    
+    / Friends Grid
+    #friends-grid.grid.grid-cols-2.md:grid-cols-3.lg:grid-cols-4.gap-4
+      / All Friends (Mutual)
+      - @mutual_friends.each do |friend|
+        .friend-card.all.bg-white.border.border-gray-200.rounded-lg.p-4.hover:shadow-md.transition-shadow
+          = link_to friend, class: "block" do
+            .aspect-square.bg-gray-200.rounded-lg.overflow-hidden.mb-3
+              = gravatar_for friend, size: 150, class_name: "w-full h-full object-cover"
+            .text-center
+              .font-semibold.text-gray-900.truncate = friend.name
+              .text-sm.text-gray-500 Friend
+      
+      / Followers Only (not following back)
+      - (@all_followers - @mutual_friends).each do |follower|
+        .friend-card.followers.hidden.bg-white.border.border-gray-200.rounded-lg.p-4.hover:shadow-md.transition-shadow
+          = link_to follower, class: "block" do
+            .aspect-square.bg-gray-200.rounded-lg.overflow-hidden.mb-3
+              = gravatar_for follower, size: 150, class_name: "w-full h-full object-cover"
+            .text-center
+              .font-semibold.text-gray-900.truncate = follower.name
+              .text-sm.text-gray-500 Follower
+      
+      / Following Only (not following back)
+      - (@all_following - @mutual_friends).each do |following|
+        .friend-card.following.hidden.bg-white.border.border-gray-200.rounded-lg.p-4.hover:shadow-md.transition-shadow
+          = link_to following, class: "block" do
+            .aspect-square.bg-gray-200.rounded-lg.overflow-hidden.mb-3
+              = gravatar_for following, size: 150, class_name: "w-full h-full object-cover"
+            .text-center
+              .font-semibold.text-gray-900.truncate = following.name
+              .text-sm.text-gray-500 Following
+    
+    / Empty State
+    #friends-empty.hidden.text-center.py-16
+      svg.w-24.h-24.mx-auto.text-gray-300.mb-4 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+      p.text-gray-500.text-lg No friends yet
+
+javascript:
+  // Friends filter functionality
+  document.querySelectorAll('.friends-filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Update active button
+      document.querySelectorAll('.friends-filter-btn').forEach(b => {
+        b.classList.remove('active', 'text-blue-600', 'bg-blue-50');
+        b.classList.add('text-gray-600');
+      });
+      this.classList.add('active', 'text-blue-600', 'bg-blue-50');
+      this.classList.remove('text-gray-600');
+      
+      const filter = this.dataset.filter;
+      const friendCards = document.querySelectorAll('.friend-card');
+      const friendsCount = document.getElementById('friends-count');
+      const friendsEmpty = document.getElementById('friends-empty');
+      
+      let visibleCount = 0;
+      
+      friendCards.forEach(card => {
+        if (filter === 'all') {
+          if (card.classList.contains('all')) {
+            card.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            card.classList.add('hidden');
+          }
+        } else if (filter === 'followers') {
+          if (card.classList.contains('followers') || card.classList.contains('all')) {
+            card.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            card.classList.add('hidden');
+          }
+        } else if (filter === 'following') {
+          if (card.classList.contains('following') || card.classList.contains('all')) {
+            card.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            card.classList.add('hidden');
+          }
+        }
+      });
+      
+      // Update count and show/hide empty state
+      friendsCount.textContent = `(${visibleCount})`;
+      if (visibleCount === 0) {
+        document.getElementById('friends-grid').classList.add('hidden');
+        friendsEmpty.classList.remove('hidden');
+      } else {
+        document.getElementById('friends-grid').classList.remove('hidden');
+        friendsEmpty.classList.add('hidden');
+      }
+    });
+  });
