@@ -51,6 +51,9 @@ const micropostsChannel = consumer.subscriptions.create(
       const currentUserId = document.body.dataset.currentUserId
       if (currentUserId && parseInt(currentUserId) === data.user_id) return
 
+      // Don't add private posts from other users
+      if (data.visibility === 'private') return
+
       const tempDiv = document.createElement('div')
       tempDiv.innerHTML = data.html
       const newItem = tempDiv.firstElementChild
@@ -139,36 +142,28 @@ const micropostsChannel = consumer.subscriptions.create(
       const micropostEl = document.getElementById(`micropost-${micropostId}`)
       if (!micropostEl) return
       
-      // Update reactions summary icons
-      let iconsContainer = micropostEl.querySelector('.reactions-icons')
-      const summaryEl = micropostEl.querySelector('.reactions-summary')
+      // Update reactions summary icons (match with social.js structure)
+      const summary = micropostEl.querySelector('.reactions-summary .reactions-icons')
       
-      // Create icons container if doesn't exist and we have reactions
-      if (!iconsContainer && summaryEl && reactionsData.total_count > 0) {
-        iconsContainer = document.createElement('div')
-        iconsContainer.className = 'reactions-icons'
-        summaryEl.insertBefore(iconsContainer, summaryEl.firstChild)
-      }
-      
-      if (iconsContainer) {
+      if (summary) {
         let html = ''
         if (reactionsData.top_reactions && reactionsData.top_reactions.length > 0) {
           reactionsData.top_reactions.forEach(rt => {
-            html += `<span class="reaction-icon-small">${this.getReactionEmoji(rt)}</span>`
+            html += `<span class="reaction-icon-small text-lg">${this.getReactionEmoji(rt)}</span>`
           })
+          html += `<span class="reactions-total ml-1">${reactionsData.total_count}</span>`
         }
-        if (reactionsData.total_count > 0) {
-          html += `<span class="reactions-total">${reactionsData.total_count}</span>`
-        }
-        iconsContainer.innerHTML = html
-        
-        // Remove container if no reactions
-        if (reactionsData.total_count === 0) {
-          iconsContainer.remove()
-        }
+        summary.innerHTML = html
+      }
+      
+      // Update comments count if present
+      const commentsCountEl = micropostEl.querySelector('.comments-count')
+      if (commentsCountEl && reactionsData.comments_count !== undefined) {
+        commentsCountEl.textContent = `${reactionsData.comments_count} ${reactionsData.comments_count === 1 ? 'comment' : 'comments'}`
       }
       
       // Flash the reactions area to show update
+      const summaryEl = micropostEl.querySelector('.reactions-summary')
       if (summaryEl) {
         summaryEl.style.backgroundColor = '#e8f4ff'
         setTimeout(() => {

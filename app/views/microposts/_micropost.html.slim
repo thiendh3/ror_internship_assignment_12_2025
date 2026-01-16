@@ -2,90 +2,129 @@
 - top_reactions = micropost.reactions.group(:reaction_type).count.sort_by { |_, v| -v }.first(3).map(&:first)
 - is_shared = micropost.shared_post?
 - original = is_shared ? micropost.original_post : nil
-li id="micropost-#{micropost.id}" class="micropost-item micropost-clickable #{is_shared ? 'shared-micropost' : ''}" data-micropost-id="#{micropost.id}" style="cursor: pointer;"
-  .micropost-header
-    = link_to gravatar_for(micropost.user, size: 50), micropost.user, class: "user-profile-link", data: { user_id: micropost.user.id }, onclick: "event.stopPropagation();"
-    .micropost-user-info
-      span.user
-        = link_to micropost.user.name, micropost.user, class: "user-profile-link", data: { user_id: micropost.user.id }, onclick: "event.stopPropagation();"
-        - if is_shared
-          span.share-label  shared a post
-      span.timestamp
-        | #{time_ago_in_words(micropost.created_at)} ago
-        - if micropost.private?
-          span.visibility-badge.ms-2 title="Only you can see this" 🔒
 
+article.bg-white.rounded-lg.shadow-sm.overflow-hidden.micropost-clickable.cursor-pointer id="micropost-#{micropost.id}" class="#{is_shared ? 'shared-micropost' : ''}" data-micropost-id="#{micropost.id}" data-user-id="#{micropost.user.id}"
+  / Post Header
+  .p-3.flex.items-start.justify-between
+    .flex.items-center.gap-2.flex-1
+      = link_to micropost.user, class: "flex-shrink-0 user-profile-link", data: { user_id: micropost.user.id }, onclick: "event.stopPropagation();" do
+        = gravatar_for(micropost.user, size: 40, class_name: "w-10 h-10 rounded-full micropost-user-avatar")
+      .flex-1.min-w-0
+        .flex.items-center.gap-2
+          = link_to micropost.user, class: "font-semibold text-gray-900 hover:underline user-profile-link micropost-user-name", data: { user_id: micropost.user.id }, onclick: "event.stopPropagation();" do
+            = micropost.user.name
+          - if is_shared
+            span.text-gray-500.text-sm shared a post
+        .flex.items-center.gap-2.text-xs.text-gray-500
+          span = time_ago_in_words(micropost.created_at) + " ago"
+          - if micropost.private?
+            span.visibility-badge title="Only you can see this" 🔒
+          span ·
+          svg.w-3.h-3 fill="currentColor" viewBox="0 0 20 20"
+            path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"
+    / Three dots menu button (only for post owner)
+    - if current_user?(micropost.user)
+      .relative
+        button.w-9.h-9.rounded-full.hover:bg-gray-100.flex.items-center.justify-center.micropost-menu-trigger data-micropost-id="#{micropost.id}" onclick="event.stopPropagation(); toggleMicropostMenu('#{micropost.id}')" type="button"
+          svg.w-5.h-5.text-gray-600 fill="currentColor" viewBox="0 0 24 24"
+            path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+        
+        / Dropdown Menu
+        .micropost-menu-dropdown.hidden.absolute.right-0.top-10.w-64.bg-white.rounded-lg.shadow-xl.border.border-gray-200.z-50.overflow-hidden data-micropost-id="#{micropost.id}" onclick="event.stopPropagation();"
+          .py-1
+            / Edit post
+            button.w-full.text-left.px-4.py-2.hover:bg-gray-100.flex.items-center.gap-3.micropost-edit.transition-colors data-micropost-id="#{micropost.id}" data-is-shared="#{is_shared}" data-visibility="#{micropost.visibility}" type="button" onclick="document.querySelector('.micropost-menu-dropdown[data-micropost-id=\'#{micropost.id}\']').classList.add('hidden')"
+              svg.w-5.h-5.text-gray-600 fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              span.text-gray-800.font-medium Edit post
+            
+            / Divider
+            .border-t.border-gray-200.my-1
+            
+            / Move to bin (Delete)
+            button.w-full.text-left.px-4.py-3.hover:bg-gray-100.flex.items-start.gap-3.micropost-delete.transition-colors data-micropost-id="#{micropost.id}" type="button" onclick="document.querySelector('.micropost-menu-dropdown[data-micropost-id=\'#{micropost.id}\']').classList.add('hidden')"
+              svg.w-5.h-5.text-gray-600.fill-current.mt-0.5 flex-shrink-0 viewBox="0 0 24 24"
+                path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              .flex.flex-col.flex-1.min-w-0
+                span.text-gray-800.font-medium Move to bin
+                span.text-xs.text-gray-500.mt-0.5 Items in your bin are deleted after 30 days.
+
+  / Post Content
   - if is_shared
-    /! Share caption
+    / Share caption
     - if micropost.content.present?
-      .share-caption
-        = micropost.content
-    
-    /! Original post embedded
-    - if original.present?
-      .shared-post-container onclick="window.location.href='/microposts/#{original.id}'; event.stopPropagation();" style="cursor: pointer;"
-        .shared-post
-          .shared-post-header
-            = link_to gravatar_for(original.user, size: 40), original.user, onclick: "event.stopPropagation();"
-            .shared-post-user-info
-              = link_to original.user.name, original.user, class: "shared-post-author", onclick: "event.stopPropagation();"
-              span.shared-post-time = time_ago_in_words(original.created_at) + " ago"
-          .shared-post-content
-            = original.content
-            - if original.image.attached?
-              .shared-post-image
-                = image_tag original.display_image, class: "img-fluid"
+      .px-3.pb-2.share-caption
+        p.text-gray-800 = micropost.content
     - else
-      /! Original post was deleted
-      .shared-post-container.deleted-post
-        .shared-post
-          .shared-post-content.text-muted.text-center.py-4
-            p.mb-0 This content is no longer available
+      .px-3.pb-2.share-caption style="display: none;"
+        p.text-gray-800
+    
+    / Original post embedded
+    - if original.present?
+      .mx-3.mb-3.border.border-gray-200.rounded-lg.overflow-hidden.cursor-pointer onclick="window.location.href='#{user_path(original.user, anchor: "micropost-#{original.id}")}'; event.stopPropagation();"
+        .p-3.flex.items-center.gap-2
+          = link_to original.user, class: "flex-shrink-0 user-profile-link", data: { user_id: original.user.id }, onclick: "event.stopPropagation();" do
+            = gravatar_for(original.user, size: 32, class_name: "w-8 h-8 rounded-full")
+          .flex-1.min-w-0
+            = link_to original.user, class: "font-semibold text-gray-900 hover:underline user-profile-link", data: { user_id: original.user.id }, onclick: "event.stopPropagation();" do
+              = original.user.name
+            .text-xs.text-gray-500 = time_ago_in_words(original.created_at) + " ago"
+        - if original.content.present?
+          .px-3.pb-2
+            p.text-gray-800 = original.content
+        - if original.image.attached?
+          .shared-post-image.w-full.cursor-pointer.hover:opacity-95.transition-opacity onclick="event.stopPropagation(); window.open(this.querySelector('img').src, '_blank');"
+            = image_tag original.display_image, class: "w-full h-auto max-w-full object-contain"
+    - else
+      / Original post was deleted
+      .mx-3.mb-3.border.border-gray-200.rounded-lg.p-8.text-center
+        p.text-gray-500 This content is no longer available
   - else
-    /! Regular post content
-    .micropost-body
-      span.content
-        = micropost.content
-      - if micropost.image.attached?
-        .micropost-image.mt-2
-          = image_tag micropost.display_image, class: "img-fluid"
-  
-  /! Reactions summary
-  .reactions-summary onclick="event.stopPropagation();"
-    - if micropost.reactions_count > 0
-      .reactions-icons
+    / Regular post content
+    - if micropost.content.present?
+      .px-3.pb-3.micropost-content
+        p.text-gray-800.whitespace-pre-wrap = micropost.content
+    - if micropost.image.attached?
+      .micropost-image-container.w-full.cursor-pointer.hover:opacity-95.transition-opacity onclick="event.stopPropagation(); window.open(this.querySelector('img').src, '_blank');"
+        = image_tag micropost.display_image, class: "w-full h-auto max-w-full object-contain"
+
+  / Reactions and Engagement Summary
+  .px-3.py-2.border-t.border-gray-200.flex.items-center.justify-between.text-sm.text-gray-600.reactions-summary onclick="event.stopPropagation();"
+    .flex.items-center.gap-1.reactions-icons
+      - if micropost.reactions_count > 0
         - top_reactions.each do |rt|
-          span.reaction-icon-small = reaction_emoji(rt)
-        span.reactions-total = micropost.reactions_count
-    .engagement-stats
+          span.reaction-icon-small.text-lg = reaction_emoji(rt)
+        span.reactions-total.ml-1 = micropost.reactions_count
+    .flex.items-center.gap-4
       - if micropost.comments_count > 0
-        span.comments-stat = "#{micropost.comments_count} comments"
+        span.cursor-pointer.hover:underline.comments-count = "#{micropost.comments_count} #{'comment'.pluralize(micropost.comments_count)}"
       - if micropost.shares_count > 0
-        span.shares-stat = "#{micropost.shares_count} shares"
+        span.cursor-pointer.hover:underline = "#{micropost.shares_count} #{'share'.pluralize(micropost.shares_count)}"
 
-  /! Action buttons
-  .social-actions onclick="event.stopPropagation();"
-    .reaction-btn-wrapper
-      button.btn-social.btn-reaction-trigger data-micropost-id="#{micropost.id}" class="#{user_reaction ? 'reacted' : ''}" data-current-reaction="#{user_reaction}"
-        span.reaction-display
-          = user_reaction ? reaction_emoji(user_reaction) : '👍'
-          = user_reaction ? user_reaction.capitalize : 'Like'
-      .reaction-picker data-micropost-id="#{micropost.id}"
+  / Action Buttons
+  .px-3.py-2.border-t.border-gray-200.flex.items-center.justify-around onclick="event.stopPropagation();"
+    .reaction-btn-wrapper.relative.flex-1
+      button.w-full.flex.items-center.justify-center.gap-1.py-2.rounded-lg.hover:bg-gray-100.transition-colors.btn-reaction-trigger data-micropost-id="#{micropost.id}" class="#{user_reaction ? 'text-blue-600' : 'text-gray-600'}" data-current-reaction="#{user_reaction}"
+        - if user_reaction
+          span.text-xl = reaction_emoji(user_reaction)
+          span.font-medium.text-sm = user_reaction.capitalize
+        - else
+          span.font-medium.text-sm Like
+      .reaction-picker.hidden.absolute.bottom-full.left-1/2.transform.-translate-x-1/2.mb-2.bg-white.rounded-lg.shadow-lg.p-2.flex.gap-1 data-micropost-id="#{micropost.id}"
         - reaction_types.each do |type, emoji|
-          button.reaction-option data-reaction-type="#{type}" data-micropost-id="#{micropost.id}" title="#{type.capitalize}"
+          button.reaction-option.w-10.h-10.text-2xl.hover:scale-125.transition-transform data-reaction-type="#{type}" data-micropost-id="#{micropost.id}" title="#{type.capitalize}"
             = emoji
-    button.btn-social.btn-comment data-micropost-id="#{micropost.id}"
-      | 💬 Comment
+    
+    button.flex-1.flex.items-center.justify-center.gap-2.py-2.rounded-lg.hover:bg-gray-100.transition-colors.text-gray-600.btn-comment data-micropost-id="#{micropost.id}"
+      svg.w-5.h-5 fill="currentColor" viewBox="0 0 24 24"
+        path d="M21.99 4c0-1.1-.89-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"
+      span.font-medium Comment
+    
     - share_target_id = is_shared && original ? original.id : micropost.id
-    button.btn-social.btn-share data-micropost-id="#{share_target_id}"
-      | ↗️ Share
+    button.flex-1.flex.items-center.justify-center.gap-2.py-2.rounded-lg.hover:bg-gray-100.transition-colors.text-gray-600.btn-share data-micropost-id="#{share_target_id}"
+      svg.w-5.h-5 fill="currentColor" viewBox="0 0 24 24"
+        path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"
+      span.font-medium Share
 
-  /! Comments section (collapsed by default)
-  .comments-container data-micropost-id="#{micropost.id}" style="display: none;" onclick="event.stopPropagation();"
-
-  - if current_user?(micropost.user)
-    .micropost-actions.mt-2 onclick="event.stopPropagation();"
-      button.btn.btn-link.btn-sm.micropost-edit data-micropost-id="#{micropost.id}" data-is-shared="#{is_shared}" data-visibility="#{micropost.visibility}" title="Edit"
-        | ✏️ Edit
-      button.btn.btn-link.btn-sm.text-danger.micropost-delete data-micropost-id="#{micropost.id}" title="Delete"
-        | 🗑️ Delete
+  / Comments Section (collapsed by default)
+  .comments-container.border-t.border-gray-200 data-micropost-id="#{micropost.id}" style="display: none;" onclick="event.stopPropagation();"

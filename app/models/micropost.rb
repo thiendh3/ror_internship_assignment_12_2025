@@ -6,7 +6,7 @@ class Micropost < ApplicationRecord
   has_many :comments, dependent: :destroy
   has_many :reactions, as: :reactable, dependent: :destroy
   has_many :notifications, as: :notifiable, dependent: :destroy
- 
+
   has_many :shared_posts, class_name: 'Micropost', foreign_key: 'original_post_id'
 
   VISIBILITY_OPTIONS = %w[public private].freeze
@@ -18,7 +18,7 @@ class Micropost < ApplicationRecord
   validates :content, presence: true, length: { maximum: 140 }, unless: :shared_post?
   validates :visibility, inclusion: { in: VISIBILITY_OPTIONS }
 
-  scope :visible_to, ->(user) {
+  scope :visible_to, lambda { |user|
     where(visibility: 'public').or(where(user_id: user&.id))
   }
 
@@ -38,6 +38,7 @@ class Micropost < ApplicationRecord
   # Get the original post (handles nested shares - always return root)
   def root_post
     return self unless shared_post?
+
     original_post&.root_post || original_post || self
   end
   validates :image, content_type: { in: %w[image/jpeg image/gif image/png],
@@ -92,8 +93,10 @@ class Micropost < ApplicationRecord
     Rails.logger.error("Failed to remove micropost #{id} from index: #{e.message}")
   end
 
-  # Notify followers when a new post is created
+  # Notify followers when a new post is created (only for public posts)
   def notify_followers
+    return unless public? # Only notify for public posts
+
     user.followers.find_each do |follower|
       Notification.create!(
         user: follower,

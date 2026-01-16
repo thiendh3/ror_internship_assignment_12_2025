@@ -5,8 +5,8 @@ class CommentsController < ApplicationController
 
   before_action :logged_in_user
   before_action :set_micropost
-  before_action :set_comment, only: [:update, :destroy]
-  before_action :correct_user, only: [:update, :destroy]
+  before_action :set_comment, only: %i[update destroy]
+  before_action :correct_user, only: %i[update destroy]
 
   def index
     @comments = @micropost.comments.root_comments.includes(:user, :replies).recent
@@ -118,10 +118,10 @@ class CommentsController < ApplicationController
       {
         action: "comment_#{action}",
         micropost_id: @micropost.id,
-        comment: action != 'destroy' ? comment_json(comment) : nil,
+        comment: action == 'destroy' ? nil : comment_json(comment),
         comment_id: comment.id,
         user_id: comment.user_id,
-        html: action != 'destroy' ? render_comment_html(comment) : nil,
+        html: action == 'destroy' ? nil : render_comment_html(comment),
         total_count: @micropost.comments_count
       }
     )

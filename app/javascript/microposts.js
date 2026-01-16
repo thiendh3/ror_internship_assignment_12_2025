@@ -4,12 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
   cleanupMicropostModals()
   initMicropostForm()
   initMicropostActions()
+  initMicropostMenu()
 })
 
 document.addEventListener('turbo:load', () => {
   cleanupMicropostModals()
   initMicropostForm()
   initMicropostActions()
+  initMicropostMenu()
 })
 
 document.addEventListener('turbo:before-visit', () => {
@@ -135,9 +137,42 @@ function initMicropostActions() {
       e.stopPropagation()
       const micropostId = btn.dataset.micropostId
       const isShared = btn.dataset.isShared === 'true'
-      enableInlineEdit(micropostId, isShared)
+      const visibility = btn.dataset.visibility || 'public'
+      
+      // Get micropost element and data
+      const micropostEl = document.getElementById(`micropost-${micropostId}`)
+      if (!micropostEl) return
+      
+      // Get content
+      let content = ''
+      if (isShared) {
+        const captionEl = micropostEl.querySelector('.share-caption p')
+        content = captionEl ? captionEl.textContent.trim() : ''
+      } else {
+        const contentEl = micropostEl.querySelector('.micropost-content p')
+        content = contentEl ? contentEl.textContent.trim() : ''
+      }
+      
+      // Get image URL if exists
+      let imageUrl = null
+      const imageEl = micropostEl.querySelector('.micropost-image-container img')
+      if (imageEl && !isShared) {
+        imageUrl = imageEl.src
+      }
+      
+      // Get user info
+      const userNameEl = micropostEl.querySelector('.micropost-user-name')
+      const userAvatarEl = micropostEl.querySelector('.micropost-user-avatar')
+      const userName = userNameEl ? userNameEl.textContent.trim() : ''
+      const userAvatar = userAvatarEl ? userAvatarEl.src : ''
+      
+      // Open edit modal
+      if (typeof openEditPostModal === 'function') {
+        openEditPostModal(micropostId, content, visibility, imageUrl, userName, userAvatar)
+      }
     })
   })
+
 
   // Visibility toggle buttons
   document.querySelectorAll('.visibility-toggle:not([data-ajax-initialized])').forEach(btn => {
@@ -192,22 +227,23 @@ function initMicropostActions() {
     })
   })
   
-  // Clickable micropost items (open modal)
+  // Clickable micropost items - navigate to user profile with anchor
   const clickableItems = document.querySelectorAll('.micropost-clickable:not([data-ajax-initialized])')
-  console.log('Found clickable items:', clickableItems.length)
   clickableItems.forEach(item => {
     item.dataset.ajaxInitialized = 'true'
-    item.addEventListener('click', async (e) => {
-      console.log('Micropost clicked:', item.dataset.micropostId)
-      // Don't open modal if clicking on links or buttons
-      if (e.target.closest('a') || e.target.closest('button') || e.target.closest('.micropost-actions')) {
-        console.log('Click ignored - on link/button')
+    item.addEventListener('click', (e) => {
+      // Don't navigate if clicking on links, buttons, or interactive elements
+      if (e.target.closest('a') || 
+          e.target.closest('button') || 
+          e.target.closest('.micropost-menu-dropdown') ||
+          e.target.closest('.reaction-picker') ||
+          e.target.closest('.comments-container')) {
         return
       }
-      e.preventDefault()
+      
+      const userId = item.dataset.userId
       const micropostId = item.dataset.micropostId
-      console.log('Opening modal for:', micropostId)
-      await showMicropostModal(micropostId)
+      navigateToMicropost(userId, micropostId)
     })
   })
 }
@@ -231,9 +267,41 @@ function enableInlineEdit(micropostId, isShared = false) {
   if (!micropostEl) return
 
   // For shared posts, edit the caption; for regular posts, edit the content
-  const contentEl = isShared 
-    ? micropostEl.querySelector('.share-caption') || createShareCaptionElement(micropostEl)
-    : micropostEl.querySelector('.content')
+  let contentEl
+  if (isShared) {
+    // Find share caption - either existing or create new one
+    contentEl = micropostEl.querySelector('.share-caption')
+    if (!contentEl) {
+      contentEl = createShareCaptionElement(micropostEl)
+    }
+    // Make sure it's visible
+    if (contentEl) {
+      contentEl.style.display = ''
+      const p = contentEl.querySelector('p') || document.createElement('p')
+      if (!contentEl.querySelector('p')) {
+        p.className = 'text-gray-800'
+        contentEl.appendChild(p)
+      }
+      contentEl = p // Edit the paragraph, not the wrapper
+    }
+  } else {
+    // Find the content paragraph element
+    contentEl = micropostEl.querySelector('.px-3.pb-3 p') || micropostEl.querySelector('p.text-gray-800')
+    if (!contentEl) {
+      // Create content wrapper if it doesn't exist
+      const contentWrapper = document.createElement('div')
+      contentWrapper.className = 'px-3 pb-3 content'
+      const p = document.createElement('p')
+      p.className = 'text-gray-800 whitespace-pre-wrap'
+      p.textContent = ''
+      contentWrapper.appendChild(p)
+      const postContent = micropostEl.querySelector('.micropost-image') || micropostEl.querySelector('.reactions-summary')
+      if (postContent) {
+        postContent.insertAdjacentElement('beforebegin', contentWrapper)
+      }
+      contentEl = p
+    }
+  }
   
   const currentContent = contentEl.textContent.trim()
 
@@ -247,15 +315,15 @@ function enableInlineEdit(micropostId, isShared = false) {
   // Create edit form
   contentEl.innerHTML = `
     <form class="inline-edit-form" data-micropost-id="${micropostId}">
-      <textarea class="form-control mb-2" rows="2" placeholder="${isShared ? 'Add a caption...' : 'Edit content...'}">${currentContent}</textarea>
-      <div class="d-flex align-items-center gap-2">
-        <select class="form-select form-select-sm visibility-select" style="width: auto;">
+      <textarea class="w-full p-3 border border-gray-300 rounded-lg mb-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="${isShared ? 'Add a caption...' : 'Edit content...'}">${currentContent}</textarea>
+      <div class="flex items-center gap-2">
+        <select class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 visibility-select">
           <option value="public" ${currentVisibility === 'public' ? 'selected' : ''}>🌍 Public</option>
           <option value="private" ${currentVisibility === 'private' ? 'selected' : ''}>🔒 Private</option>
         </select>
-        <div class="btn-group btn-group-sm">
-          <button type="submit" class="btn btn-primary btn-sm">Save</button>
-          <button type="button" class="btn btn-secondary btn-sm cancel-edit">Cancel</button>
+        <div class="flex gap-2">
+          <button type="submit" class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg font-semibold hover:bg-blue-700 transition-colors">Save</button>
+          <button type="button" class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg font-semibold hover:bg-gray-300 transition-colors cancel-edit">Cancel</button>
         </div>
       </div>
     </form>
@@ -270,10 +338,19 @@ function enableInlineEdit(micropostId, isShared = false) {
 
   // Cancel button
   form.querySelector('.cancel-edit').addEventListener('click', () => {
-    contentEl.innerHTML = contentEl.dataset.originalHtml
-    // Remove caption element if it was empty
-    if (isShared && !currentContent) {
-      contentEl.remove()
+    if (isShared) {
+      // For shared posts, restore the caption wrapper
+      const captionWrapper = micropostEl.querySelector('.share-caption')
+      if (captionWrapper) {
+        captionWrapper.innerHTML = captionWrapper.dataset.originalHtml || ''
+        // Hide if empty
+        if (!currentContent && !captionWrapper.textContent.trim()) {
+          captionWrapper.style.display = 'none'
+        }
+      }
+    } else {
+      // For regular posts, restore content
+      contentEl.innerHTML = contentEl.dataset.originalHtml
     }
   })
 
@@ -486,11 +563,224 @@ function showFlash(type, message) {
   flash.querySelector('.btn-close').addEventListener('click', () => flash.remove())
 }
 
+// ========== MICROPOST MENU (3 DOTS) ==========
+function initMicropostMenu() {
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.micropost-menu-trigger') && !e.target.closest('.micropost-menu-dropdown')) {
+      document.querySelectorAll('.micropost-menu-dropdown').forEach(dropdown => {
+        dropdown.classList.add('hidden')
+      })
+    }
+  })
+}
+
+// Toggle micropost menu dropdown
+function toggleMicropostMenu(micropostId) {
+  const dropdown = document.querySelector(`.micropost-menu-dropdown[data-micropost-id="${micropostId}"]`)
+  if (!dropdown) return
+  
+  // Close all other dropdowns
+  document.querySelectorAll('.micropost-menu-dropdown').forEach(d => {
+    if (d !== dropdown) d.classList.add('hidden')
+  })
+  
+  // Toggle current dropdown
+  dropdown.classList.toggle('hidden')
+}
+
+// Make function available globally
+window.toggleMicropostMenu = toggleMicropostMenu
+
+// Navigate to micropost - redirect to user profile with anchor
+function navigateToMicropost(userId, micropostId) {
+  const currentPath = window.location.pathname
+  const targetPath = `/users/${userId}`
+  
+  // Check if we're already on the user's profile page
+  if (currentPath === targetPath || currentPath === `${targetPath}/`) {
+    // Already on user profile - just scroll to anchor
+    const anchor = `micropost-${micropostId}`
+    const element = document.getElementById(anchor)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      // Highlight the post
+      element.style.backgroundColor = '#ffffd0'
+      setTimeout(() => {
+        element.style.transition = 'background-color 1s ease'
+        element.style.backgroundColor = ''
+      }, 500)
+    } else {
+      // Element not found, update URL with anchor
+      window.location.hash = anchor
+      // Try again after a short delay
+      setTimeout(() => {
+        const el = document.getElementById(anchor)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          el.style.backgroundColor = '#ffffd0'
+          setTimeout(() => {
+            el.style.transition = 'background-color 1s ease'
+            el.style.backgroundColor = ''
+          }, 500)
+        }
+      }, 100)
+    }
+  } else {
+    // Not on user profile - redirect with anchor
+    window.location.href = `${targetPath}#micropost-${micropostId}`
+  }
+}
+
+// Edit Post Modal Functions
+window.openEditPostModal = function(micropostId, content, visibility, imageUrl, userName, userAvatar) {
+  console.log('openEditPostModal called', { micropostId, content, visibility });
+  const modal = document.getElementById('edit-post-modal');
+  if (!modal) {
+    console.error('Edit post modal not found!');
+    return;
+  }
+  
+  document.getElementById('edit-micropost-id').value = micropostId;
+  document.getElementById('edit-micropost-content').value = content;
+  document.getElementById('edit-user-name').textContent = userName;
+  document.getElementById('edit-user-avatar').src = userAvatar;
+  document.getElementById('edit-micropost-visibility').value = visibility;
+  setEditVisibilityDisplay(visibility);
+  
+  const currentImageContainer = document.getElementById('edit-current-image-container');
+  const currentImage = document.getElementById('edit-current-image');
+  if (imageUrl) {
+    currentImage.src = imageUrl;
+    currentImageContainer.classList.remove('hidden');
+  } else {
+    currentImageContainer.classList.add('hidden');
+  }
+  
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  
+  setTimeout(() => document.getElementById('edit-micropost-content').focus(), 100);
+}
+
+window.closeEditPostModal = function() {
+  document.getElementById('edit-post-modal').classList.add('hidden');
+  document.body.style.overflow = 'auto';
+}
+
+window.toggleEditVisibilityDropdown = function() {
+  document.getElementById('edit-visibility-dropdown').classList.toggle('hidden');
+}
+
+window.setEditVisibility = function(visibility) {
+  document.getElementById('edit-micropost-visibility').value = visibility;
+  setEditVisibilityDisplay(visibility);
+  document.getElementById('edit-visibility-dropdown').classList.add('hidden');
+}
+
+function setEditVisibilityDisplay(visibility) {
+  const text = document.getElementById('edit-visibility-text');
+  const icon = document.getElementById('edit-visibility-icon');
+  if (visibility === 'public') {
+    text.textContent = 'Public';
+    icon.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>';
+  } else {
+    text.textContent = 'Only me';
+    icon.innerHTML = '<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>';
+  }
+}
+
+window.checkEditPostButton = function() {
+  const content = document.getElementById('edit-micropost-content').value.trim();
+  const button = document.getElementById('edit-post-button');
+  if (content.length > 0) {
+    button.disabled = false;
+    button.classList.remove('bg-gray-300', 'cursor-not-allowed');
+    button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+  } else {
+    button.disabled = true;
+    button.classList.add('bg-gray-300', 'cursor-not-allowed');
+    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+  }
+}
+
+window.submitEditPost = async function() {
+  const micropostId = document.getElementById('edit-micropost-id').value;
+  const content = document.getElementById('edit-micropost-content').value;
+  const visibility = document.getElementById('edit-micropost-visibility').value;
+  
+  const formData = new FormData();
+  formData.append('micropost[content]', content);
+  formData.append('micropost[visibility]', visibility);
+  formData.append('authenticity_token', document.querySelector('input[name="authenticity_token"]').value);
+  
+  const button = document.getElementById('edit-post-button');
+  button.disabled = true;
+  button.textContent = 'Saving...';
+  
+  try {
+    const response = await fetch(`/microposts/${micropostId}`, {
+      method: 'PATCH',
+      body: formData,
+      headers: {
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
+        'Accept': 'application/json'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok) {
+      console.log('Update successful, replacing micropost...');
+      const micropostEl = document.getElementById(`micropost-${micropostId}`);
+      
+      if (micropostEl && data.html) {
+        // Replace entire micropost with updated HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data.html;
+        const newMicropost = tempDiv.firstElementChild;
+        
+        if (newMicropost) {
+          micropostEl.replaceWith(newMicropost);
+          console.log('Micropost replaced successfully!');
+          
+          // Re-initialize event handlers for the new element
+          if (window.MicropostActions) {
+            window.MicropostActions.initMicropostActions();
+          }
+          if (window.SocialFeatures) {
+            window.SocialFeatures.initSocialFeatures();
+          }
+        }
+      }
+      
+      window.closeEditPostModal();
+      
+      // Show success notification
+      if (typeof showFlash === 'function') {
+        showFlash('success', 'Post updated successfully!');
+      }
+    } else {
+      alert(data.error || 'Failed to update post');
+    }
+  } catch (error) {
+    console.error('Error updating post:', error);
+    alert('An error occurred while updating the post');
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Save';
+  }
+}
+
 // Export for use in other modules
 window.MicropostActions = {
   initMicropostForm,
   initMicropostActions,
   enableInlineEdit,
   showMicropostModal,
-  showFlash
+  showFlash,
+  initMicropostMenu
 }
+
+// Make navigateToMicropost available globally
+window.navigateToMicropost = navigateToMicropost

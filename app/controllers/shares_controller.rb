@@ -4,7 +4,7 @@ class SharesController < ApplicationController
   include ActionView::Helpers::DateHelper
 
   before_action :logged_in_user
-  before_action :set_micropost, only: [:create, :index]
+  before_action :set_micropost, only: %i[create index]
 
   def create
     @share = @micropost.shares.build(
@@ -33,7 +33,7 @@ class SharesController < ApplicationController
     return render json: { success: false, error: 'Share not found' }, status: :not_found unless @share
 
     @micropost = @share.micropost # May be nil if original deleted
-    
+
     if @share.destroy
       if @micropost
         broadcast_share('destroy')

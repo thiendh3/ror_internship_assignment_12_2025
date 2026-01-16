@@ -16,7 +16,7 @@ li.share-item.micropost-item id="share-#{share.id}" data-share-id="#{share.id}" 
   - if original.present?
     - user_reaction = logged_in? ? original.reactions.find_by(user: current_user) : nil
     /! Original post embedded - clickable to go to original post
-    .shared-post-container onclick="window.location.href='/microposts/#{original.id}'; event.stopPropagation();" style="cursor: pointer;"
+    .shared-post-container onclick="window.location.href='#{user_path(original.user, anchor: "micropost-#{original.id}")}'; event.stopPropagation();" style="cursor: pointer;"
       .shared-post
         .shared-post-header
           = link_to gravatar_for(original.user, size: 40), original.user, onclick: "event.stopPropagation();"
@@ -26,8 +26,8 @@ li.share-item.micropost-item id="share-#{share.id}" data-share-id="#{share.id}" 
         .shared-post-content
           = original.content
           - if original.image.attached?
-            .shared-post-image
-              = image_tag original.display_image, class: "img-fluid"
+            .shared-post-image.w-full
+              = image_tag original.display_image, class: "w-full h-auto max-w-full object-contain"
 
     /! Reactions summary for original post
     .reactions-summary data-micropost-id="#{original.id}" onclick="event.stopPropagation();"
@@ -54,7 +54,7 @@ li.share-item.micropost-item id="share-#{share.id}" data-share-id="#{share.id}" 
             span.current-reaction = reaction_emoji(user_reaction.reaction_type)
             = user_reaction.reaction_type.capitalize
           - else
-            | 👍 Like
+            | Like
         .reaction-picker
           - reaction_types.each do |type, emoji|
             button.reaction-option data-reaction-type="#{type}" data-micropost-id="#{original.id}" title="#{type.capitalize}"

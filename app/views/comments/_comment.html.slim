@@ -13,9 +13,12 @@ li.comment-item data-comment-id=comment.id data-parent-id=comment.parent_id clas
         - top_reactions = comment.reactions.group(:reaction_type).count.sort_by { |_, v| -v }.first(3).map(&:first)
         .comment-reaction-wrapper
           button.btn-comment-reaction.btn-sm data-comment-id=comment.id class="#{user_reaction ? 'reacted' : ''}" data-current-reaction="#{user_reaction}"
-            span.reaction-icon = user_reaction ? reaction_emoji(user_reaction) : '👍'
-            span.reaction-text = user_reaction ? user_reaction.capitalize : 'Like'
-          .comment-reaction-picker data-comment-id=comment.id style="flex-direction: row !important;"
+            - if user_reaction
+              span.reaction-icon = reaction_emoji(user_reaction)
+              span.reaction-text = user_reaction.capitalize
+            - else
+              span.reaction-text Like
+          .comment-reaction-picker.hidden data-comment-id=comment.id style="flex-direction: row !important;"
             - reaction_types.each do |type, emoji|
               button.comment-reaction-option data-reaction-type="#{type}" data-comment-id="#{comment.id}" title="#{type.capitalize}" style="display: inline-block;"
                 = emoji

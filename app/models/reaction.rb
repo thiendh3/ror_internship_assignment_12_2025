@@ -8,7 +8,7 @@ class Reaction < ApplicationRecord
   has_many :notifications, as: :notifiable, dependent: :destroy
 
   validates :reaction_type, presence: true, inclusion: { in: REACTION_TYPES }
-  validates :user_id, uniqueness: { scope: [:reactable_type, :reactable_id] }
+  validates :user_id, uniqueness: { scope: %i[reactable_type reactable_id] }
 
   after_create_commit :notify_owner
 

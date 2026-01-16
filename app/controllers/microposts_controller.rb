@@ -5,12 +5,23 @@ class MicropostsController < ApplicationController
 
   before_action :logged_in_user, only: %i[create destroy update share]
   before_action :correct_user, only: %i[destroy update]
-  before_action :set_micropost, only: [:show, :share]
+  before_action :set_micropost, only: %i[show share]
 
   def show
     @micropost = Micropost.find(params[:id])
+    
+    # Check visibility: private posts can only be viewed by owner
+    unless @micropost.public? || (logged_in? && current_user.id == @micropost.user_id)
+      respond_to do |format|
+        format.html { render file: "#{Rails.root}/public/404.html", status: :not_found, layout: false }
+        format.json { render json: { error: 'Post not found' }, status: :not_found }
+      end
+      return
+    end
+    
+    # Redirect to user profile with anchor instead of showing separate page
     respond_to do |format|
-      format.html
+      format.html { redirect_to user_path(@micropost.user, anchor: "micropost-#{@micropost.id}") }
       format.json do
         # Only owner can see edit history
         include_versions = logged_in? && current_user.id == @micropost.user_id
@@ -30,13 +41,18 @@ class MicropostsController < ApplicationController
           flash[:success] = 'Micropost created!'
           redirect_to root_url
         end
-        format.json { render json: { success: true, micropost: micropost_json(@micropost), html: render_micropost_html(@micropost) }, status: :created }
+        format.json do
+          render json: { success: true, micropost: micropost_json(@micropost), html: render_micropost_html(@micropost) },
+                 status: :created
+        end
       else
         format.html do
           @feed_items = current_user.feed.paginate(page: params[:page])
           render 'static_pages/home'
         end
-        format.json { render json: { success: false, errors: @micropost.errors.full_messages }, status: :unprocessable_entity }
+        format.json do
+          render json: { success: false, errors: @micropost.errors.full_messages }, status: :unprocessable_entity
+        end
       end
     end
   end
@@ -49,10 +65,20 @@ class MicropostsController < ApplicationController
           flash[:success] = 'Micropost updated!'
           redirect_to root_url
         end
-        format.json { render json: { success: true, micropost: micropost_json(@micropost), html: render_micropost_html(@micropost) } }
+        format.json do
+          image_url = @micropost.image.attached? ? @micropost.display_image : nil
+          render json: { 
+            success: true, 
+            micropost: micropost_json(@micropost), 
+            html: render_micropost_html(@micropost),
+            image_url: image_url
+          }
+        end
       else
         format.html { redirect_to root_url, alert: 'Failed to update micropost' }
-        format.json { render json: { success: false, errors: @micropost.errors.full_messages }, status: :unprocessable_entity }
+        format.json do
+          render json: { error: @micropost.errors.full_messages.join(', ') }, status: :unprocessable_entity
+        end
       end
     end
   end
@@ -73,7 +99,7 @@ class MicropostsController < ApplicationController
   # Share a post - creates a new micropost with original_post_id
   def share
     original = @micropost.root_post # Always share the root post
-    
+
     shared_post = current_user.microposts.build(
       content: params[:content].presence || '',
       original_post_id: original.id
@@ -82,12 +108,12 @@ class MicropostsController < ApplicationController
     if shared_post.save
       # Update shares_count on original
       original.increment!(:shares_count)
-      
+
       # Notify original post owner
       notify_share(original, shared_post) if original.user_id != current_user.id
-      
+
       broadcast_micropost(shared_post, 'create')
-      
+
       render json: {
         success: true,
         micropost: micropost_json(shared_post),
@@ -168,14 +194,19 @@ class MicropostsController < ApplicationController
   end
 
   def broadcast_micropost(micropost, action)
+    # Only broadcast public posts to feed
+    # Private posts should not appear in other users' feeds
+    return if action == 'create' && micropost.private?
+
     MicropostsChannel.broadcast_to(
       'feed',
       {
         action: action,
         micropost: micropost_json(micropost),
-        html: action != 'destroy' ? render_micropost_html(micropost) : nil,
+        html: action == 'destroy' ? nil : render_micropost_html(micropost),
         micropost_id: micropost.id,
-        user_id: micropost.user_id
+        user_id: micropost.user_id,
+        visibility: micropost.visibility
       }
     )
   rescue StandardError => e
