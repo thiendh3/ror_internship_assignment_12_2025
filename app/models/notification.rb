@@ -26,13 +26,7 @@ class Notification < ApplicationRecord
     case notification_type
     when 'follow', 'unfollow'
       notifiable.follower
-    when 'comment', 'reply'
-      notifiable.user
-    when 'micropost_reaction', 'comment_reaction'
-      notifiable.user
-    when 'share'
-      notifiable.user
-    when 'new_post'
+    when 'comment', 'reply', 'micropost_reaction', 'comment_reaction', 'share', 'new_post'
       notifiable.user
     end
   end
@@ -40,26 +34,17 @@ class Notification < ApplicationRecord
   def message
     return '' unless actor
 
-    case notification_type
-    when 'follow'
-      'started following you'
-    when 'unfollow'
-      'unfollowed you'
-    when 'comment'
-      'commented on your post'
-    when 'reply'
-      'replied to your comment'
-    when 'micropost_reaction'
-      'reacted to your post'
-    when 'comment_reaction'
-      'reacted to your comment'
-    when 'share'
-      'shared your post'
-    when 'new_post'
-      'posted something new'
-    else
-      'You have a new notification'
-    end
+    messages = {
+      'follow' => 'started following you',
+      'unfollow' => 'unfollowed you',
+      'comment' => 'commented on your post',
+      'reply' => 'replied to your comment',
+      'micropost_reaction' => 'reacted to your post',
+      'comment_reaction' => 'reacted to your comment',
+      'share' => 'shared your post',
+      'new_post' => 'posted something new'
+    }
+    messages[notification_type] || 'You have a new notification'
   end
 
   # Get the URL to redirect when clicking notification
@@ -67,9 +52,7 @@ class Notification < ApplicationRecord
     case notification_type
     when 'follow', 'unfollow'
       "/users/#{actor&.id}"
-    when 'comment'
-      "/microposts/#{notifiable.micropost_id}#comment-#{notifiable.id}"
-    when 'reply'
+    when 'comment', 'reply'
       "/microposts/#{notifiable.micropost_id}#comment-#{notifiable.id}"
     when 'micropost_reaction'
       "/microposts/#{notifiable.reactable_id}"
@@ -108,6 +91,14 @@ class Notification < ApplicationRecord
   end
 
   def notification_data
+    actor_data = if actor
+                   {
+                     id: actor.id,
+                     name: actor.name,
+                     avatar_url: gravatar_url(actor)
+                   }
+                 end
+
     {
       id: id,
       message: message,
@@ -115,11 +106,7 @@ class Notification < ApplicationRecord
       read: read,
       created_at: created_at,
       target_url: target_url,
-      actor: actor ? { 
-        id: actor.id, 
-        name: actor.name,
-        avatar_url: gravatar_url(actor)
-      } : nil,
+      actor: actor_data,
       micropost_id: related_micropost_id
     }
   end

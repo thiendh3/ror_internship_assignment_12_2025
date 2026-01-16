@@ -45,15 +45,19 @@ class NotificationsController < ApplicationController
 
   def notifications_json
     @notifications.map do |n|
+      actor_data = if n.actor
+                     {
+                       id: n.actor.id,
+                       name: n.actor.name,
+                       email: n.actor.email,
+                       avatar_url: gravatar_url(n.actor)
+                     }
+                   end
+
       {
         id: n.id,
         type: n.notification_type,
-        actor: n.actor ? {
-          id: n.actor.id,
-          name: n.actor.name,
-          email: n.actor.email,
-          avatar_url: gravatar_url(n.actor)
-        } : nil,
+        actor: actor_data,
         message: n.message,
         target_url: n.target_url,
         created_at: n.created_at,

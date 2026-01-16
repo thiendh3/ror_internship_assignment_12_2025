@@ -25,24 +25,33 @@ class NotificationService
     private
 
     def broadcast_notification(notification)
-      actor = notification.actor
       NotificationsChannel.broadcast_to(
         notification.user,
-        {
-          id: notification.id,
-          type: notification.notification_type,
-          actor: actor ? {
-            id: actor.id,
-            name: actor.name,
-            email: actor.email,
-            avatar_url: gravatar_url(actor)
-          } : nil,
-          message: notification.message,
-          target_url: notification.target_url,
-          created_at: notification.created_at,
-          read: notification.read
-        }
+        notification_broadcast_data(notification)
       )
+    end
+
+    def notification_broadcast_data(notification)
+      {
+        id: notification.id,
+        type: notification.notification_type,
+        actor: actor_data(notification.actor),
+        message: notification.message,
+        target_url: notification.target_url,
+        created_at: notification.created_at,
+        read: notification.read
+      }
+    end
+
+    def actor_data(actor)
+      return unless actor
+
+      {
+        id: actor.id,
+        name: actor.name,
+        email: actor.email,
+        avatar_url: gravatar_url(actor)
+      }
     end
 
     def gravatar_url(user, size = 40)
@@ -50,6 +59,5 @@ class NotificationService
       gravatar_id = Digest::MD5.hexdigest(user.email.downcase)
       "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}&d=identicon"
     end
-
   end
 end

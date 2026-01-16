@@ -38,10 +38,11 @@ class UserSearchService
     end
   end
 
-  def prepare_query(q)
-    return nil if q.blank?
+  def prepare_query(query_string)
+    return nil if query_string.blank?
+
     # Add wildcard for partial matching
-    q.split.map { |term| "#{term}*" }.join(' ')
+    query_string.split.map { |term| "#{term}*" }.join(' ')
   end
 
   def following_filter_ids

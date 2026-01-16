@@ -4,7 +4,8 @@ class Share < ApplicationRecord
   SHARE_TYPES = %w[share share_to_story].freeze
 
   belongs_to :user
-  belongs_to :micropost, counter_cache: true, optional: true # original post being shared, optional allows null when deleted
+  # original post being shared, optional allows null when deleted
+  belongs_to :micropost, counter_cache: true, optional: true
   has_many :notifications, as: :notifiable, dependent: :destroy
 
   validates :share_type, inclusion: { in: SHARE_TYPES }

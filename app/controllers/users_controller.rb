@@ -14,18 +14,16 @@ class UsersController < ApplicationController
     # All microposts including shared ones, filtered by visibility
     @microposts = @user.microposts.includes(:user, :original_post)
                        .visible_to(current_user).to_a
-    
+
     # Get all photos from user's posts (for Photos tab)
-    @user_photos = @user.microposts.select { |post| post.image.attached? }.map do |post|
-      post.display_image
-    end.compact
-    
+    @user_photos = @user.microposts.select { |post| post.image.attached? }.map(&:display_image).compact
+
     # Get mutual friends (users who follow each other)
     follower_ids = @user.followers.pluck(:id)
     following_ids = @user.following.pluck(:id)
     mutual_ids = follower_ids & following_ids
     @mutual_friends = User.where(id: mutual_ids)
-    
+
     # Get all followers and following for Friends tab
     @all_followers = @user.followers
     @all_following = @user.following
@@ -61,28 +59,9 @@ class UsersController < ApplicationController
   def update
     @user = User.find(params[:id])
     if @user.update(user_params)
-      respond_to do |format|
-        format.html do
-          flash[:success] = 'Profile is updated'
-          redirect_to @user
-        end
-        format.json do
-          render json: {
-            name: @user.name,
-            email: @user.email,
-            bio: @user.bio
-          }, status: :ok
-        end
-      end
+      handle_user_update_success
     else
-      respond_to do |format|
-        format.html { render 'edit' }
-        format.json do
-          render json: {
-            errors: @user.errors.full_messages
-          }, status: :unprocessable_entity
-        end
-      end
+      handle_user_update_failure
     end
   end
 
@@ -145,23 +124,8 @@ class UsersController < ApplicationController
     @search = @search_service.search
     @users = @search.results
     @highlights = build_highlights(@search)
-    
-    users = @users.map do |user|
-      highlights = @highlights[user.id] || {}
-      {
-        id: user.id,
-        name: user.name,
-        avatar_url: gravatar_url_for(user, size: 40),
-        relationship: relationship_status(user),
-        new_posts_count: new_posts_count(user),
-        highlights: {
-          name: highlights[:name]&.format { |word| "<mark>#{word}</mark>" },
-          bio: highlights[:bio]&.format { |word| "<mark>#{word}</mark>" }
-        }
-      }
-    end
-    
-    render json: { users: users }
+
+    render json: { users: map_autocomplete_users }
   end
 
   def destroy
@@ -177,11 +141,12 @@ class UsersController < ApplicationController
     return 'Friend' if current_user.following?(user) && user.following?(current_user)
     return 'Following' if current_user.following?(user)
     return 'Follower' if user.following?(current_user)
+
     nil
   end
 
-  def new_posts_count(user)
-    return 0 unless logged_in?
+  def new_posts_count(_user)
+    0 unless logged_in?
   end
 
   def gravatar_url_for(user, size: 80)
@@ -223,7 +188,22 @@ class UsersController < ApplicationController
     end
   end
 
-  private
+  def map_autocomplete_users
+    @users.map do |user|
+      highlights = @highlights[user.id] || {}
+      {
+        id: user.id,
+        name: user.name,
+        avatar_url: gravatar_url_for(user, size: 40),
+        relationship: relationship_status(user),
+        new_posts_count: new_posts_count(user),
+        highlights: {
+          name: highlights[:name]&.format { |word| "<mark>#{word}</mark>" },
+          bio: highlights[:bio]&.format { |word| "<mark>#{word}</mark>" }
+        }
+      }
+    end
+  end
 
   def build_highlights(search)
     search.hits.each_with_object({}) do |hit, hash|
@@ -249,6 +229,33 @@ class UsersController < ApplicationController
           bio: highlights[:bio]&.format { |word| "<mark>#{word}</mark>" }
         }
       }
+    end
+  end
+
+  def handle_user_update_success
+    respond_to do |format|
+      format.html do
+        flash[:success] = 'Profile is updated'
+        redirect_to @user
+      end
+      format.json do
+        render json: {
+          name: @user.name,
+          email: @user.email,
+          bio: @user.bio
+        }, status: :ok
+      end
+    end
+  end
+
+  def handle_user_update_failure
+    respond_to do |format|
+      format.html { render 'edit' }
+      format.json do
+        render json: {
+          errors: @user.errors.full_messages
+        }, status: :unprocessable_entity
+      end
     end
   end
 
@@ -298,10 +305,15 @@ class UsersController < ApplicationController
   end
 
   def render_follow_button(user, relationship)
+    button_style = 'padding: 8px 24px; color: white; border: none; border-radius: 4px; cursor: pointer;'
     if relationship
-      "<button class='follow-btn' data-user-id='#{user.id}' data-following='true' data-relationship-id='#{relationship.id}' style='padding: 8px 24px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;'>Unfollow</button>"
+      background = 'background: #6c757d;'
+      "<button class='follow-btn' data-user-id='#{user.id}' data-following='true' " \
+        "data-relationship-id='#{relationship.id}' style='#{button_style} #{background}'>Unfollow</button>"
     else
-      "<button class='follow-btn' data-user-id='#{user.id}' data-following='false' style='padding: 8px 24px; background: #0d6efd; color: white; border: none; border-radius: 4px; cursor: pointer;'>Follow</button>"
+      background = 'background: #0d6efd;'
+      "<button class='follow-btn' data-user-id='#{user.id}' data-following='false' " \
+        "style='#{button_style} #{background}'>Follow</button>"
     end
   end
 end

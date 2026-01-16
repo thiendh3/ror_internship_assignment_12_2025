@@ -70,21 +70,25 @@ class SharesController < ApplicationController
       content: share.content,
       created_at: share.created_at,
       time_ago: time_ago_in_words(share.created_at),
-      user: {
-        id: share.user.id,
-        name: share.user.name,
-        gravatar_url: gravatar_url(share.user)
-      },
-      original_post: {
-        id: share.micropost.id,
-        content: share.micropost.content,
-        user: {
-          id: share.micropost.user.id,
-          name: share.micropost.user.name,
-          gravatar_url: gravatar_url(share.micropost.user)
-        },
-        image_url: share.micropost.image.attached? ? url_for(share.micropost.display_image) : nil
-      }
+      user: share_user_json(share.user),
+      original_post: original_post_json(share.micropost)
+    }
+  end
+
+  def share_user_json(user)
+    {
+      id: user.id,
+      name: user.name,
+      gravatar_url: gravatar_url(user)
+    }
+  end
+
+  def original_post_json(micropost)
+    {
+      id: micropost.id,
+      content: micropost.content,
+      user: share_user_json(micropost.user),
+      image_url: micropost.image.attached? ? url_for(micropost.display_image) : nil
     }
   end
 

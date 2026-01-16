@@ -9,7 +9,7 @@ class MicropostsController < ApplicationController
 
   def show
     @micropost = Micropost.find(params[:id])
-    
+
     # Check visibility: private posts can only be viewed by owner
     unless @micropost.public? || (logged_in? && current_user.id == @micropost.user_id)
       respond_to do |format|
@@ -18,7 +18,7 @@ class MicropostsController < ApplicationController
       end
       return
     end
-    
+
     # Redirect to user profile with anchor instead of showing separate page
     respond_to do |format|
       format.html { redirect_to user_path(@micropost.user, anchor: "micropost-#{@micropost.id}") }
@@ -34,52 +34,18 @@ class MicropostsController < ApplicationController
     @micropost = current_user.microposts.build(micropost_params)
     @micropost.image.attach(params[:micropost][:image]) if params[:micropost][:image].present?
 
-    respond_to do |format|
-      if @micropost.save
-        broadcast_micropost(@micropost, 'create')
-        format.html do
-          flash[:success] = 'Micropost created!'
-          redirect_to root_url
-        end
-        format.json do
-          render json: { success: true, micropost: micropost_json(@micropost), html: render_micropost_html(@micropost) },
-                 status: :created
-        end
-      else
-        format.html do
-          @feed_items = current_user.feed.paginate(page: params[:page])
-          render 'static_pages/home'
-        end
-        format.json do
-          render json: { success: false, errors: @micropost.errors.full_messages }, status: :unprocessable_entity
-        end
-      end
+    if @micropost.save
+      handle_create_success
+    else
+      handle_create_failure
     end
   end
 
   def update
-    respond_to do |format|
-      if @micropost.update(micropost_params)
-        broadcast_micropost(@micropost, 'update')
-        format.html do
-          flash[:success] = 'Micropost updated!'
-          redirect_to root_url
-        end
-        format.json do
-          image_url = @micropost.image.attached? ? @micropost.display_image : nil
-          render json: { 
-            success: true, 
-            micropost: micropost_json(@micropost), 
-            html: render_micropost_html(@micropost),
-            image_url: image_url
-          }
-        end
-      else
-        format.html { redirect_to root_url, alert: 'Failed to update micropost' }
-        format.json do
-          render json: { error: @micropost.errors.full_messages.join(', ') }, status: :unprocessable_entity
-        end
-      end
+    if @micropost.update(micropost_params)
+      handle_update_success
+    else
+      handle_update_failure
     end
   end
 
@@ -127,6 +93,63 @@ class MicropostsController < ApplicationController
 
   private
 
+  def handle_create_success
+    broadcast_micropost(@micropost, 'create')
+    respond_to do |format|
+      format.html do
+        flash[:success] = 'Micropost created!'
+        redirect_to root_url
+      end
+      format.json do
+        render json: {
+          success: true,
+          micropost: micropost_json(@micropost),
+          html: render_micropost_html(@micropost)
+        }, status: :created
+      end
+    end
+  end
+
+  def handle_create_failure
+    respond_to do |format|
+      format.html do
+        @feed_items = current_user.feed.paginate(page: params[:page])
+        render 'static_pages/home'
+      end
+      format.json do
+        render json: { success: false, errors: @micropost.errors.full_messages }, status: :unprocessable_entity
+      end
+    end
+  end
+
+  def handle_update_success
+    broadcast_micropost(@micropost, 'update')
+    respond_to do |format|
+      format.html do
+        flash[:success] = 'Micropost updated!'
+        redirect_to root_url
+      end
+      format.json do
+        image_url = @micropost.image.attached? ? @micropost.display_image : nil
+        render json: {
+          success: true,
+          micropost: micropost_json(@micropost),
+          html: render_micropost_html(@micropost),
+          image_url: image_url
+        }
+      end
+    end
+  end
+
+  def handle_update_failure
+    respond_to do |format|
+      format.html { redirect_to root_url, alert: 'Failed to update micropost' }
+      format.json do
+        render json: { error: @micropost.errors.full_messages.join(', ') }, status: :unprocessable_entity
+      end
+    end
+  end
+
   def notify_share(original, shared_post)
     Notification.create!(
       user: original.user,
@@ -163,25 +186,30 @@ class MicropostsController < ApplicationController
       updated_at: micropost.updated_at,
       time_ago: time_ago_in_words(micropost.created_at),
       edited: micropost.updated_at > micropost.created_at,
-      user: {
-        id: micropost.user.id,
-        name: micropost.user.name,
-        gravatar_url: gravatar_url(micropost.user)
-      },
+      user: micropost_user_json(micropost.user),
       image_url: micropost.image.attached? ? url_for(micropost.display_image) : nil
     }
 
-    if include_versions && micropost.versions.any?
-      result[:versions] = micropost.versions.map do |v|
-        {
-          content: v.content,
-          edited_at: v.edited_at,
-          time_ago: time_ago_in_words(v.edited_at)
-        }
-      end
-    end
-
+    result[:versions] = micropost_versions_json(micropost) if include_versions && micropost.versions.any?
     result
+  end
+
+  def micropost_user_json(user)
+    {
+      id: user.id,
+      name: user.name,
+      gravatar_url: gravatar_url(user)
+    }
+  end
+
+  def micropost_versions_json(micropost)
+    micropost.versions.map do |v|
+      {
+        content: v.content,
+        edited_at: v.edited_at,
+        time_ago: time_ago_in_words(v.edited_at)
+      }
+    end
   end
 
   def gravatar_url(user, size: 50)
