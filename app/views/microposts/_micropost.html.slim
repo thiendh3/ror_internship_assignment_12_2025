@@ -44,7 +44,7 @@
     
     .micropost-interaction-buttons
       button.btn.btn-sm.like-btn class=(micropost.liked_by?(current_user) ? 'liked' : '') data-controller="like" data-micropost-id=micropost.id data-action="click->like#toggle" data-like-id=(micropost.like_for(current_user)&.id)
-        i class=(micropost.liked_by?(current_user) ? 'fa' : 'fa') + ' fa-heart'
+        i class=(micropost.liked_by?(current_user) ? 'fas fa-heart' : 'far fa-heart')
         = " Like"
       button.btn.btn-sm.comment-btn data-toggle="collapse" data-target="#comments-section-#{micropost.id}"
         i.fa.fa-comment
@@ -78,12 +78,14 @@
       .text-center.py-3
         .spinner-border.spinner-border-sm role="status"
           span.visually-hidden Loading...
-    .comment-form.mt-3
+    .comment-form.mt-2.mb-2
       - if logged_in?
         = form_with model: Comment.new, url: micropost_comments_path(micropost), class: "comment-form-ajax", data: { controller: "autocomplete", action: "submit->comment#submit" } do |f|
-          .input-group.micropost-form-container
-            = f.text_field :content, class: "form-control", placeholder: "Write a comment...", autocomplete: "off", required: true, data: { action: "input->autocomplete#onInput keydown->autocomplete#onKeyDown" }
-            = f.submit "Post", class: "btn btn-primary"
+          .form-group.mb-0
+            .input-group
+              = f.text_field :content, class: "form-control", placeholder: "Write a comment...", autocomplete: "off", required: true, data: { action: "input->autocomplete#onInput keydown->autocomplete#onKeyDown" }
+              .input-group-btn
+                = f.submit "Post", class: "btn btn-primary"
       - else
         .alert.alert-info.mb-0
           | Please 

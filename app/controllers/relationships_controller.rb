@@ -7,6 +7,9 @@ class RelationshipsController < ApplicationController
     # Use find_or_create_by to avoid duplicate relationships when button is clicked multiple times
     relationship = current_user.active_relationships.find_or_create_by!(followed_id: @user.id)
 
+    # Create follow notification
+    NotificationService.create_follow_notification(current_user, @user)
+
     respond_to do |format|
       format.html { redirect_to @user }
       format.js
@@ -14,7 +17,9 @@ class RelationshipsController < ApplicationController
         render json: {
           success: true,
           relationship_id: relationship.id,
-          following: true
+          following: true,
+          followers_count: @user.followers.count,
+          following_count: @user.following.count
         }
       end
     end
@@ -24,13 +29,19 @@ class RelationshipsController < ApplicationController
     @relationship = Relationship.find(params[:id])
     @user = @relationship.followed
     current_user.unfollow(@user)
+
+    # Optional: Create unfollow notification (commented out by default)
+    # NotificationService.create_unfollow_notification(current_user, @user)
+
     respond_to do |format|
       format.html { redirect_to @user }
       format.js
       format.json do
         render json: {
           success: true,
-          following: false
+          following: false,
+          followers_count: @user.followers.count,
+          following_count: @user.following.count
         }
       end
     end

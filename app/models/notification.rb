@@ -25,9 +25,37 @@ class Notification < ApplicationRecord
       "#{actor.name} commented on your micropost"
     when 'mentioned'
       "#{actor.name} mentioned you in a micropost"
+    when 'followed'
+      "#{actor.name} started following you"
+    when 'unfollowed'
+      "#{actor.name} unfollowed you"
     else
       "#{actor.name} #{action}"
     end
+  end
+
+  # Get URL to navigate to based on notification type
+  def url
+    case action
+    when 'liked', 'commented', 'mentioned'
+      # Navigate to the micropost
+      if notifiable_type == 'Micropost'
+        "/microposts/#{notifiable_id}"
+      elsif notifiable_type == 'Comment'
+        # If it's a comment, get the micropost from the comment
+        comment = Comment.find_by(id: notifiable_id)
+        comment ? "/microposts/#{comment.micropost_id}" : '/'
+      else
+        '/'
+      end
+    when 'followed', 'unfollowed'
+      # Navigate to the actor's profile
+      "/users/#{actor.id}"
+    else
+      '/'
+    end
+  rescue StandardError
+    '/'
   end
 
   private

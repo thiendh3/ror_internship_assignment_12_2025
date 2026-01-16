@@ -1,23 +1,48 @@
 = content_for :title, @title
-.row
-  aside.col-md-4
-    section.user_info
-      = gravatar_for @user
-      h1 = @user.name
-      span = link_to "view my profile", @user
-      span
-        b Microposts:
-        = @user.microposts.count
-    section.stats
-      = render 'shared/stats'
-      - if @users.any?
-        .user_avatars
-          - @users.each do |user|
-            = link_to gravatar_for(user, size: 30), user
-  .col-md-8
-    h3 = @title
-    - if @users.any?
-      ul.users.follow
-        = render @users
-      .digg_pagination
-        = will_paginate @microposts
+
+.container.show-follow-page
+  .row
+    / Left Sidebar - User Info
+    aside.col-md-4
+      .card.user-profile-card
+        .card-body
+          section.user_info.text-center
+            .user-avatar.mb-3
+              = gravatar_for @user, size: 120
+            h2.user-name = @user.name
+            = link_to "View Profile", @user, class: "btn btn-sm btn-outline-primary mb-2"
+            p.microposts-count
+              strong Microposts: 
+              = @user.microposts.count
+          
+          section.stats.mt-3
+            = render 'shared/stats'
+          
+          - if @users.any?
+            .user_avatars.mt-3.text-center
+              - @users.limit(10).each do |user|
+                = link_to gravatar_for(user, size: 30), user, class: "d-inline-block mr-1 mb-1"
+    
+    / Right Content - Users List
+    .col-md-8
+      .users-list-container
+        .show-follow-header
+          h1 = @title
+          p.text-muted = "#{@users.total_entries} users"
+        
+        - if @users.any?
+          ul.users.follow-list
+            = render @users
+          
+          .digg_pagination.text-center
+            = will_paginate @users
+        - else
+          .empty-state.text-center.py-5
+            p.text-muted
+              i.fas.fa-users-slash.fa-3x.mb-3
+            h4 No #{@title.downcase} yet
+            - if @title == "Following"
+              p Start following users to see them here!
+            - else
+              p Your followers will appear here.
+

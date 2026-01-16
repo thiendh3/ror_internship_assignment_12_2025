@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus";
 
 export default class extends Controller {
-  static targets = ["button"];
+  static targets = ["button", "followersCount", "followingCount"];
 
   async toggle(event) {
     event.preventDefault();
@@ -48,9 +48,30 @@ export default class extends Controller {
           link.href = "/relationships";
           link.dataset.method = "post";
         }
+
+        // Update stats if available
+        this.updateStats(data);
       }
     } catch (error) {
       console.error("Error toggling follow:", error);
+    }
+  }
+
+  updateStats(data) {
+    // Update followers count
+    if (data.followers_count !== undefined) {
+      const followersElement = document.getElementById("followers");
+      if (followersElement) {
+        followersElement.textContent = data.followers_count;
+      }
+    }
+
+    // Update following count
+    if (data.following_count !== undefined) {
+      const followingElement = document.getElementById("following");
+      if (followingElement) {
+        followingElement.textContent = data.following_count;
+      }
     }
   }
 
@@ -64,7 +85,7 @@ export default class extends Controller {
     // Otherwise get from the user profile link
     const userLink = link
       .closest(".user-item")
-      .querySelector('.user-info a[href^="/users/"]');
+      ?.querySelector('.user-info a[href^="/users/"]');
     if (userLink) {
       return userLink.href.split("/").pop();
     }

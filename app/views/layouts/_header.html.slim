@@ -11,7 +11,7 @@ header.navbar.navbar-fixed-top.navbar-inverse
       ul.nav.navbar-nav.navbar-right.collapse.navbar-collapse#bs-example-navbar-collapse-1
         li = link_to "Home", root_path
         - if logged_in?
-          li
+          li.nav-search-container
             .search-form data-controller="search"
               input.form-control.search-input type="text" placeholder="Search microposts..." data-search-target="input" data-action="input->search#search keyup.enter->search#submitSearch"
               .search-suggestions data-search-target="suggestions"
@@ -32,6 +32,9 @@ header.navbar.navbar-fixed-top.navbar-inverse
             ul.dropdown-menu
               li = link_to "Profile", current_user
               li = link_to "Settings", edit_user_path(current_user)
+              - if current_user.admin?
+                li.divider
+                li = link_to "Admin Panel", admin_users_path
               li.divider
               li = link_to "Log out", logout_path, data: { turbo_method: :delete }
         - else

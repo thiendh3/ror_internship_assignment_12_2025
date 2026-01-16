@@ -1,0 +1,43 @@
+= content_for :title, "Admin - Manage Users"
+
+.container.mt-4
+  h1.mb-4 Manage Users
+  
+  .table-responsive
+    table.table.table-striped.table-hover
+      thead
+        tr
+          th ID
+          th Avatar
+          th Name
+          th Email
+          th Admin
+          th Status
+          th Created
+          th Actions
+      tbody
+        - @users.each do |user|
+          tr
+            td = user.id
+            td = gravatar_for user, size: 40
+            td 
+              = link_to user.name, user_path(user)
+            td = user.email
+            td
+              - if user.admin?
+                span.badge.badge-danger Admin
+              - else
+                span.badge.badge-secondary User
+            td
+              - if user.activated?
+                span.badge.badge-success Active
+              - else
+                span.badge.badge-warning Pending
+            td = user.created_at.strftime("%Y-%m-%d")
+            td.text-nowrap
+              = link_to "Edit", edit_admin_user_path(user), class: "btn btn-sm btn-warning"
+              - unless user == current_user
+                = link_to "Delete", admin_user_path(user), method: :delete, data: { turbo_method: :delete, confirm: "Are you sure you want to delete this user?" }, class: "btn btn-sm btn-danger ml-1"
+  
+  .text-center.mt-4
+    = will_paginate @users

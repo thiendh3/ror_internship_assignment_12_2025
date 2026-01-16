@@ -17,9 +17,16 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "static_pages#home"
+  
+  # Admin namespace
+  namespace :admin do
+    resources :users, only: [:index, :edit, :update, :destroy]
+  end
+  
   resources :users do
     collection do
       get :autocomplete
+      get :search
     end
     member do
       get :following, :followers

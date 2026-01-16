@@ -394,3 +394,25 @@ span.image {
     border: 0;
   }
 }
+
+/* Navigation improvements */
+.navbar-nav > li.nav-search-container {
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .nav-search-container {
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 767px) {
+  .nav-search-container {
+    width: 100%;
+  }
+
+  .nav-search-container .search-form {
+    width: 100%;
+  }
+}

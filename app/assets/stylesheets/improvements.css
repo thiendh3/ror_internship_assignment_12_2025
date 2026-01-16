@@ -1,0 +1,234 @@
+/* Header and Navigation Improvements */
+.nav-search-container {
+  position: relative;
+  padding: 10px 15px;
+}
+
+.nav-search-container .search-form {
+  margin: 0;
+  width: 250px;
+}
+
+.nav-search-container .search-input {
+  width: 100%;
+  height: 34px;
+  padding: 6px 12px;
+  border-radius: 4px;
+}
+
+.navbar-nav > li.nav-search-container {
+  display: flex;
+  align-items: center;
+}
+
+/* Notifications Dropdown */
+.notifications-dropdown {
+  min-width: 320px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.notifications-dropdown .dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  font-weight: bold;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: #d9534f;
+  color: white;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: bold;
+  min-width: 18px;
+  text-align: center;
+}
+
+.notification-item {
+  transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+  background-color: #f8f9fa !important;
+}
+
+.notification-item.unread {
+  font-weight: 500;
+}
+
+/* Like Button Improvements */
+.like-btn {
+  border: none;
+  background: transparent;
+  color: #555;
+  transition: all 0.3s ease;
+}
+
+.like-btn:hover {
+  color: #e74c3c;
+}
+
+.like-btn.liked {
+  color: #e74c3c;
+}
+
+.like-btn.liked i {
+  animation: likeAnimation 0.4s ease;
+}
+
+@keyframes likeAnimation {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Comment Section Improvements */
+.micropost-comments-section {
+  border-top: 1px solid #e9ecef;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.comment-form {
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.comment-form .input-group {
+  display: flex;
+}
+
+.comment-form .form-control {
+  flex: 1;
+  border-radius: 20px 0 0 20px;
+  border-right: none;
+}
+
+.comment-form .input-group-btn {
+  display: flex;
+}
+
+.comment-form .btn-primary {
+  border-radius: 0 20px 20px 0;
+  padding: 6px 20px;
+}
+
+.comments-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px 15px;
+}
+
+/* Micropost Interaction Buttons */
+.micropost-interaction-buttons {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid #e9ecef;
+  margin-top: 10px;
+}
+
+.micropost-interaction-buttons .btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #555;
+  transition: all 0.2s;
+}
+
+.micropost-interaction-buttons .btn:hover {
+  background-color: #f8f9fa;
+}
+
+.comment-btn:hover {
+  color: #3498db;
+}
+
+.share-btn:hover {
+  color: #2ecc71;
+}
+
+/* Follow Button Full Width */
+#follow_form {
+  width: 100%;
+}
+
+#follow_form form {
+  width: 100%;
+  margin: 0;
+}
+
+#follow_form .btn {
+  width: 100%;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .nav-search-container {
+    padding: 10px 15px;
+  }
+
+  .nav-search-container .search-form {
+    width: 100%;
+  }
+
+  .notifications-dropdown {
+    min-width: 280px;
+  }
+
+  .micropost-interaction-buttons {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .micropost-interaction-buttons .btn {
+    width: 100%;
+  }
+}
+
+/* Search suggestions positioning */
+.search-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+}
+
+.search-suggestions.active {
+  display: block;
+}
+
+/* Dropdown menu improvements */
+.dropdown-menu {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-menu > li > a {
+  padding: 10px 20px;
+}
+
+.dropdown-menu > li > a:hover {
+  background-color: #f8f9fa;
+}

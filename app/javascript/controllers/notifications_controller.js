@@ -102,7 +102,9 @@ export default class extends Controller {
       <li>
         <a href="#" class="notification-item ${readClass}" data-notification-id="${
       notification.id
-    }" data-action="click->notifications#markAsRead" style="display: block; padding: 10px 20px; white-space: normal; background-color: ${bgColor};">
+    }" data-notification-url="${
+      notification.url || "/"
+    }" data-action="click->notifications#markAsReadAndNavigate" style="display: block; padding: 10px 20px; white-space: normal; background-color: ${bgColor};">
           <div style="margin-bottom: 5px;">
             <strong>${notification.actor.name}</strong>
             ${notification.message}
@@ -126,13 +128,16 @@ export default class extends Controller {
     }
   }
 
-  async markAsRead(event) {
+  async markAsReadAndNavigate(event) {
     event.preventDefault();
 
     const notificationId = event.currentTarget.dataset.notificationId;
+    const notificationUrl = event.currentTarget.dataset.notificationUrl;
+
     if (!notificationId) return;
 
     try {
+      // Mark as read
       const response = await fetch(
         `/notifications/${notificationId}/mark_as_read`,
         {
@@ -155,6 +160,11 @@ export default class extends Controller {
 
         // Update badge
         this.updateBadge(data.unread_count);
+
+        // Navigate to the URL
+        if (notificationUrl && notificationUrl !== "/") {
+          window.location.href = notificationUrl;
+        }
       }
     } catch (error) {
       console.error("Error marking as read:", error);
@@ -163,6 +173,7 @@ export default class extends Controller {
 
   async markAllAsRead(event) {
     event.preventDefault();
+    event.stopPropagation(); // Prevent dropdown from closing
 
     try {
       const response = await fetch("/notifications/mark_all_as_read", {

@@ -6,6 +6,8 @@ class NotificationServiceTest < ActiveSupport::TestCase
     @commenter = users(:archer)
     @micropost = microposts(:orange)
     @micropost_owner = @micropost.user
+    @follower = users(:archer)
+    @followed = users(:lana)
   end
 
   test 'create_like_notification should create notification' do
@@ -66,5 +68,49 @@ class NotificationServiceTest < ActiveSupport::TestCase
     assert_not_nil notification
     assert_equal users(:michael), notification.recipient
     assert_equal mentioner, notification.actor
+  end
+
+  test 'create_follow_notification should create notification' do
+    assert_difference 'Notification.count', 1 do
+      NotificationService.create_follow_notification(@follower, @followed)
+    end
+
+    notification = Notification.last
+    assert_equal @followed, notification.recipient
+    assert_equal @follower, notification.actor
+    assert_equal 'followed', notification.action
+    assert_equal 'User', notification.notifiable_type
+    assert_equal @followed.id, notification.notifiable_id
+  end
+
+  test 'create_follow_notification should not create notification for self follow' do
+    assert_no_difference 'Notification.count' do
+      NotificationService.create_follow_notification(@follower, @follower)
+    end
+  end
+
+  test 'create_follow_notification should not create duplicate notifications' do
+    NotificationService.create_follow_notification(@follower, @followed)
+
+    assert_no_difference 'Notification.count' do
+      NotificationService.create_follow_notification(@follower, @followed)
+    end
+  end
+
+  test 'create_unfollow_notification should create notification' do
+    assert_difference 'Notification.count', 1 do
+      NotificationService.create_unfollow_notification(@follower, @followed)
+    end
+
+    notification = Notification.last
+    assert_equal @followed, notification.recipient
+    assert_equal @follower, notification.actor
+    assert_equal 'unfollowed', notification.action
+  end
+
+  test 'create_unfollow_notification should not create notification for self' do
+    assert_no_difference 'Notification.count' do
+      NotificationService.create_unfollow_notification(@follower, @follower)
+    end
   end
 end

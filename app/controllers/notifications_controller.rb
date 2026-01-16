@@ -96,6 +96,7 @@ class NotificationsController < ApplicationController
       action: notification.action,
       read: notification.read,
       created_at: notification.created_at,
+      url: notification.url,
       actor: {
         id: notification.actor.id,
         name: notification.actor.name

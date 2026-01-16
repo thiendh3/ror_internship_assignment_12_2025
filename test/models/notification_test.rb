@@ -57,4 +57,44 @@ class NotificationTest < ActiveSupport::TestCase
     @notification.action = 'mentioned'
     assert_includes @notification.message, 'mentioned you'
   end
+
+  test 'message should return correct format for followed action' do
+    @notification.action = 'followed'
+    assert_includes @notification.message, 'started following you'
+  end
+
+  test 'message should return correct format for unfollowed action' do
+    @notification.action = 'unfollowed'
+    assert_includes @notification.message, 'unfollowed you'
+  end
+
+  test 'unread scope should return only unread notifications' do
+    @notification.save
+    read_notification = Notification.create!(
+      recipient: @recipient,
+      actor: @actor,
+      notifiable: @micropost,
+      action: 'commented',
+      read: true
+    )
+
+    unread_notifications = Notification.unread
+    assert_includes unread_notifications, @notification
+    assert_not_includes unread_notifications, read_notification
+  end
+
+  test 'recent scope should order by created_at desc' do
+    @notification.save
+    sleep 0.1
+    newer_notification = Notification.create!(
+      recipient: @recipient,
+      actor: @actor,
+      notifiable: @micropost,
+      action: 'commented'
+    )
+
+    recent_notifications = Notification.recent.limit(2)
+    assert_equal newer_notification, recent_notifications.first
+    assert_equal @notification, recent_notifications.second
+  end
 end

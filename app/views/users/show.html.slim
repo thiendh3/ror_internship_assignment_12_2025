@@ -1,21 +1,57 @@
 = content_for :title, @user.name
-.row
-  aside.col-md-4
-    section.user_info
-      h1
-        = gravatar_for @user
-        = @user.name
-    section.stats
-      = render 'shared/stats'
-  .col-md-8
-    - if logged_in?
-      = render 'follow_form'
-    - if @user.microposts.any?
-      h3
-        | Microposts (#{@user.microposts.count})
-      ol.microposts
-        = render @microposts
-      .digg_pagination
-        = will_paginate @microposts
-    - else
-      h3 No post yet
+
+.container data-controller="follow"
+  .row.user-profile
+    / Left Sidebar - User Info
+    aside.col-md-4
+      .card.user-profile-card
+        .card-body
+          section.user_info.text-center
+            .user-avatar.mb-3
+              = gravatar_for @user, size: 150
+            h2.user-name = @user.name
+            p.user-email.text-muted = @user.email
+            p.user-joined.text-muted
+              | Joined #{time_ago_in_words(@user.created_at)} ago
+          
+          / Stats Section
+          section.stats.mt-4
+            = render 'shared/stats'
+          
+          / Follow/Edit Actions
+          section.actions.mt-4
+            - if logged_in?
+              - if current_user?(@user)
+                = link_to "Edit Profile", edit_user_path(@user), class: "btn btn-primary btn-block"
+              - elsif current_user&.admin?
+                = link_to "Edit User (Admin)", edit_admin_user_path(@user), class: "btn btn-warning btn-block mb-2"
+                = render 'follow_form'
+              - else
+                = render 'follow_form'
+    
+    / Right Content - User Microposts
+    .col-md-8
+      .user-content
+        / Microposts Header
+        .microposts-header.d-flex.justify-content-between.align-items-center.mb-3
+          h3.mb-0
+            | Microposts 
+            span.badge.badge-secondary = @user.microposts.count
+        
+        / Microposts Feed
+        - if @user.microposts.any?
+          .microposts-feed data-controller="infinite-scroll"
+            ol.microposts
+              = render @microposts
+            
+            / Pagination
+            .digg_pagination.text-center
+              = will_paginate @microposts
+        - else
+          .empty-state.text-center.py-5
+            p.text-muted
+              i.fas.fa-comment-slash.fa-3x.mb-3
+            h4 No posts yet
+            - if current_user?(@user)
+              p Share your thoughts and start posting!
+
