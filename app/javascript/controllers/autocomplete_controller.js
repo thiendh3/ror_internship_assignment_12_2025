@@ -12,6 +12,7 @@ export default class extends Controller {
 		this.search();
 	}
 
+    // debounced user input and send requests to server
 	search() {
 		clearTimeout(this.timeout);
 		this.timeout = setTimeout(() => {
@@ -19,6 +20,7 @@ export default class extends Controller {
 		}, 300);
 	}
 
+    // the actual search
 	async performSearch() {
 		const query = this.inputTarget.value.trim();
 
@@ -47,6 +49,7 @@ export default class extends Controller {
 		}
 	}
 
+    // build the autocomplete lists
 	renderResults(queries) {
 		if (!queries || queries.length === 0) {
 			this.resultsTarget.hidden = true;
@@ -70,6 +73,7 @@ export default class extends Controller {
 		this.resultsTarget.hidden = false;
 	}
 
+    // fill the search bar and submit the search form when select an autocomplete item
 	selectQuery(event) {
 		event.preventDefault();
 		this.inputTarget.value = event.currentTarget.innerText.trim();
@@ -77,12 +81,14 @@ export default class extends Controller {
 		this.inputTarget.form.requestSubmit();
 	}
 
+    // hide autocomplete list when click outside the search bar
 	blur() {
 		setTimeout(() => {
 			this.resultsTarget.hidden = true;
 		}, 200);
 	}
 
+    // escape special characters to prevent XSS attacking
 	escapeHtml(text) {
 		if (!text) return "";
 		return text

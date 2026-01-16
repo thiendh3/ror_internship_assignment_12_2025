@@ -18,7 +18,7 @@ consumer.subscriptions.create("NotificationChannel", {
 
 		if (noNotifMessage) noNotifMessage.remove();
 
-		// Render new notification with actor avatar and unread styling
+		// render new notification item
 		const newNotificationHtml = `
             <li class="unread-notification">
                 <a href="${data.actor_url}" class="notification-item">
@@ -61,7 +61,7 @@ document.addEventListener("turbo:load", () => {
 				".unread-notification"
 			);
 
-			// Only execute if there are unread notifications to clear
+			// only execute if there are unread notifications to clear
 			if (internalBadge || unreadItems.length > 0) {
 				if (internalBadge) internalBadge.remove();
 				unreadItems.forEach((item) =>
@@ -92,7 +92,7 @@ document.addEventListener("turbo:load", () => {
 			const nextPage = container.dataset.nextPage;
 			const totalPages = container.dataset.totalPages;
 
-			// Trigger fetch if user scrolls to the bottom and more pages exist
+			// trigger fetch if user scrolls to the bottom and more pages exist
 			if (
 				scrollTop + clientHeight >= scrollHeight - 10 &&
 				nextPage &&

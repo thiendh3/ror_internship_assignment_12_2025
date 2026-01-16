@@ -1,10 +1,9 @@
 .panel.panel-default.sidebar-search
   .panel-body
-    / --- Search Form ---
     div data-controller="autocomplete" data-autocomplete-url-value=autocomplete_users_path
       = form_with(url: users_path, method: :get, html: { autocomplete: 'off' }, data: { turbo_frame: "users_list", turbo_action: "advance" }) do |f|
         
-        / --- Keywords Section ---
+        / search bar section
         .form-group
           label.text-uppercase.text-muted Keywords
           
@@ -15,13 +14,14 @@
                    class: "form-control input-sm", 
                    data: { action: "change->autocomplete#updateParams" })
 
+					/ search bar + autocomplete results
           .input-group-container
             = f.text_field :query, value: params[:query], class: "form-control", placeholder: (current_user.admin? ? "Name or email..." : "Name..."), data: { autocomplete_target: "input", action: "input->autocomplete#search blur->autocomplete#blur" }
             .autocomplete-results data-autocomplete-target="results" hidden=true
 
         hr
 
-        / --- Filter Checkboxes ---
+        / filters
         .form-group
           label.text-uppercase.text-muted Show Users
           
@@ -41,7 +41,7 @@
             - else
                p.text-muted.small Log in to filter by relationship.
 
-            / Admin Deactivated Toggle
+            / activated users inclusion toggle for admin
             - if current_user.admin?
               .checkbox
                 label.text-danger
@@ -50,7 +50,7 @@
 
         hr
 
-        / --- Sorting ---
+        / sorting options
         .form-group
           label.text-uppercase.text-muted Sort By
           = select_tag :sort, 

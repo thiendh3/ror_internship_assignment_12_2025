@@ -48,10 +48,9 @@ class UserSearch < ApplicationSearch
     return following_only_filter if scopes.include?('following')
 
     # only discover
-    return discover_only_filter if scopes.include?('discover')
+    discover_only_filter if scopes.include?('discover')
 
-    # return a filter matches nothing so that Solr returns nothing
-    'id:0'
+    # return no filter if no filter is sent
   end
 
   def following_only_filter

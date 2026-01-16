@@ -1,19 +1,16 @@
 - provide(:title, 'All users')
 
 .row
-  / --- LEFT SIDEBAR (Sticky) ---
   aside.col-md-4
     .sidebar-sticky style="position: sticky; top: 80px;"
       = render 'sidebar_search', filter_type: @filter_type, total_found: @total_found
 
-  / --- RIGHT CONTENT (User List) ---
   .col-md-8
     = turbo_frame_tag "users_list", data: { turbo_action: "advance" }
 			- if @users.any?
 				ul.users
 					= render @users
 				
-				/ Bottom Pagination
 				.digg_pagination
 					= will_paginate @users
 			- else
