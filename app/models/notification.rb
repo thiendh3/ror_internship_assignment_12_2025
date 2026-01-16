@@ -42,21 +42,21 @@ class Notification < ApplicationRecord
 
     case notification_type
     when 'follow'
-      "started following you"
+      'started following you'
     when 'unfollow'
-      "unfollowed you"
+      'unfollowed you'
     when 'comment'
-      "commented on your post"
+      'commented on your post'
     when 'reply'
-      "replied to your comment"
+      'replied to your comment'
     when 'micropost_reaction'
-      "reacted to your post"
+      'reacted to your post'
     when 'comment_reaction'
-      "reacted to your comment"
+      'reacted to your comment'
     when 'share'
-      "shared your post"
+      'shared your post'
     when 'new_post'
-      "posted something new"
+      'posted something new'
     else
       'You have a new notification'
     end
@@ -115,8 +115,18 @@ class Notification < ApplicationRecord
       read: read,
       created_at: created_at,
       target_url: target_url,
-      actor: actor ? { id: actor.id, name: actor.name } : nil,
+      actor: actor ? { 
+        id: actor.id, 
+        name: actor.name,
+        avatar_url: gravatar_url(actor)
+      } : nil,
       micropost_id: related_micropost_id
     }
+  end
+
+  def gravatar_url(user, size = 40)
+    require 'digest/md5'
+    gravatar_id = Digest::MD5.hexdigest(user.email.downcase)
+    "https://secure.gravatar.com/avatar/#{gravatar_id}?s=#{size}&d=identicon"
   end
 end
