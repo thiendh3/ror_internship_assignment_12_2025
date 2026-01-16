@@ -6,6 +6,7 @@ ruby "3.0.6"
 gem "rails", "~> 7.1.3", ">= 7.1.3.3"
 gem 'bootstrap-sass'
 gem "bcrypt"
+gem "tailwindcss-rails"
 gem "slim-rails"
 gem 'sass-rails'
 gem 'webpacker'
