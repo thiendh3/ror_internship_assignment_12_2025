@@ -38,7 +38,10 @@ class UserSearch < ApplicationSearch
   def scope_filter
     scopes = Array(params[:scope]).map(&:to_s)
 
-    # return nil (not filter) if both filter exists
+    # return nil (no filter) if scope is global (for autocomplete)
+    return if scopes.include?('global')
+
+    # return nil (no filter) if both filter exists
     return if scopes.include?('following') && scopes.include?('discover')
 
     # only following

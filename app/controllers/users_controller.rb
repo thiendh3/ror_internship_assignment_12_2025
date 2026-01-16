@@ -93,11 +93,14 @@ class UsersController < ApplicationController
     return render json: { queries: [] } if query.blank?
 
     search = UserSearch.new(
-      query: query,
-      search_field: params[:search_field],
-      page: 1,
-      per_page: 30,
-      user: current_user
+      {
+        query: query,
+        search_field: params[:search_field],
+        page: 1,
+        per_page: 30,
+        scope: 'global'
+      },
+      current_user
     )
 
     final_suggestions = filter_autocomplete_suggestions(search.results.records, query)
